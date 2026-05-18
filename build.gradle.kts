@@ -26,6 +26,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("io.github.wimdeblauwe:htmx-spring-boot-thymeleaf:5.1.0")
     implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1")
+    implementation("org.springframework.security:spring-security-crypto")
 //    implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")

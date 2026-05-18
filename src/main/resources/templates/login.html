@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head(~{::title})}">
+    <title>로그인 · SeuStock</title>
+</head>
+<body class="min-h-screen bg-slate-50 flex flex-col">
+
+<nav th:replace="~{fragments/layout :: nav}"></nav>
+
+<main class="flex flex-1 items-center justify-center px-4 py-12">
+    <div class="w-full max-w-sm">
+
+        <h1 class="mb-6 text-2xl font-bold text-slate-800">로그인</h1>
+
+        <form th:action="@{/login}" th:object="${form}" method="post" class="space-y-4">
+
+            <!-- 전역 인증 오류 -->
+            <div th:if="${#fields.hasGlobalErrors()}"
+                 class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+            </div>
+
+            <!-- 아이디 -->
+            <div>
+                <label for="username" class="block text-sm font-medium text-slate-700 mb-1">
+                    아이디
+                </label>
+                <input type="text" id="username" th:field="*{username}"
+                       th:classappend="${#fields.hasErrors('username')} ? 'border-red-400 focus:ring-red-400'"
+                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                              transition"
+                       autocomplete="username">
+                <span th:if="${#fields.hasErrors('username')}"
+                      th:errors="*{username}"
+                      class="mt-1 block text-xs text-red-500"></span>
+            </div>
+
+            <!-- 비밀번호 -->
+            <div>
+                <label for="password" class="block text-sm font-medium text-slate-700 mb-1">
+                    비밀번호
+                </label>
+                <input type="password" id="password" th:field="*{password}"
+                       th:classappend="${#fields.hasErrors('password')} ? 'border-red-400 focus:ring-red-400'"
+                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                              transition"
+                       autocomplete="current-password">
+                <span th:if="${#fields.hasErrors('password')}"
+                      th:errors="*{password}"
+                      class="mt-1 block text-xs text-red-500"></span>
+            </div>
+
+            <button type="submit"
+                    class="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white
+                           hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+                           focus:ring-offset-2 transition">
+                로그인
+            </button>
+
+        </form>
+
+        <p class="mt-5 text-center text-sm text-slate-500">
+            계정이 없으신가요?
+            <a href="/register" class="font-medium text-blue-600 hover:text-blue-700">회원가입</a>
+        </p>
+
+    </div>
+</main>
+
+</body>
+</html>

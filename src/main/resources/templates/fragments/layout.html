@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!--/* 공통 <head> — 모든 페이지에서 th:replace="~{fragments/layout :: head(~{::title})}" 로 사용 */-->
+<head th:fragment="head(titleContent)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:replace="${titleContent}">SeuStock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#3b82f6',
+                            hover:   '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<!--/* 공통 네비게이션 바 */-->
+<nav th:fragment="nav" class="border-b border-slate-200 bg-white">
+    <div class="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
+        <a href="/" class="text-lg font-semibold text-slate-800 tracking-tight">SeuStock</a>
+        <div class="flex items-center gap-4 text-sm">
+            <th:block th:if="${session.loginUser != null}">
+                <span class="text-slate-500" th:text="${session.loginUser}"></span>
+                <a href="/logout"
+                   class="text-slate-600 hover:text-slate-900 transition">로그아웃</a>
+            </th:block>
+            <th:block th:if="${session.loginUser == null}">
+                <a href="/login"
+                   class="text-slate-600 hover:text-slate-900 transition">로그인</a>
+                <a href="/register"
+                   class="rounded-md bg-blue-600 px-3 py-1.5 font-medium text-white
+                          hover:bg-blue-700 transition">회원가입</a>
+            </th:block>
+        </div>
+    </div>
+</nav>
+
+</html>
