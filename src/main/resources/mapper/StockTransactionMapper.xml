@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.seu.seustock.mapper.StockTransactionMapper">
+
+    <resultMap id="StockTransactionResultMap" type="StockTransactionDTO">
+        <id     property="id"              column="id"/>
+        <result property="externalId"      column="external_id"/>
+        <result property="stockId"         column="stock_id"/>
+        <result property="transactionType" column="transaction_type"/>
+        <result property="quantityDelta"   column="quantity_delta"/>
+        <result property="memo"            column="memo"/>
+        <result property="createdAt"       column="created_at"/>
+    </resultMap>
+
+    <insert id="insertTransaction" parameterType="StockTransactionDTO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO stock_transactions (stock_id, transaction_type, quantity_delta, memo)
+        VALUES (#{stockId}, #{transactionType}, #{quantityDelta}, #{memo})
+    </insert>
+
+    <select id="findById" parameterType="long" resultMap="StockTransactionResultMap">
+        SELECT id, external_id, stock_id, transaction_type, quantity_delta, memo, created_at
+        FROM stock_transactions
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByStockId" parameterType="long" resultMap="StockTransactionResultMap">
+        SELECT id, external_id, stock_id, transaction_type, quantity_delta, memo, created_at
+        FROM stock_transactions
+        WHERE stock_id = #{stockId}
+        ORDER BY created_at
+    </select>
+
+</mapper>

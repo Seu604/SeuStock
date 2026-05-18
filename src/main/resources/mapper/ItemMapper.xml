@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.seu.seustock.mapper.ItemMapper">
+
+    <resultMap id="ItemResultMap" type="ItemDTO">
+        <id     property="id"          column="id"/>
+        <result property="externalId"  column="external_id"/>
+        <result property="userId"      column="user_id"/>
+        <result property="name"        column="name"/>
+        <result property="description" column="description"/>
+        <result property="createdAt"   column="created_at"/>
+    </resultMap>
+
+    <insert id="insertItem" parameterType="ItemDTO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO items (user_id, name, description)
+        VALUES (#{userId}, #{name}, #{description})
+    </insert>
+
+    <select id="findById" parameterType="long" resultMap="ItemResultMap">
+        SELECT id, external_id, user_id, name, description, created_at
+        FROM items
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByUserId" parameterType="long" resultMap="ItemResultMap">
+        SELECT id, external_id, user_id, name, description, created_at
+        FROM items
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="updateItem" parameterType="ItemDTO">
+        UPDATE items
+        SET name        = #{name},
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM items
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

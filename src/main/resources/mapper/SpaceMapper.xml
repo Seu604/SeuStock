@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.seu.seustock.mapper.SpaceMapper">
+
+    <resultMap id="SpaceResultMap" type="SpaceDTO">
+        <id     property="id"         column="id"/>
+        <result property="externalId" column="external_id"/>
+        <result property="userId"     column="user_id"/>
+        <result property="name"       column="name"/>
+        <result property="createdAt"  column="created_at"/>
+    </resultMap>
+
+    <insert id="insertSpace" parameterType="SpaceDTO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO spaces (user_id, name)
+        VALUES (#{userId}, #{name})
+    </insert>
+
+    <select id="findById" parameterType="long" resultMap="SpaceResultMap">
+        SELECT id, external_id, user_id, name, created_at
+        FROM spaces
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByUserId" parameterType="long" resultMap="SpaceResultMap">
+        SELECT id, external_id, user_id, name, created_at
+        FROM spaces
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="updateSpace" parameterType="SpaceDTO">
+        UPDATE spaces
+        SET name = #{name}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM spaces
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

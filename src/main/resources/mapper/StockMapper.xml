@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.seu.seustock.mapper.StockMapper">
+
+    <resultMap id="StockResultMap" type="StockDTO">
+        <id     property="id"         column="id"/>
+        <result property="externalId" column="external_id"/>
+        <result property="itemId"     column="item_id"/>
+        <result property="spaceId"    column="space_id"/>
+        <result property="shelfId"    column="shelf_id"/>
+        <result property="boxId"      column="box_id"/>
+        <result property="quantity"   column="quantity"/>
+        <result property="createdAt"  column="created_at"/>
+    </resultMap>
+
+    <insert id="insertStock" parameterType="StockDTO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, quantity)
+        VALUES (#{itemId}, #{spaceId}, #{shelfId}, #{boxId}, #{quantity})
+    </insert>
+
+    <select id="findById" parameterType="long" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        FROM stocks
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByItemId" parameterType="long" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        FROM stocks
+        WHERE item_id = #{itemId}
+    </select>
+
+    <select id="findBySpaceId" parameterType="long" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        FROM stocks
+        WHERE space_id = #{spaceId}
+    </select>
+
+    <update id="updateStock" parameterType="StockDTO">
+        UPDATE stocks
+        SET quantity  = #{quantity},
+            shelf_id  = #{shelfId},
+            box_id    = #{boxId}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM stocks
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

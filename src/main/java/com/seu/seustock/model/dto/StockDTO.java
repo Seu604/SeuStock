@@ -1,4 +1,4 @@
-package com.seu.seustock.model;
+package com.seu.seustock.model.dto;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -10,10 +10,13 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
-public class UserDTO {
+public class StockDTO {
     private Long id;
     private UUID externalId;
-    private String username;
-    private String password;
+    private Long itemId;
+    private Long spaceId;
+    private Long shelfId;
+    private Long boxId;
+    private Integer quantity;
     private LocalDateTime createdAt;
 }
