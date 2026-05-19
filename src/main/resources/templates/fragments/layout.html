@@ -30,6 +30,9 @@
         <a href="/" class="text-lg font-semibold text-slate-800 tracking-tight">SeuStock</a>
         <div class="flex items-center gap-4 text-sm">
             <th:block th:if="${session.loginUser != null}">
+                <a href="/spaces"
+                   class="text-slate-600 hover:text-slate-900 transition">내 공간</a>
+                <span class="text-slate-300">|</span>
                 <span class="text-slate-500" th:text="${session.loginUser}"></span>
                 <a href="/logout"
                    class="text-slate-600 hover:text-slate-900 transition">로그아웃</a>

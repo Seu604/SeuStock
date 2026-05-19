@@ -4,6 +4,13 @@
 
 <mapper namespace="com.seu.seustock.mapper.StockMapper">
 
+    <resultMap id="StockPanelResultMap" type="StockPanelDTO">
+        <id     property="id"         column="id"/>
+        <result property="externalId" column="external_id"/>
+        <result property="itemName"   column="item_name"/>
+        <result property="quantity"   column="quantity"/>
+    </resultMap>
+
     <resultMap id="StockResultMap" type="StockDTO">
         <id     property="id"         column="id"/>
         <result property="externalId" column="external_id"/>
@@ -27,6 +34,32 @@
         WHERE id = #{id}
     </select>
 
+    <select id="findByExternalId" parameterType="java.util.UUID" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        FROM stocks
+        WHERE external_id = #{externalId}
+    </select>
+
+    <select id="findByBoxId" parameterType="long" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        FROM stocks
+        WHERE box_id = #{boxId}
+    </select>
+
+    <select id="findByShelfIdDirectOnly" parameterType="long" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        FROM stocks
+        WHERE shelf_id = #{shelfId}
+          AND box_id IS NULL
+    </select>
+
+    <select id="findBySpaceIdDirectOnly" parameterType="long" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        FROM stocks
+        WHERE space_id = #{spaceId}
+          AND shelf_id IS NULL
+    </select>
+
     <select id="findByItemId" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
         FROM stocks
@@ -47,9 +80,38 @@
         WHERE id = #{id}
     </update>
 
+    <update id="updateQuantity">
+        UPDATE stocks
+        SET quantity = #{quantity}
+        WHERE id = #{id}
+    </update>
+
     <delete id="deleteById" parameterType="long">
         DELETE FROM stocks
         WHERE id = #{id}
     </delete>
+
+    <select id="findPanelByBoxId" parameterType="long" resultMap="StockPanelResultMap">
+        SELECT s.id, s.external_id, i.name AS item_name, s.quantity
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.box_id = #{boxId}
+    </select>
+
+    <select id="findPanelByShelfDirectOnly" parameterType="long" resultMap="StockPanelResultMap">
+        SELECT s.id, s.external_id, i.name AS item_name, s.quantity
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.shelf_id = #{shelfId}
+          AND s.box_id IS NULL
+    </select>
+
+    <select id="findPanelBySpaceDirectOnly" parameterType="long" resultMap="StockPanelResultMap">
+        SELECT s.id, s.external_id, i.name AS item_name, s.quantity
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.space_id = #{spaceId}
+          AND s.shelf_id IS NULL
+    </select>
 
 </mapper>

@@ -24,6 +24,12 @@
         WHERE id = #{id}
     </select>
 
+    <select id="findByExternalId" parameterType="java.util.UUID" resultMap="ShelfResultMap">
+        SELECT id, external_id, space_id, name, created_at
+        FROM shelves
+        WHERE external_id = #{externalId}
+    </select>
+
     <select id="findBySpaceId" parameterType="long" resultMap="ShelfResultMap">
         SELECT id, external_id, space_id, name, created_at
         FROM shelves

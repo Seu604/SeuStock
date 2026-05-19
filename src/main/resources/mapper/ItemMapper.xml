@@ -25,6 +25,12 @@
         WHERE id = #{id}
     </select>
 
+    <select id="findByExternalId" parameterType="java.util.UUID" resultMap="ItemResultMap">
+        SELECT id, external_id, user_id, name, description, created_at
+        FROM items
+        WHERE external_id = #{externalId}
+    </select>
+
     <select id="findByUserId" parameterType="long" resultMap="ItemResultMap">
         SELECT id, external_id, user_id, name, description, created_at
         FROM items

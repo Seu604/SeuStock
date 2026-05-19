@@ -5,11 +5,13 @@ import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Mapper
 public interface ItemMapper {
     void insertItem(ItemDTO item);
     Optional<ItemDTO> findById(Long id);
+    Optional<ItemDTO> findByExternalId(UUID externalId);
     List<ItemDTO> findByUserId(Long userId);
     void updateItem(ItemDTO item);
     void deleteById(Long id);

@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS boxes (
     shelf_id    BIGINT       NOT NULL,
     name        VARCHAR(255) NOT NULL,
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (shelf_id) REFERENCES shelves(id)
+    FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS items (
@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS stocks (
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (item_id)  REFERENCES items(id),
     FOREIGN KEY (space_id) REFERENCES spaces(id),
-    FOREIGN KEY (shelf_id) REFERENCES shelves(id),
-    FOREIGN KEY (box_id)   REFERENCES boxes(id),
+    FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE,
+    FOREIGN KEY (box_id)   REFERENCES boxes(id)   ON DELETE CASCADE,
     CHECK (quantity >= 0)
 );
 
@@ -67,5 +67,5 @@ CREATE TABLE IF NOT EXISTS stock_transactions (
     quantity_delta   INT          NOT NULL,
     memo             TEXT,
     created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (stock_id) REFERENCES stocks(id)
+    FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE
 );

@@ -44,7 +44,7 @@ CREATE TABLE shelves (
                          space_id INT NOT NULL,
                          name VARCHAR(255) NOT NULL,
                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                         FOREIGN KEY (space_id) REFERENCES spaces(id)
+                         FOREIGN KEY (space_id) REFERENCES spaces(id) ON DELETE CASCADE
 );
 
 CREATE TABLE boxes (
@@ -54,7 +54,7 @@ CREATE TABLE boxes (
                        shelf_id INT NOT NULL,
                        name VARCHAR(255) NOT NULL,
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                       FOREIGN KEY (shelf_id) REFERENCES shelves(id)
+                       FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE
 );
 
 -- 역할 재정의: 아이템의 '마스터 정보'만 관리 (위치, 재고 정보 없음)
@@ -87,8 +87,8 @@ CREATE TABLE stocks (
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (item_id) REFERENCES items(id),
                         FOREIGN KEY (space_id) REFERENCES spaces(id),
-                        FOREIGN KEY (shelf_id) REFERENCES shelves(id),
-                        FOREIGN KEY (box_id) REFERENCES boxes(id),
+                        FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE,
+                        FOREIGN KEY (box_id) REFERENCES boxes(id) ON DELETE CASCADE,
                         CHECK (quantity >= 0)
     -- CHECK 제약이나 트리거를 통해 (box_id -> shelf_id -> space_id) 관계의 일관성을 보장할 수 있음
     -- 예: CHECK (box_id IS NULL OR shelf_id IS NOT NULL) -> 박스가 있으면 선반도 있어야 함
@@ -102,5 +102,5 @@ CREATE TABLE stock_transactions (
                                     quantity_delta INT NOT NULL,
                                     memo TEXT,
                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                    FOREIGN KEY (stock_id) REFERENCES stocks(id)
+                                    FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE
 );

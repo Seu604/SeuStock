@@ -18,6 +18,12 @@
         VALUES (#{userId}, #{name})
     </insert>
 
+    <select id="findByExternalId" parameterType="java.util.UUID" resultMap="SpaceResultMap">
+        SELECT id, external_id, user_id, name, created_at
+        FROM spaces
+        WHERE external_id = #{externalId}
+    </select>
+
     <select id="findById" parameterType="long" resultMap="SpaceResultMap">
         SELECT id, external_id, user_id, name, created_at
         FROM spaces
