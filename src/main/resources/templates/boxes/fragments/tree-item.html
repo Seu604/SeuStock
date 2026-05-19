@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<li th:fragment="tree-item(box, spaceExternalId, shelfExternalId)"
+    th:id="'box-' + ${box.externalId}"
+    class="flex items-center gap-1 px-3 py-1.5 hover:bg-slate-50 transition cursor-pointer group">
+
+    <span class="text-xs text-slate-300 w-3">□</span>
+
+    <!-- Box명 클릭 → 박스 재고 패널 로드 -->
+    <button type="button"
+            class="flex-1 text-left text-sm text-slate-600 truncate"
+            th:text="${box.name}"
+            th:attr="hx-get=@{/spaces/{sid}/shelves/{shid}/boxes/{id}/stocks(sid=${spaceExternalId},shid=${shelfExternalId},id=${box.externalId})}"
+            hx-target="#stock-panel"
+            hx-swap="outerHTML"></button>
+
+    <span class="hidden group-hover:flex items-center gap-1 shrink-0">
+        <!-- 재고 추가 버튼 -->
+        <button type="button"
+                class="text-xs text-blue-500 hover:text-blue-700 px-1"
+                th:attr="hx-get=@{/stocks/new(spaceId=${spaceExternalId},shelfId=${shelfExternalId},boxId=${box.externalId})}"
+                hx-target="#modal"
+                hx-swap="outerHTML"
+                title="재고 추가">📦</button>
+
+        <!-- Box 삭제 버튼 -->
+        <button type="button"
+                class="text-xs text-red-400 hover:text-red-600 px-1"
+                th:attr="hx-delete=@{/spaces/{sid}/shelves/{shid}/boxes/{id}(sid=${spaceExternalId},shid=${shelfExternalId},id=${box.externalId})},
+                         hx-confirm='박스를 삭제하면 포함된 재고도 함께 삭제됩니다. 계속하시겠습니까?'"
+                hx-target="closest li"
+                hx-swap="outerHTML"
+                title="삭제">×</button>
+    </span>
+
+</li>
+
+</body>
+</html>

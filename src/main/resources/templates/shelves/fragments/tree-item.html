@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<li th:fragment="tree-item(shelf, spaceExternalId)"
+    th:id="'shelf-' + ${shelf.externalId}"
+    class="border-b border-slate-100 last:border-0">
+
+    <!-- Shelf 헤더: 클릭 첫 번째→HTMX로 Box 목록 로드, 이후→JS 토글 -->
+    <div class="flex items-center gap-1 px-3 py-2 hover:bg-slate-50 transition cursor-pointer group"
+         th:attr="onclick='toggleBoxList(\'' + ${shelf.externalId} + '\', this)',
+                  hx-get=@{/spaces/{sid}/shelves/{id}/boxes(sid=${spaceExternalId},id=${shelf.externalId})},
+                  hx-target='#box-list-' + ${shelf.externalId}"
+         hx-swap="innerHTML"
+         hx-trigger="click once">
+
+        <span class="arrow text-xs text-slate-400 w-3 shrink-0">▶</span>
+
+        <!-- Shelf명 클릭 → 선반 직접 재고 패널 로드 -->
+        <button type="button"
+                class="flex-1 text-left text-sm font-medium text-slate-700 truncate"
+                th:text="${shelf.name}"
+                th:attr="hx-get=@{/spaces/{sid}/shelves/{id}/stocks(sid=${spaceExternalId},id=${shelf.externalId})}"
+                hx-target="#stock-panel"
+                hx-swap="outerHTML"
+                onclick="event.stopPropagation()"></button>
+
+        <span class="hidden group-hover:flex items-center gap-1 shrink-0">
+            <!-- Box 추가 버튼 -->
+            <button type="button"
+                    class="text-xs text-blue-500 hover:text-blue-700 px-1"
+                    th:attr="hx-get=@{/spaces/{sid}/shelves/{id}/boxes/new(sid=${spaceExternalId},id=${shelf.externalId})}"
+                    hx-target="#modal"
+                    hx-swap="outerHTML"
+                    onclick="event.stopPropagation()"
+                    title="박스 추가">+</button>
+
+            <!-- Shelf 삭제 버튼 -->
+            <button type="button"
+                    class="text-xs text-red-400 hover:text-red-600 px-1"
+                    th:attr="hx-delete=@{/spaces/{sid}/shelves/{id}(sid=${spaceExternalId},id=${shelf.externalId})},
+                             hx-confirm='선반을 삭제하면 하위 박스와 재고도 함께 삭제됩니다. 계속하시겠습니까?'"
+                    hx-target="closest li"
+                    hx-swap="outerHTML"
+                    onclick="event.stopPropagation()"
+                    title="삭제">×</button>
+        </span>
+    </div>
+
+    <!-- Box 목록 컨테이너 (HTMX가 innerHTML로 채움) -->
+    <ul th:id="'box-list-' + ${shelf.externalId}"
+        class="hidden ml-4 border-l border-slate-100">
+    </ul>
+
+</li>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- HTMX로 Box 목록 첫 로드 시 innerHTML로 삽입됨 -->
+<th:block th:fragment="box-list">
+
+    <li th:if="${boxes.empty}"
+        class="px-3 py-2 text-xs text-slate-400">
+        박스가 없습니다.
+    </li>
+
+    <th:block th:each="box : ${boxes}">
+        <th:block th:replace="~{boxes/fragments/tree-item :: tree-item(box=${box}, spaceExternalId=${spaceExternalId}, shelfExternalId=${shelf.externalId})}"></th:block>
+    </th:block>
+
+</th:block>
+
+</body>
+</html>
