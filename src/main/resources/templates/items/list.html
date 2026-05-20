@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head(~{::title})}">
+    <title>내 품목 · SeuStock</title>
+</head>
+<body class="min-h-screen bg-slate-50 flex flex-col">
+
+<nav th:replace="~{fragments/layout :: nav}"></nav>
+
+<main class="mx-auto w-full max-w-4xl px-4 py-10">
+
+    <div class="mb-6 flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-slate-800">내 품목</h1>
+    </div>
+
+    <!-- 품목 추가 폼 -->
+    <form th:action="@{/items}" th:object="${form}" method="post"
+          class="mb-6 rounded-lg border border-slate-200 bg-white p-4">
+        <div class="flex gap-2">
+            <div class="flex-1">
+                <input type="text" th:field="*{name}"
+                       th:classappend="${#fields.hasErrors('name')} ? 'border-red-400'"
+                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                              transition"
+                       placeholder="품목 이름 *">
+                <span th:if="${#fields.hasErrors('name')}"
+                      th:errors="*{name}"
+                      class="mt-1 block text-xs text-red-500"></span>
+            </div>
+            <div class="flex-[2]">
+                <input type="text" th:field="*{description}"
+                       th:classappend="${#fields.hasErrors('description')} ? 'border-red-400'"
+                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                              transition"
+                       placeholder="설명 (선택)">
+                <span th:if="${#fields.hasErrors('description')}"
+                      th:errors="*{description}"
+                      class="mt-1 block text-xs text-red-500"></span>
+            </div>
+            <button type="submit"
+                    class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white
+                           hover:bg-blue-700 transition whitespace-nowrap self-start">
+                + 추가
+            </button>
+        </div>
+    </form>
+
+    <!-- 품목 목록 테이블 -->
+    <div class="rounded-lg border border-slate-200 bg-white overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-40">
+                        품목명
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        설명
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">
+                        생성일
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-24">
+                        관리
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100" id="item-list">
+
+                <tr th:if="${items.empty}">
+                    <td colspan="4" class="px-4 py-8 text-center text-sm text-slate-400">
+                        등록된 품목이 없습니다. 위에서 추가해보세요.
+                    </td>
+                </tr>
+
+                <th:block th:each="item : ${items}">
+                    <tr th:replace="~{items/fragments/row :: view}"></tr>
+                </th:block>
+
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+</body>
+</html>

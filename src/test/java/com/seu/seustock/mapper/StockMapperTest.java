@@ -3,6 +3,7 @@ package com.seu.seustock.mapper;
 import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
+import com.seu.seustock.model.dto.StockPanelDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,17 +59,17 @@ class StockMapperTest {
         spaceId = space.getId();
     }
 
-    private StockDTO buildStock(int quantity) {
+    private StockDTO buildStock() {
         StockDTO stock = new StockDTO();
         stock.setItemId(itemId);
         stock.setSpaceId(spaceId);
-        stock.setQuantity(quantity);
         return stock;
     }
 
     @Test
     void insertStock_thenFindById() {
-        StockDTO stock = buildStock(10);
+        StockDTO stock = buildStock();
+        stock.setSerialNumber("SN-001");
         stockMapper.insertStock(stock);
 
         Optional<StockDTO> found = stockMapper.findById(stock.getId());
@@ -78,7 +79,8 @@ class StockMapperTest {
         assertThat(found.get().getExternalId()).isNotNull();
         assertThat(found.get().getItemId()).isEqualTo(itemId);
         assertThat(found.get().getSpaceId()).isEqualTo(spaceId);
-        assertThat(found.get().getQuantity()).isEqualTo(10);
+        assertThat(found.get().getStatus()).isEqualTo("IN_STOCK");
+        assertThat(found.get().getSerialNumber()).isEqualTo("SN-001");
     }
 
     @Test
@@ -89,8 +91,8 @@ class StockMapperTest {
 
     @Test
     void findByItemId() {
-        stockMapper.insertStock(buildStock(5));
-        stockMapper.insertStock(buildStock(3));
+        stockMapper.insertStock(buildStock());
+        stockMapper.insertStock(buildStock());
 
         List<StockDTO> stocks = stockMapper.findByItemId(itemId);
 
@@ -99,34 +101,97 @@ class StockMapperTest {
 
     @Test
     void findBySpaceId() {
-        stockMapper.insertStock(buildStock(7));
+        stockMapper.insertStock(buildStock());
+        stockMapper.insertStock(buildStock());
 
         List<StockDTO> stocks = stockMapper.findBySpaceId(spaceId);
 
-        assertThat(stocks).hasSize(1);
-        assertThat(stocks.get(0).getQuantity()).isEqualTo(7);
+        assertThat(stocks).hasSize(2);
     }
 
     @Test
-    void updateStock() {
-        StockDTO stock = buildStock(5);
+    void updateStatusIfInStock() {
+        StockDTO stock = buildStock();
         stockMapper.insertStock(stock);
-        stock.setQuantity(20);
 
-        stockMapper.updateStock(stock);
+        int updated = stockMapper.updateStatusIfInStock(stock.getId(), "DISPATCHED");
 
         Optional<StockDTO> found = stockMapper.findById(stock.getId());
+        assertThat(updated).isEqualTo(1);
         assertThat(found).isPresent();
-        assertThat(found.get().getQuantity()).isEqualTo(20);
+        assertThat(found.get().getStatus()).isEqualTo("DISPATCHED");
+    }
+
+    @Test
+    void updateStatusIfInStock_alreadyDispatched_returnsZero() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        stockMapper.updateStatusIfInStock(stock.getId(), "DISPATCHED");
+
+        int updated = stockMapper.updateStatusIfInStock(stock.getId(), "DAMAGED");
+
+        Optional<StockDTO> found = stockMapper.findById(stock.getId());
+        assertThat(updated).isZero();
+        assertThat(found).isPresent();
+        assertThat(found.get().getStatus()).isEqualTo("DISPATCHED");
     }
 
     @Test
     void deleteById() {
-        StockDTO stock = buildStock(1);
+        StockDTO stock = buildStock();
         stockMapper.insertStock(stock);
 
         stockMapper.deleteById(stock.getId());
 
         assertThat(stockMapper.findById(stock.getId())).isEmpty();
+    }
+
+    @Test
+    void findPanelBySpaceDirectOnly_groupsByItem() {
+        stockMapper.insertStock(buildStock());
+        stockMapper.insertStock(buildStock());
+
+        List<StockPanelDTO> panel = stockMapper.findPanelBySpaceDirectOnly(spaceId);
+
+        assertThat(panel).hasSize(1);
+        assertThat(panel.get(0).getItemName()).isEqualTo("노트북");
+        assertThat(panel.get(0).getCount()).isEqualTo(2);
+        assertThat(panel.get(0).getItemExternalId()).isNotNull();
+    }
+
+    @Test
+    void findPanelBySpaceDirectOnly_excludesDispatched() {
+        StockDTO unit1 = buildStock();
+        stockMapper.insertStock(unit1);
+        StockDTO unit2 = buildStock();
+        stockMapper.insertStock(unit2);
+        stockMapper.updateStatusIfInStock(unit2.getId(), "DISPATCHED");
+
+        List<StockPanelDTO> panel = stockMapper.findPanelBySpaceDirectOnly(spaceId);
+
+        assertThat(panel).hasSize(1);
+        assertThat(panel.get(0).getCount()).isEqualTo(1);
+    }
+
+    @Test
+    void findInStockByItemAndSpace_returnsFifoOrder() {
+        stockMapper.insertStock(buildStock());
+        stockMapper.insertStock(buildStock());
+        stockMapper.insertStock(buildStock());
+
+        List<StockDTO> units = stockMapper.findInStockByItemAndSpace(itemId, spaceId);
+
+        assertThat(units).hasSize(3);
+        assertThat(units).extracting(StockDTO::getStatus).containsOnly("IN_STOCK");
+    }
+
+    @Test
+    void deleteInStockByItemAndSpace() {
+        stockMapper.insertStock(buildStock());
+        stockMapper.insertStock(buildStock());
+
+        stockMapper.deleteInStockByItemAndSpace(itemId, spaceId);
+
+        assertThat(stockMapper.findBySpaceId(spaceId)).isEmpty();
     }
 }

@@ -24,6 +24,16 @@ public class StockService {
     private final BoxMapper boxMapper;
     private final UserMapper userMapper;
 
+    private record VerifiedLocation(SpaceDTO space, ShelfDTO shelf, BoxDTO box) {
+        Long shelfId() {
+            return shelf == null ? null : shelf.getId();
+        }
+
+        Long boxId() {
+            return box == null ? null : box.getId();
+        }
+    }
+
     public List<StockPanelDTO> findPanelBySpace(UUID spaceExternalId, String username) {
         SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
         return stockMapper.findPanelBySpaceDirectOnly(space.getId());
@@ -55,105 +65,147 @@ public class StockService {
     }
 
     @Transactional
-    public StockPanelDTO create(StockForm form, String username) {
-        UserDTO user = getUser(username);
-        ItemDTO item = itemMapper.findByExternalId(form.getItemExternalId())
+    public void create(StockForm form, String username) {
+        ItemDTO item = getVerifiedItem(form.getItemExternalId(), username);
+        VerifiedLocation location = resolveVerifiedLocation(
+                form.getSpaceExternalId(),
+                form.getShelfExternalId(),
+                form.getBoxExternalId(),
+                username);
+
+        for (int i = 0; i < form.getCount(); i++) {
+            StockDTO unit = new StockDTO();
+            unit.setItemId(item.getId());
+            unit.setSpaceId(location.space().getId());
+            unit.setShelfId(location.shelfId());
+            unit.setBoxId(location.boxId());
+            unit.setSerialNumber(form.getCount() == 1 ? form.getSerialNumber() : null);
+            unit.setLotNumber(form.getLotNumber());
+            unit.setExpirationDate(form.getExpirationDate());
+            stockMapper.insertStock(unit);
+
+            StockTransactionDTO tx = new StockTransactionDTO();
+            tx.setStockId(unit.getId());
+            tx.setTransactionType("IN");
+            tx.setMemo(form.getMemo() != null ? form.getMemo() : "초기 등록");
+            transactionMapper.insertTransaction(tx);
+        }
+    }
+
+    @Transactional
+    public void addUnits(StockInOutForm form, String username) {
+        ItemDTO item = getVerifiedItem(form.getItemExternalId(), username);
+        VerifiedLocation location = resolveVerifiedLocation(
+                form.getSpaceExternalId(),
+                form.getShelfExternalId(),
+                form.getBoxExternalId(),
+                username);
+
+        for (int i = 0; i < form.getCount(); i++) {
+            StockDTO unit = new StockDTO();
+            unit.setItemId(item.getId());
+            unit.setSpaceId(location.space().getId());
+            unit.setShelfId(location.shelfId());
+            unit.setBoxId(location.boxId());
+            stockMapper.insertStock(unit);
+
+            StockTransactionDTO tx = new StockTransactionDTO();
+            tx.setStockId(unit.getId());
+            tx.setTransactionType("IN");
+            tx.setMemo(form.getMemo());
+            transactionMapper.insertTransaction(tx);
+        }
+    }
+
+    @Transactional
+    public void dispatchUnits(StockInOutForm form, String username) {
+        ItemDTO item = getVerifiedItem(form.getItemExternalId(), username);
+        VerifiedLocation location = resolveVerifiedLocation(
+                form.getSpaceExternalId(),
+                form.getShelfExternalId(),
+                form.getBoxExternalId(),
+                username);
+
+        List<StockDTO> units;
+        if (location.box() != null) {
+            units = stockMapper.findInStockByItemAndBox(item.getId(), location.box().getId());
+        } else if (location.shelf() != null) {
+            units = stockMapper.findInStockByItemAndShelf(item.getId(), location.shelf().getId());
+        } else {
+            units = stockMapper.findInStockByItemAndSpace(item.getId(), location.space().getId());
+        }
+
+        if (units.size() < form.getCount()) {
+            throw new IllegalArgumentException("재고가 부족합니다. (현재: " + units.size() + "개)");
+        }
+
+        for (StockDTO unit : units.subList(0, form.getCount())) {
+            int updated = stockMapper.updateStatusIfInStock(unit.getId(), "DISPATCHED");
+            if (updated != 1) {
+                throw new IllegalStateException("재고 상태가 변경되어 출고할 수 없습니다.");
+            }
+
+            StockTransactionDTO tx = new StockTransactionDTO();
+            tx.setStockId(unit.getId());
+            tx.setTransactionType("OUT");
+            tx.setMemo(form.getMemo());
+            transactionMapper.insertTransaction(tx);
+        }
+    }
+
+    @Transactional
+    public void deleteUnits(UUID itemExternalId, UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
+        ItemDTO item = getVerifiedItem(itemExternalId, username);
+        VerifiedLocation location = resolveVerifiedLocation(spaceExternalId, shelfExternalId, boxExternalId, username);
+
+        if (location.box() != null) {
+            stockMapper.deleteInStockByItemAndBox(item.getId(), location.box().getId());
+        } else if (location.shelf() != null) {
+            stockMapper.deleteInStockByItemAndShelf(item.getId(), location.shelf().getId());
+        } else {
+            stockMapper.deleteInStockByItemAndSpace(item.getId(), location.space().getId());
+        }
+    }
+
+    private ItemDTO getVerifiedItem(UUID itemExternalId, String username) {
+        ItemDTO item = itemMapper.findByExternalId(itemExternalId)
                 .orElseThrow(() -> new NoSuchElementException("품목을 찾을 수 없습니다."));
+        UserDTO user = getUser(username);
         if (!item.getUserId().equals(user.getId())) {
             throw new SecurityException("접근 권한이 없습니다.");
         }
-        SpaceDTO space = spaceMapper.findByExternalId(form.getSpaceExternalId())
-                .orElseThrow(() -> new NoSuchElementException("공간을 찾을 수 없습니다."));
-        if (!space.getUserId().equals(user.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+        return item;
+    }
+
+    private VerifiedLocation resolveVerifiedLocation(UUID spaceExternalId,
+                                                     UUID shelfExternalId,
+                                                     UUID boxExternalId,
+                                                     String username) {
+        SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
+        ShelfDTO shelf = null;
+        BoxDTO box = null;
+
+        if (boxExternalId != null && shelfExternalId == null) {
+            throw new IllegalArgumentException("박스 재고는 선반 정보가 필요합니다.");
         }
 
-        StockDTO stock = new StockDTO();
-        stock.setItemId(item.getId());
-        stock.setSpaceId(space.getId());
-        stock.setQuantity(form.getQuantity());
-
-        if (form.getShelfExternalId() != null) {
-            ShelfDTO shelf = shelfMapper.findByExternalId(form.getShelfExternalId())
+        if (shelfExternalId != null) {
+            shelf = shelfMapper.findByExternalId(shelfExternalId)
                     .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
-            stock.setShelfId(shelf.getId());
+            if (!shelf.getSpaceId().equals(space.getId())) {
+                throw new SecurityException("접근 권한이 없습니다.");
+            }
         }
-        if (form.getBoxExternalId() != null) {
-            BoxDTO box = boxMapper.findByExternalId(form.getBoxExternalId())
+
+        if (boxExternalId != null) {
+            box = boxMapper.findByExternalId(boxExternalId)
                     .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
-            stock.setBoxId(box.getId());
+            if (!box.getShelfId().equals(shelf.getId())) {
+                throw new SecurityException("접근 권한이 없습니다.");
+            }
         }
 
-        stockMapper.insertStock(stock);
-
-        if (stock.getQuantity() > 0) {
-            StockTransactionDTO tx = new StockTransactionDTO();
-            tx.setStockId(stock.getId());
-            tx.setTransactionType("IN");
-            tx.setQuantityDelta(stock.getQuantity());
-            tx.setMemo("초기 등록");
-            transactionMapper.insertTransaction(tx);
-        }
-
-        return toPanel(stockMapper.findById(stock.getId()).orElseThrow(), item);
-    }
-
-    public void delete(UUID stockExternalId, String username) {
-        StockDTO stock = getVerifiedStock(stockExternalId, username);
-        stockMapper.deleteById(stock.getId());
-    }
-
-    @Transactional
-    public StockPanelDTO processIn(UUID stockExternalId, StockInOutForm form, String username) {
-        StockDTO stock = getVerifiedStock(stockExternalId, username);
-        int newQty = stock.getQuantity() + form.getQuantity();
-
-        StockTransactionDTO tx = new StockTransactionDTO();
-        tx.setStockId(stock.getId());
-        tx.setTransactionType("IN");
-        tx.setQuantityDelta(form.getQuantity());
-        tx.setMemo(form.getMemo());
-        transactionMapper.insertTransaction(tx);
-
-        stockMapper.updateQuantity(stock.getId(), newQty);
-
-        ItemDTO item = itemMapper.findById(stock.getItemId()).orElseThrow();
-        stock.setQuantity(newQty);
-        return toPanel(stock, item);
-    }
-
-    @Transactional
-    public StockPanelDTO processOut(UUID stockExternalId, StockInOutForm form, String username) {
-        StockDTO stock = getVerifiedStock(stockExternalId, username);
-        int newQty = stock.getQuantity() - form.getQuantity();
-        if (newQty < 0) {
-            throw new IllegalArgumentException("재고가 부족합니다.");
-        }
-
-        StockTransactionDTO tx = new StockTransactionDTO();
-        tx.setStockId(stock.getId());
-        tx.setTransactionType("OUT");
-        tx.setQuantityDelta(-form.getQuantity());
-        tx.setMemo(form.getMemo());
-        transactionMapper.insertTransaction(tx);
-
-        stockMapper.updateQuantity(stock.getId(), newQty);
-
-        ItemDTO item = itemMapper.findById(stock.getItemId()).orElseThrow();
-        stock.setQuantity(newQty);
-        return toPanel(stock, item);
-    }
-
-    private StockDTO getVerifiedStock(UUID stockExternalId, String username) {
-        StockDTO stock = stockMapper.findByExternalId(stockExternalId)
-                .orElseThrow(() -> new NoSuchElementException("재고를 찾을 수 없습니다."));
-        SpaceDTO space = spaceMapper.findById(stock.getSpaceId())
-                .orElseThrow(() -> new NoSuchElementException("공간을 찾을 수 없습니다."));
-        UserDTO user = getUser(username);
-        if (!space.getUserId().equals(user.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
-        }
-        return stock;
+        return new VerifiedLocation(space, shelf, box);
     }
 
     private SpaceDTO getVerifiedSpace(UUID spaceExternalId, String username) {
@@ -169,14 +221,5 @@ public class StockService {
     private UserDTO getUser(String username) {
         return userMapper.findByUsername(username)
                 .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
-    }
-
-    private StockPanelDTO toPanel(StockDTO stock, ItemDTO item) {
-        StockPanelDTO dto = new StockPanelDTO();
-        dto.setId(stock.getId());
-        dto.setExternalId(stock.getExternalId());
-        dto.setItemName(item.getName());
-        dto.setQuantity(stock.getQuantity());
-        return dto;
     }
 }

@@ -61,23 +61,21 @@ class StockTransactionMapperTest {
         StockDTO stock = new StockDTO();
         stock.setItemId(item.getId());
         stock.setSpaceId(space.getId());
-        stock.setQuantity(0);
         stockMapper.insertStock(stock);
         stockId = stock.getId();
     }
 
-    private StockTransactionDTO buildTransaction(String type, int delta, String memo) {
+    private StockTransactionDTO buildTransaction(String type, String memo) {
         StockTransactionDTO tx = new StockTransactionDTO();
         tx.setStockId(stockId);
         tx.setTransactionType(type);
-        tx.setQuantityDelta(delta);
         tx.setMemo(memo);
         return tx;
     }
 
     @Test
     void insertTransaction_thenFindById() {
-        StockTransactionDTO tx = buildTransaction("IN", 10, "입고");
+        StockTransactionDTO tx = buildTransaction("IN", "입고");
         stockTransactionMapper.insertTransaction(tx);
 
         Optional<StockTransactionDTO> found = stockTransactionMapper.findById(tx.getId());
@@ -87,7 +85,6 @@ class StockTransactionMapperTest {
         assertThat(found.get().getExternalId()).isNotNull();
         assertThat(found.get().getStockId()).isEqualTo(stockId);
         assertThat(found.get().getTransactionType()).isEqualTo("IN");
-        assertThat(found.get().getQuantityDelta()).isEqualTo(10);
         assertThat(found.get().getMemo()).isEqualTo("입고");
     }
 
@@ -99,8 +96,8 @@ class StockTransactionMapperTest {
 
     @Test
     void findByStockId_returnsAllTransactions() {
-        stockTransactionMapper.insertTransaction(buildTransaction("IN", 10, "입고"));
-        stockTransactionMapper.insertTransaction(buildTransaction("OUT", 3, "출고"));
+        stockTransactionMapper.insertTransaction(buildTransaction("IN", "입고"));
+        stockTransactionMapper.insertTransaction(buildTransaction("OUT", "출고"));
 
         List<StockTransactionDTO> txList = stockTransactionMapper.findByStockId(stockId);
 

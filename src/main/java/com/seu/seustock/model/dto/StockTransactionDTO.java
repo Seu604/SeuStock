@@ -15,7 +15,6 @@ public class StockTransactionDTO {
     private UUID externalId;
     private Long stockId;
     private String transactionType;
-    private Integer quantityDelta;
     private String memo;
     private LocalDateTime createdAt;
 }

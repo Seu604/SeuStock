@@ -19,9 +19,15 @@ public interface StockMapper {
     List<StockDTO> findByBoxId(Long boxId);
     List<StockDTO> findByShelfIdDirectOnly(Long shelfId);
     List<StockDTO> findBySpaceIdDirectOnly(Long spaceId);
-    void updateStock(StockDTO stock);
-    void updateQuantity(@Param("id") Long id, @Param("quantity") int quantity);
+    int updateStatusIfInStock(@Param("id") Long id, @Param("status") String status);
     void deleteById(Long id);
+    void deleteInStockByItemAndBox(@Param("itemId") Long itemId, @Param("boxId") Long boxId);
+    void deleteInStockByItemAndShelf(@Param("itemId") Long itemId, @Param("shelfId") Long shelfId);
+    void deleteInStockByItemAndSpace(@Param("itemId") Long itemId, @Param("spaceId") Long spaceId);
+
+    List<StockDTO> findInStockByItemAndBox(@Param("itemId") Long itemId, @Param("boxId") Long boxId);
+    List<StockDTO> findInStockByItemAndShelf(@Param("itemId") Long itemId, @Param("shelfId") Long shelfId);
+    List<StockDTO> findInStockByItemAndSpace(@Param("itemId") Long itemId, @Param("spaceId") Long spaceId);
 
     List<StockPanelDTO> findPanelByBoxId(Long boxId);
     List<StockPanelDTO> findPanelByShelfDirectOnly(Long shelfId);

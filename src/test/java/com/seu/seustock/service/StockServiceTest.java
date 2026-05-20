@@ -1,0 +1,237 @@
+package com.seu.seustock.service;
+
+import com.seu.seustock.mapper.*;
+import com.seu.seustock.model.dto.*;
+import com.seu.seustock.model.form.StockForm;
+import com.seu.seustock.model.form.StockInOutForm;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class StockServiceTest {
+
+    private static final String USERNAME = "testuser";
+    private static final UUID ITEM_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID OTHER_ITEM_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final UUID SPACE_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000000010");
+    private static final UUID OTHER_SPACE_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000000020");
+    private static final UUID SHELF_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000000100");
+    private static final UUID OTHER_SHELF_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
+    private static final UUID BOX_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000001000");
+    private static final UUID OTHER_BOX_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000001001");
+
+    @Mock
+    private StockMapper stockMapper;
+    @Mock
+    private StockTransactionMapper transactionMapper;
+    @Mock
+    private ItemMapper itemMapper;
+    @Mock
+    private SpaceMapper spaceMapper;
+    @Mock
+    private ShelfMapper shelfMapper;
+    @Mock
+    private BoxMapper boxMapper;
+    @Mock
+    private UserMapper userMapper;
+
+    @InjectMocks
+    private StockService stockService;
+
+    private UserDTO user;
+    private ItemDTO item;
+    private ItemDTO otherUserItem;
+    private SpaceDTO space;
+    private SpaceDTO otherSpace;
+    private ShelfDTO shelf;
+    private ShelfDTO otherSpaceShelf;
+    private BoxDTO box;
+    private BoxDTO otherShelfBox;
+
+    @BeforeEach
+    void setUp() {
+        user = user(1L);
+        item = item(10L, ITEM_EXTERNAL_ID, user.getId());
+        otherUserItem = item(20L, OTHER_ITEM_EXTERNAL_ID, 2L);
+        space = space(100L, SPACE_EXTERNAL_ID, user.getId());
+        otherSpace = space(200L, OTHER_SPACE_EXTERNAL_ID, user.getId());
+        shelf = shelf(1000L, SHELF_EXTERNAL_ID, space.getId());
+        otherSpaceShelf = shelf(1001L, OTHER_SHELF_EXTERNAL_ID, otherSpace.getId());
+        box = box(10000L, BOX_EXTERNAL_ID, shelf.getId());
+        otherShelfBox = box(10001L, OTHER_BOX_EXTERNAL_ID, otherSpaceShelf.getId());
+
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+    }
+
+    @Test
+    void create_rejectsItemOwnedByAnotherUser() {
+        when(itemMapper.findByExternalId(OTHER_ITEM_EXTERNAL_ID)).thenReturn(Optional.of(otherUserItem));
+
+        assertThatThrownBy(() -> stockService.create(stockForm(OTHER_ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME))
+                .isInstanceOf(SecurityException.class);
+
+        verify(stockMapper, never()).insertStock(any());
+    }
+
+    @Test
+    void create_rejectsShelfFromDifferentSpace() {
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(shelfMapper.findByExternalId(OTHER_SHELF_EXTERNAL_ID)).thenReturn(Optional.of(otherSpaceShelf));
+
+        assertThatThrownBy(() -> stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, OTHER_SHELF_EXTERNAL_ID, null), USERNAME))
+                .isInstanceOf(SecurityException.class);
+
+        verify(stockMapper, never()).insertStock(any());
+    }
+
+    @Test
+    void create_rejectsBoxWithoutShelf() {
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+
+        assertThatThrownBy(() -> stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, BOX_EXTERNAL_ID), USERNAME))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("선반 정보");
+
+        verify(stockMapper, never()).insertStock(any());
+    }
+
+    @Test
+    void create_rejectsBoxFromDifferentShelf() {
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
+        when(boxMapper.findByExternalId(OTHER_BOX_EXTERNAL_ID)).thenReturn(Optional.of(otherShelfBox));
+
+        assertThatThrownBy(() -> stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, OTHER_BOX_EXTERNAL_ID), USERNAME))
+                .isInstanceOf(SecurityException.class);
+
+        verify(stockMapper, never()).insertStock(any());
+    }
+
+    @Test
+    void create_usesVerifiedLocationIds() {
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
+        when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
+        doAnswer(invocation -> {
+            StockDTO stock = invocation.getArgument(0);
+            stock.setId(500L);
+            return null;
+        }).when(stockMapper).insertStock(any());
+
+        stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, BOX_EXTERNAL_ID), USERNAME);
+
+        ArgumentCaptor<StockDTO> stockCaptor = ArgumentCaptor.forClass(StockDTO.class);
+        verify(stockMapper).insertStock(stockCaptor.capture());
+        assertThat(stockCaptor.getValue().getItemId()).isEqualTo(item.getId());
+        assertThat(stockCaptor.getValue().getSpaceId()).isEqualTo(space.getId());
+        assertThat(stockCaptor.getValue().getShelfId()).isEqualTo(shelf.getId());
+        assertThat(stockCaptor.getValue().getBoxId()).isEqualTo(box.getId());
+        verify(transactionMapper).insertTransaction(any());
+    }
+
+    @Test
+    void dispatchUnits_rejectsChangedStockState() {
+        StockInOutForm form = stockInOutForm(SPACE_EXTERNAL_ID, null, null);
+        StockDTO stock = new StockDTO();
+        stock.setId(700L);
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of(stock));
+        when(stockMapper.updateStatusIfInStock(stock.getId(), "DISPATCHED")).thenReturn(0);
+
+        assertThatThrownBy(() -> stockService.dispatchUnits(form, USERNAME))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("상태");
+
+        verify(transactionMapper, never()).insertTransaction(any());
+    }
+
+    @Test
+    void deleteUnits_rejectsManipulatedLocation() {
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(shelfMapper.findByExternalId(OTHER_SHELF_EXTERNAL_ID)).thenReturn(Optional.of(otherSpaceShelf));
+
+        assertThatThrownBy(() -> stockService.deleteUnits(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, OTHER_SHELF_EXTERNAL_ID, null, USERNAME))
+                .isInstanceOf(SecurityException.class);
+
+        verify(stockMapper, never()).deleteInStockByItemAndShelf(any(), any());
+    }
+
+    private StockForm stockForm(UUID itemExternalId, UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId) {
+        StockForm form = new StockForm();
+        form.setItemExternalId(itemExternalId);
+        form.setSpaceExternalId(spaceExternalId);
+        form.setShelfExternalId(shelfExternalId);
+        form.setBoxExternalId(boxExternalId);
+        form.setCount(1);
+        return form;
+    }
+
+    private StockInOutForm stockInOutForm(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId) {
+        StockInOutForm form = new StockInOutForm();
+        form.setItemExternalId(ITEM_EXTERNAL_ID);
+        form.setSpaceExternalId(spaceExternalId);
+        form.setShelfExternalId(shelfExternalId);
+        form.setBoxExternalId(boxExternalId);
+        form.setCount(1);
+        return form;
+    }
+
+    private UserDTO user(Long id) {
+        UserDTO dto = new UserDTO();
+        dto.setId(id);
+        dto.setUsername(USERNAME);
+        return dto;
+    }
+
+    private ItemDTO item(Long id, UUID externalId, Long userId) {
+        ItemDTO dto = new ItemDTO();
+        dto.setId(id);
+        dto.setExternalId(externalId);
+        dto.setUserId(userId);
+        return dto;
+    }
+
+    private SpaceDTO space(Long id, UUID externalId, Long userId) {
+        SpaceDTO dto = new SpaceDTO();
+        dto.setId(id);
+        dto.setExternalId(externalId);
+        dto.setUserId(userId);
+        return dto;
+    }
+
+    private ShelfDTO shelf(Long id, UUID externalId, Long spaceId) {
+        ShelfDTO dto = new ShelfDTO();
+        dto.setId(id);
+        dto.setExternalId(externalId);
+        dto.setSpaceId(spaceId);
+        return dto;
+    }
+
+    private BoxDTO box(Long id, UUID externalId, Long shelfId) {
+        BoxDTO dto = new BoxDTO();
+        dto.setId(id);
+        dto.setExternalId(externalId);
+        dto.setShelfId(shelfId);
+        return dto;
+    }
+}

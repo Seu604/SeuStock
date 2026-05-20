@@ -72,35 +72,34 @@ CREATE TABLE items (
 --                        FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
 );
 
--- 역할 재정의: '실물 재고'와 '유연한 위치'를 관리
+-- stocks: row 1개 = 물리적 단위 1개
 CREATE TABLE stocks (
-                        id SERIAL PRIMARY KEY,
-                        external_id UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    -- 어떤 아이템에 대한 재고인지 명시 (NOT NULL)
-                        item_id INT NOT NULL,
-    -- 최소한의 위치 정보는 필요하므로 space_id는 NOT NULL
-                        space_id INT NOT NULL,
-    -- 선반이나 박스는 아직 모를 수 있으므로 NULL 허용
-                        shelf_id INT,
-                        box_id INT,
-                        quantity INT NOT NULL DEFAULT 0,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (item_id) REFERENCES items(id),
-                        FOREIGN KEY (space_id) REFERENCES spaces(id),
-                        FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE,
-                        FOREIGN KEY (box_id) REFERENCES boxes(id) ON DELETE CASCADE,
-                        CHECK (quantity >= 0)
-    -- CHECK 제약이나 트리거를 통해 (box_id -> shelf_id -> space_id) 관계의 일관성을 보장할 수 있음
-    -- 예: CHECK (box_id IS NULL OR shelf_id IS NOT NULL) -> 박스가 있으면 선반도 있어야 함
+    id              SERIAL PRIMARY KEY,
+    external_id     UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    item_id         INT NOT NULL,
+    space_id        INT NOT NULL,
+    shelf_id        INT,
+    box_id          INT,
+    serial_number   VARCHAR(255),
+    lot_number      VARCHAR(255),
+    expiration_date DATE,
+    status          VARCHAR(20) NOT NULL DEFAULT 'IN_STOCK',
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id)  REFERENCES items(id),
+    FOREIGN KEY (space_id) REFERENCES spaces(id),
+    FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE,
+    FOREIGN KEY (box_id)   REFERENCES boxes(id)   ON DELETE CASCADE,
+    CONSTRAINT chk_box_requires_shelf CHECK (box_id IS NULL OR shelf_id IS NOT NULL),
+    CONSTRAINT chk_stock_status CHECK (status IN ('IN_STOCK', 'DISPATCHED', 'LOST', 'DAMAGED', 'DISPOSED'))
 );
 
 CREATE TABLE stock_transactions (
-                                    id SERIAL PRIMARY KEY,
-                                    external_id UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-                                    stock_id INT NOT NULL,
-                                    transaction_type VARCHAR(255) NOT NULL,
-                                    quantity_delta INT NOT NULL,
-                                    memo TEXT,
-                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                    FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE
+    id               SERIAL PRIMARY KEY,
+    external_id      UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+    stock_id         INT NOT NULL,
+    transaction_type VARCHAR(20) NOT NULL,
+    memo             TEXT,
+    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
+    CONSTRAINT chk_transaction_type CHECK (transaction_type IN ('IN', 'OUT', 'MOVE', 'ADJUST'))
 );

@@ -1,10 +1,12 @@
 package com.seu.seustock.model.form;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
@@ -21,6 +23,15 @@ public class StockForm {
 
     private UUID boxExternalId;
 
-    @Min(value = 0, message = "수량은 0 이상이어야 합니다.")
-    private int quantity = 0;
+    @Min(value = 1, message = "수량은 1 이상이어야 합니다.")
+    @Max(value = 50, message = "한 번에 최대 50개까지 등록할 수 있습니다.")
+    private int count = 1;
+
+    private String serialNumber;
+
+    private String lotNumber;
+
+    private LocalDate expirationDate;
+
+    private String memo;
 }

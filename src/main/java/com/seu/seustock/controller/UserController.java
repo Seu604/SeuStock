@@ -4,6 +4,7 @@ import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.LoginForm;
 import com.seu.seustock.model.form.UserRegistrationForm;
 import com.seu.seustock.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +70,7 @@ public class UserController {
     @PostMapping("/login")
     public String login(@Valid @ModelAttribute("form") LoginForm form,
                         BindingResult result,
+                        HttpServletRequest request,
                         HttpSession session) {
         if (result.hasErrors()) {
             return "login";
@@ -80,7 +82,8 @@ public class UserController {
             return "login";
         }
 
-        session.setAttribute("loginUser", user.get().getUsername());
+        session.invalidate();
+        request.getSession(true).setAttribute("loginUser", user.get().getUsername());
         return "redirect:/";
     }
 

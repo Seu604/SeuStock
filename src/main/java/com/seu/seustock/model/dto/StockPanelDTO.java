@@ -10,8 +10,7 @@ import java.util.UUID;
 @Setter
 @ToString
 public class StockPanelDTO {
-    private Long id;
-    private UUID externalId;
+    private UUID itemExternalId;
     private String itemName;
-    private Integer quantity;
+    private Integer count;
 }

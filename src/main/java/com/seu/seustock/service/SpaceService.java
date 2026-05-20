@@ -1,6 +1,7 @@
 package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.SpaceMapper;
+import com.seu.seustock.mapper.StockMapper;
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.UserDTO;
@@ -18,6 +19,7 @@ public class SpaceService {
 
     private final SpaceMapper spaceMapper;
     private final UserMapper userMapper;
+    private final StockMapper stockMapper;
 
     public List<SpaceDTO> findAllByUsername(String username) {
         UserDTO user = getUser(username);
@@ -49,6 +51,9 @@ public class SpaceService {
     public void delete(UUID externalId, String username) {
         SpaceDTO space = getSpace(externalId);
         verifyOwner(space, username);
+        if (!stockMapper.findBySpaceId(space.getId()).isEmpty()) {
+            throw new IllegalStateException("재고가 있는 공간은 삭제할 수 없습니다.");
+        }
         spaceMapper.deleteById(space.getId());
     }
 

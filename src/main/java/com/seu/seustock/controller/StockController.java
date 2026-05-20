@@ -92,85 +92,100 @@ public class StockController {
             return "stocks/fragments/modal :: modal";
         }
         stockService.create(form, username);
-
-        List<StockPanelDTO> stocks = resolvePanel(form, username);
-        model.addAttribute("stocks", stocks);
-        model.addAttribute("breadcrumb", resolveBreadcrumb(form, username));
-        model.addAttribute("spaceExternalId", form.getSpaceExternalId());
-        model.addAttribute("shelfExternalId", form.getShelfExternalId());
-        model.addAttribute("boxExternalId", form.getBoxExternalId());
-        return "stocks/fragments/panel :: stock-panel-response";
+        return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username, model);
     }
 
     /* ── 재고 삭제 ── */
 
-    @DeleteMapping("/stocks/{externalId}")
+    @DeleteMapping("/stocks")
     @ResponseBody
-    public String delete(@PathVariable UUID externalId, HttpSession session) {
-        stockService.delete(externalId, (String) session.getAttribute("loginUser"));
+    public String delete(@RequestParam UUID itemExternalId,
+                         @RequestParam UUID spaceExternalId,
+                         @RequestParam(required = false) UUID shelfExternalId,
+                         @RequestParam(required = false) UUID boxExternalId,
+                         HttpSession session) {
+        stockService.deleteUnits(itemExternalId, spaceExternalId, shelfExternalId, boxExternalId,
+                (String) session.getAttribute("loginUser"));
         return "";
     }
 
     /* ── 입고 ── */
 
-    @GetMapping("/stocks/{externalId}/in-form")
-    public String inForm(@PathVariable UUID externalId, Model model) {
-        model.addAttribute("stockExternalId", externalId);
-        model.addAttribute("form", new StockInOutForm());
+    @GetMapping("/stocks/in-form")
+    public String inForm(@RequestParam UUID itemExternalId,
+                         @RequestParam UUID spaceExternalId,
+                         @RequestParam(required = false) UUID shelfExternalId,
+                         @RequestParam(required = false) UUID boxExternalId,
+                         Model model) {
+        StockInOutForm form = new StockInOutForm();
+        form.setItemExternalId(itemExternalId);
+        form.setSpaceExternalId(spaceExternalId);
+        form.setShelfExternalId(shelfExternalId);
+        form.setBoxExternalId(boxExternalId);
+        model.addAttribute("form", form);
         return "stocks/fragments/in-modal :: modal";
     }
 
-    @PostMapping("/stocks/{externalId}/in")
-    public String processIn(@PathVariable UUID externalId,
-                            @Valid @ModelAttribute("form") StockInOutForm form,
+    @PostMapping("/stocks/in")
+    public String processIn(@Valid @ModelAttribute("form") StockInOutForm form,
                             BindingResult result,
                             HttpSession session, Model model) {
         if (result.hasErrors()) {
-            model.addAttribute("stockExternalId", externalId);
             return "stocks/fragments/in-modal :: modal";
         }
-        StockPanelDTO stock = stockService.processIn(externalId, form, (String) session.getAttribute("loginUser"));
-        model.addAttribute("stock", stock);
-        return "stocks/fragments/row :: view-response";
+        stockService.addUnits(form, (String) session.getAttribute("loginUser"));
+        return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
+                (String) session.getAttribute("loginUser"), model);
     }
 
     /* ── 출고 ── */
 
-    @GetMapping("/stocks/{externalId}/out-form")
-    public String outForm(@PathVariable UUID externalId, Model model) {
-        model.addAttribute("stockExternalId", externalId);
-        model.addAttribute("form", new StockInOutForm());
+    @GetMapping("/stocks/out-form")
+    public String outForm(@RequestParam UUID itemExternalId,
+                          @RequestParam UUID spaceExternalId,
+                          @RequestParam(required = false) UUID shelfExternalId,
+                          @RequestParam(required = false) UUID boxExternalId,
+                          Model model) {
+        StockInOutForm form = new StockInOutForm();
+        form.setItemExternalId(itemExternalId);
+        form.setSpaceExternalId(spaceExternalId);
+        form.setShelfExternalId(shelfExternalId);
+        form.setBoxExternalId(boxExternalId);
+        model.addAttribute("form", form);
         return "stocks/fragments/out-modal :: modal";
     }
 
-    @PostMapping("/stocks/{externalId}/out")
-    public String processOut(@PathVariable UUID externalId,
-                             @Valid @ModelAttribute("form") StockInOutForm form,
+    @PostMapping("/stocks/out")
+    public String processOut(@Valid @ModelAttribute("form") StockInOutForm form,
                              BindingResult result,
                              HttpSession session, Model model) {
         if (result.hasErrors()) {
-            model.addAttribute("stockExternalId", externalId);
             return "stocks/fragments/out-modal :: modal";
         }
-        StockPanelDTO stock = stockService.processOut(externalId, form, (String) session.getAttribute("loginUser"));
-        model.addAttribute("stock", stock);
-        return "stocks/fragments/row :: view-response";
+        stockService.dispatchUnits(form, (String) session.getAttribute("loginUser"));
+        return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
+                (String) session.getAttribute("loginUser"), model);
     }
 
-    private List<StockPanelDTO> resolvePanel(StockForm form, String username) {
-        if (form.getBoxExternalId() != null) {
-            return stockService.findPanelByBox(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username);
-        } else if (form.getShelfExternalId() != null) {
-            return stockService.findPanelByShelf(form.getSpaceExternalId(), form.getShelfExternalId(), username);
+    private String buildPanelResponse(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId,
+                                      String username, Model model) {
+        List<StockPanelDTO> stocks;
+        String breadcrumb;
+        if (boxExternalId != null) {
+            stocks = stockService.findPanelByBox(spaceExternalId, shelfExternalId, boxExternalId, username);
+            breadcrumb = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName();
+        } else if (shelfExternalId != null) {
+            stocks = stockService.findPanelByShelf(spaceExternalId, shelfExternalId, username);
+            breadcrumb = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName() + " (선반 직접 재고)";
         } else {
-            return stockService.findPanelBySpace(form.getSpaceExternalId(), username);
+            stocks = stockService.findPanelBySpace(spaceExternalId, username);
+            breadcrumb = "공간 직접 재고";
         }
-    }
-
-    private String resolveBreadcrumb(StockForm form, String username) {
-        if (form.getShelfExternalId() != null) {
-            return shelfService.findByExternalId(form.getSpaceExternalId(), form.getShelfExternalId(), username).getName();
-        }
-        return "공간 직접 재고";
+        model.addAttribute("stocks", stocks);
+        model.addAttribute("breadcrumb", breadcrumb);
+        model.addAttribute("spaceExternalId", spaceExternalId);
+        model.addAttribute("shelfExternalId", shelfExternalId);
+        model.addAttribute("boxExternalId", boxExternalId);
+        return "stocks/fragments/panel :: stock-panel-response";
     }
 }

@@ -5,85 +5,119 @@
 <mapper namespace="com.seu.seustock.mapper.StockMapper">
 
     <resultMap id="StockPanelResultMap" type="StockPanelDTO">
-        <id     property="id"         column="id"/>
-        <result property="externalId" column="external_id"/>
-        <result property="itemName"   column="item_name"/>
-        <result property="quantity"   column="quantity"/>
+        <result property="itemExternalId" column="item_external_id"/>
+        <result property="itemName"       column="item_name"/>
+        <result property="count"          column="count"/>
     </resultMap>
 
     <resultMap id="StockResultMap" type="StockDTO">
-        <id     property="id"         column="id"/>
-        <result property="externalId" column="external_id"/>
-        <result property="itemId"     column="item_id"/>
-        <result property="spaceId"    column="space_id"/>
-        <result property="shelfId"    column="shelf_id"/>
-        <result property="boxId"      column="box_id"/>
-        <result property="quantity"   column="quantity"/>
-        <result property="createdAt"  column="created_at"/>
+        <id     property="id"             column="id"/>
+        <result property="externalId"     column="external_id"/>
+        <result property="itemId"         column="item_id"/>
+        <result property="spaceId"        column="space_id"/>
+        <result property="shelfId"        column="shelf_id"/>
+        <result property="boxId"          column="box_id"/>
+        <result property="serialNumber"   column="serial_number"/>
+        <result property="lotNumber"      column="lot_number"/>
+        <result property="expirationDate" column="expiration_date"/>
+        <result property="status"         column="status"/>
+        <result property="createdAt"      column="created_at"/>
     </resultMap>
 
     <insert id="insertStock" parameterType="StockDTO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, quantity)
-        VALUES (#{itemId}, #{spaceId}, #{shelfId}, #{boxId}, #{quantity})
+        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, serial_number, lot_number, expiration_date, status)
+        VALUES (#{itemId}, #{spaceId}, #{shelfId}, #{boxId}, #{serialNumber}, #{lotNumber}, #{expirationDate}, 'IN_STOCK')
     </insert>
 
     <select id="findById" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
         FROM stocks
         WHERE id = #{id}
     </select>
 
     <select id="findByExternalId" parameterType="java.util.UUID" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
         FROM stocks
         WHERE external_id = #{externalId}
     </select>
 
     <select id="findByBoxId" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
         FROM stocks
         WHERE box_id = #{boxId}
     </select>
 
     <select id="findByShelfIdDirectOnly" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
         FROM stocks
         WHERE shelf_id = #{shelfId}
           AND box_id IS NULL
     </select>
 
     <select id="findBySpaceIdDirectOnly" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
         FROM stocks
         WHERE space_id = #{spaceId}
           AND shelf_id IS NULL
     </select>
 
     <select id="findByItemId" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
         FROM stocks
         WHERE item_id = #{itemId}
     </select>
 
     <select id="findBySpaceId" parameterType="long" resultMap="StockResultMap">
-        SELECT id, external_id, item_id, space_id, shelf_id, box_id, quantity, created_at
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
         FROM stocks
         WHERE space_id = #{spaceId}
     </select>
 
-    <update id="updateStock" parameterType="StockDTO">
-        UPDATE stocks
-        SET quantity  = #{quantity},
-            shelf_id  = #{shelfId},
-            box_id    = #{boxId}
-        WHERE id = #{id}
-    </update>
+    <select id="findInStockByItemAndBox" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
+        FROM stocks
+        WHERE item_id = #{itemId}
+          AND box_id  = #{boxId}
+          AND status  = 'IN_STOCK'
+        ORDER BY created_at
+    </select>
 
-    <update id="updateQuantity">
+    <select id="findInStockByItemAndShelf" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
+        FROM stocks
+        WHERE item_id  = #{itemId}
+          AND shelf_id = #{shelfId}
+          AND box_id IS NULL
+          AND status   = 'IN_STOCK'
+        ORDER BY created_at
+    </select>
+
+    <select id="findInStockByItemAndSpace" resultMap="StockResultMap">
+        SELECT id, external_id, item_id, space_id, shelf_id, box_id,
+               serial_number, lot_number, expiration_date, status, created_at
+        FROM stocks
+        WHERE item_id  = #{itemId}
+          AND space_id = #{spaceId}
+          AND shelf_id IS NULL
+          AND status   = 'IN_STOCK'
+        ORDER BY created_at
+    </select>
+
+    <update id="updateStatusIfInStock">
         UPDATE stocks
-        SET quantity = #{quantity}
+        SET status = #{status}
         WHERE id = #{id}
+          AND status = 'IN_STOCK'
     </update>
 
     <delete id="deleteById" parameterType="long">
@@ -91,27 +125,56 @@
         WHERE id = #{id}
     </delete>
 
+    <delete id="deleteInStockByItemAndBox">
+        DELETE FROM stocks
+        WHERE item_id = #{itemId}
+          AND box_id  = #{boxId}
+          AND status  = 'IN_STOCK'
+    </delete>
+
+    <delete id="deleteInStockByItemAndShelf">
+        DELETE FROM stocks
+        WHERE item_id  = #{itemId}
+          AND shelf_id = #{shelfId}
+          AND box_id IS NULL
+          AND status   = 'IN_STOCK'
+    </delete>
+
+    <delete id="deleteInStockByItemAndSpace">
+        DELETE FROM stocks
+        WHERE item_id  = #{itemId}
+          AND space_id = #{spaceId}
+          AND shelf_id IS NULL
+          AND status   = 'IN_STOCK'
+    </delete>
+
     <select id="findPanelByBoxId" parameterType="long" resultMap="StockPanelResultMap">
-        SELECT s.id, s.external_id, i.name AS item_name, s.quantity
+        SELECT i.external_id AS item_external_id, i.name AS item_name, COUNT(*) AS count
         FROM stocks s
         JOIN items i ON s.item_id = i.id
         WHERE s.box_id = #{boxId}
+          AND s.status = 'IN_STOCK'
+        GROUP BY i.id, i.external_id, i.name
     </select>
 
     <select id="findPanelByShelfDirectOnly" parameterType="long" resultMap="StockPanelResultMap">
-        SELECT s.id, s.external_id, i.name AS item_name, s.quantity
+        SELECT i.external_id AS item_external_id, i.name AS item_name, COUNT(*) AS count
         FROM stocks s
         JOIN items i ON s.item_id = i.id
         WHERE s.shelf_id = #{shelfId}
           AND s.box_id IS NULL
+          AND s.status = 'IN_STOCK'
+        GROUP BY i.id, i.external_id, i.name
     </select>
 
     <select id="findPanelBySpaceDirectOnly" parameterType="long" resultMap="StockPanelResultMap">
-        SELECT s.id, s.external_id, i.name AS item_name, s.quantity
+        SELECT i.external_id AS item_external_id, i.name AS item_name, COUNT(*) AS count
         FROM stocks s
         JOIN items i ON s.item_id = i.id
         WHERE s.space_id = #{spaceId}
           AND s.shelf_id IS NULL
+          AND s.status = 'IN_STOCK'
+        GROUP BY i.id, i.external_id, i.name
     </select>
 
 </mapper>
