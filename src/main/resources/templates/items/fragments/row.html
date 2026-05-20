@@ -4,6 +4,14 @@
 
 <!-- 읽기 모드 행 -->
 <tr th:fragment="view" th:id="'item-' + ${item.externalId}">
+    <td class="px-4 py-3">
+        <img th:if="${item.primaryImageExternalId != null}"
+             th:src="@{/images/{id}(id=${item.primaryImageExternalId})}"
+             alt=""
+             class="h-10 w-10 rounded-md object-cover border border-slate-200">
+        <div th:unless="${item.primaryImageExternalId != null}"
+             class="h-10 w-10 rounded-md border border-slate-200 bg-slate-50"></div>
+    </td>
     <td class="px-4 py-3 text-sm font-medium text-slate-800" th:text="${item.name}"></td>
     <td class="px-4 py-3 text-sm text-slate-500"
         th:text="${item.description != null and !item.description.isEmpty()} ? ${item.description} : '—'"></td>
@@ -24,6 +32,17 @@
 <!-- 수정 모드 행 -->
 <tr th:fragment="edit" th:id="'item-' + ${item.externalId}">
     <td class="px-4 py-3">
+        <input type="file" name="imageFile" data-image-file
+               accept="image/jpeg,image/png,image/webp,image/gif"
+               class="block w-32 text-xs text-slate-500
+                      file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2 file:py-1
+                      file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+        <img data-image-preview
+             class="hidden mt-1 h-12 w-12 rounded-md object-cover border border-slate-200"
+             alt="">
+        <input type="hidden" name="imageHash" data-image-hash value="">
+    </td>
+    <td class="px-4 py-3">
         <input type="text" name="name" th:value="${item.name}"
                class="w-full rounded-md border border-slate-300 px-2 py-1 text-sm
                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -41,7 +60,9 @@
                 th:attr="hx-put=@{/items/{id}(id=${item.externalId})}"
                 hx-target="closest tr"
                 hx-swap="outerHTML"
-                hx-include="closest tr">저장</button>
+                hx-encoding="multipart/form-data"
+                hx-include="closest tr"
+                data-submit-btn>저장</button>
         <button class="text-slate-500 hover:text-slate-700 transition"
                 th:attr="hx-get=@{/items/{id}/cancel(id=${item.externalId})}"
                 hx-target="closest tr"
@@ -49,5 +70,17 @@
     </td>
 </tr>
 
+<script>
+(function () {
+    var tr = document.currentScript.closest('tr');
+    if (!tr) return;
+    initImageUpload({
+        fileInputSelector: '[data-image-file]',
+        previewSelector:   '[data-image-preview]',
+        hashInputSelector: '[data-image-hash]',
+        submitSelector:    '[data-submit-btn]'
+    }, tr);
+})();
+</script>
 </body>
 </html>

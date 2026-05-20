@@ -103,3 +103,39 @@ CREATE TABLE stock_transactions (
     FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
     CONSTRAINT chk_transaction_type CHECK (transaction_type IN ('IN', 'OUT', 'MOVE', 'ADJUST'))
 );
+
+CREATE TABLE images (
+                        id                SERIAL PRIMARY KEY,
+                        external_id       UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+                        user_id           INT NOT NULL,
+                        storage_path      TEXT NOT NULL,
+                        original_filename VARCHAR(255),
+                        content_type      VARCHAR(100),
+                        size_bytes        BIGINT,
+                        content_hash      VARCHAR(64),
+                        created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        CONSTRAINT uq_images_user_hash UNIQUE (user_id, content_hash)
+);
+
+CREATE TABLE item_images (
+                             item_id       INT NOT NULL,
+                             image_id      INT NOT NULL,
+                             display_order INT NOT NULL DEFAULT 0,
+                             is_primary    BOOLEAN NOT NULL DEFAULT FALSE,
+                             created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                             PRIMARY KEY (item_id, image_id),
+                             FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+                             FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
+);
+
+CREATE TABLE stock_images (
+                              stock_id      INT NOT NULL,
+                              image_id      INT NOT NULL,
+                              display_order INT NOT NULL DEFAULT 0,
+                              is_primary    BOOLEAN NOT NULL DEFAULT FALSE,
+                              created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                              PRIMARY KEY (stock_id, image_id),
+                              FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
+                              FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
+);

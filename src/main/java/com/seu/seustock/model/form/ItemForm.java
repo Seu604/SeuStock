@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -15,4 +16,7 @@ public class ItemForm {
 
     @Size(max = 500, message = "설명은 500자 이하여야 합니다.")
     private String description;
+
+    private MultipartFile imageFile;
+    private String imageHash;
 }

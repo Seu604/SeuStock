@@ -7,6 +7,7 @@
     <resultMap id="StockPanelResultMap" type="StockPanelDTO">
         <result property="itemExternalId" column="item_external_id"/>
         <result property="itemName"       column="item_name"/>
+        <result property="displayImageExternalId" column="display_image_external_id"/>
         <result property="count"          column="count"/>
     </resultMap>
 
@@ -149,7 +150,17 @@
     </delete>
 
     <select id="findPanelByBoxId" parameterType="long" resultMap="StockPanelResultMap">
-        SELECT i.external_id AS item_external_id, i.name AS item_name, COUNT(*) AS count
+        SELECT i.external_id AS item_external_id,
+               i.name AS item_name,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS display_image_external_id,
+               COUNT(*) AS count
         FROM stocks s
         JOIN items i ON s.item_id = i.id
         WHERE s.box_id = #{boxId}
@@ -158,7 +169,17 @@
     </select>
 
     <select id="findPanelByShelfDirectOnly" parameterType="long" resultMap="StockPanelResultMap">
-        SELECT i.external_id AS item_external_id, i.name AS item_name, COUNT(*) AS count
+        SELECT i.external_id AS item_external_id,
+               i.name AS item_name,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS display_image_external_id,
+               COUNT(*) AS count
         FROM stocks s
         JOIN items i ON s.item_id = i.id
         WHERE s.shelf_id = #{shelfId}
@@ -168,7 +189,17 @@
     </select>
 
     <select id="findPanelBySpaceDirectOnly" parameterType="long" resultMap="StockPanelResultMap">
-        SELECT i.external_id AS item_external_id, i.name AS item_name, COUNT(*) AS count
+        SELECT i.external_id AS item_external_id,
+               i.name AS item_name,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS display_image_external_id,
+               COUNT(*) AS count
         FROM stocks s
         JOIN items i ON s.item_id = i.id
         WHERE s.space_id = #{spaceId}

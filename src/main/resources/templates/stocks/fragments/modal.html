@@ -27,14 +27,20 @@
 
             <div class="mb-3">
                 <label class="block text-sm font-medium text-slate-700 mb-1">품목</label>
-                <select name="itemExternalId"
-                        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
-                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                    <option value="">품목 선택...</option>
-                    <option th:each="item : ${items}"
-                            th:value="${item.externalId}"
-                            th:text="${item.name}"></option>
-                </select>
+                <div class="max-h-48 overflow-y-auto rounded-md border border-slate-200 divide-y divide-slate-100">
+                    <label th:each="item : ${items}"
+                           class="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
+                        <input type="radio" name="itemExternalId" th:value="${item.externalId}"
+                               class="text-blue-600 focus:ring-blue-500">
+                        <img th:if="${item.primaryImageExternalId != null}"
+                             th:src="@{/images/{id}(id=${item.primaryImageExternalId})}"
+                             alt=""
+                             class="h-9 w-9 rounded-md object-cover border border-slate-200">
+                        <span th:unless="${item.primaryImageExternalId != null}"
+                              class="h-9 w-9 rounded-md border border-slate-200 bg-slate-50"></span>
+                        <span class="text-sm text-slate-800" th:text="${item.name}">품목명</span>
+                    </label>
+                </div>
                 <span th:if="${#fields.hasErrors('itemExternalId')}"
                       th:errors="*{itemExternalId}"
                       class="mt-1 block text-xs text-red-500"></span>

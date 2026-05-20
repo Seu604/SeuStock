@@ -74,32 +74,66 @@ CREATE TABLE items (
 
 -- stocks: row 1개 = 물리적 단위 1개
 CREATE TABLE stocks (
-    id              SERIAL PRIMARY KEY,
-    external_id     UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    item_id         INT NOT NULL,
-    space_id        INT NOT NULL,
-    shelf_id        INT,
-    box_id          INT,
-    serial_number   VARCHAR(255),
-    lot_number      VARCHAR(255),
-    expiration_date DATE,
-    status          VARCHAR(20) NOT NULL DEFAULT 'IN_STOCK',
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (item_id)  REFERENCES items(id),
-    FOREIGN KEY (space_id) REFERENCES spaces(id),
-    FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE,
-    FOREIGN KEY (box_id)   REFERENCES boxes(id)   ON DELETE CASCADE,
-    CONSTRAINT chk_box_requires_shelf CHECK (box_id IS NULL OR shelf_id IS NOT NULL),
-    CONSTRAINT chk_stock_status CHECK (status IN ('IN_STOCK', 'DISPATCHED', 'LOST', 'DAMAGED', 'DISPOSED'))
+                        id              SERIAL PRIMARY KEY,
+                        external_id     UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+                        item_id         INT NOT NULL,
+                        space_id        INT NOT NULL,
+                        shelf_id        INT,
+                        box_id          INT,
+                        serial_number   VARCHAR(255),
+                        lot_number      VARCHAR(255),
+                        expiration_date DATE,
+                        status          VARCHAR(20) NOT NULL DEFAULT 'IN_STOCK',
+                        created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (item_id)  REFERENCES items(id),
+                        FOREIGN KEY (space_id) REFERENCES spaces(id),
+                        FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE,
+                        FOREIGN KEY (box_id)   REFERENCES boxes(id)   ON DELETE CASCADE,
+                        CONSTRAINT chk_box_requires_shelf CHECK (box_id IS NULL OR shelf_id IS NOT NULL),
+                        CONSTRAINT chk_stock_status CHECK (status IN ('IN_STOCK', 'DISPATCHED', 'LOST', 'DAMAGED', 'DISPOSED'))
 );
 
 CREATE TABLE stock_transactions (
-    id               SERIAL PRIMARY KEY,
-    external_id      UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    stock_id         INT NOT NULL,
-    transaction_type VARCHAR(20) NOT NULL,
-    memo             TEXT,
-    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
-    CONSTRAINT chk_transaction_type CHECK (transaction_type IN ('IN', 'OUT', 'MOVE', 'ADJUST'))
+                                    id               SERIAL PRIMARY KEY,
+                                    external_id      UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+                                    stock_id         INT NOT NULL,
+                                    transaction_type VARCHAR(20) NOT NULL,
+                                    memo             TEXT,
+                                    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
+                                    CONSTRAINT chk_transaction_type CHECK (transaction_type IN ('IN', 'OUT', 'MOVE', 'ADJUST'))
+);
+
+CREATE TABLE images (
+                        id                SERIAL PRIMARY KEY,
+                        external_id       UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+                        user_id           INT NOT NULL,
+                        storage_path      TEXT NOT NULL,
+                        original_filename VARCHAR(255),
+                        content_type      VARCHAR(100),
+                        size_bytes        BIGINT,
+                        created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE item_images (
+                             item_id       INT NOT NULL,
+                             image_id      INT NOT NULL,
+                             display_order INT NOT NULL DEFAULT 0,
+                             is_primary    BOOLEAN NOT NULL DEFAULT FALSE,
+                             created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                             PRIMARY KEY (item_id, image_id),
+                             FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+                             FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
+);
+
+CREATE TABLE stock_images (
+                              stock_id      INT NOT NULL,
+                              image_id      INT NOT NULL,
+                              display_order INT NOT NULL DEFAULT 0,
+                              is_primary    BOOLEAN NOT NULL DEFAULT FALSE,
+                              created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                              PRIMARY KEY (stock_id, image_id),
+                              FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
+                              FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
 );

@@ -24,6 +24,16 @@ public class BoxService {
     private final SpaceMapper spaceMapper;
     private final UserMapper userMapper;
 
+    public BoxDTO findByExternalId(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
+        ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
+        BoxDTO box = boxMapper.findByExternalId(boxExternalId)
+                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+        if (!box.getShelfId().equals(shelf.getId())) {
+            throw new SecurityException("접근 권한이 없습니다.");
+        }
+        return box;
+    }
+
     public List<BoxDTO> findAllByShelfId(UUID spaceExternalId, UUID shelfExternalId, String username) {
         ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
         return boxMapper.findByShelfId(shelf.getId());

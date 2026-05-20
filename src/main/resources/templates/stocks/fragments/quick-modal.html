@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="modal"
+     id="modal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+
+        <h2 class="text-lg font-semibold text-slate-800 mb-1">빠른 재고 등록</h2>
+        <p class="text-xs text-slate-400 mb-4">품목을 새로 만들고 바로 재고에 추가합니다.</p>
+
+        <form th:object="${form}"
+              method="post"
+              enctype="multipart/form-data"
+              hx-post="/stocks/quick"
+              hx-encoding="multipart/form-data"
+              hx-target="#stock-panel"
+              hx-swap="outerHTML">
+
+            <input type="hidden" name="spaceExternalId" th:value="${spaceId}">
+            <input type="hidden" name="shelfExternalId" th:value="${shelfId}">
+            <input type="hidden" name="boxExternalId"   th:value="${boxId}">
+
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1">품목명</label>
+                <input type="text" th:field="*{name}"
+                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                       placeholder="예: 충전기, 드라이버 세트">
+                <span th:if="${#fields.hasErrors('name')}"
+                      th:errors="*{name}"
+                      class="mt-1 block text-xs text-red-500"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1">설명 <span class="text-slate-400 font-normal">(선택)</span></label>
+                <input type="text" th:field="*{description}"
+                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                       placeholder="간단한 설명">
+                <span th:if="${#fields.hasErrors('description')}"
+                      th:errors="*{description}"
+                      class="mt-1 block text-xs text-red-500"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1">수량 <span class="text-slate-400 font-normal">(최대 50개)</span></label>
+                <input type="number" th:field="*{count}" min="1" max="50"
+                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                <span th:if="${#fields.hasErrors('count')}"
+                      th:errors="*{count}"
+                      class="mt-1 block text-xs text-red-500"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1">메모 <span class="text-slate-400 font-normal">(선택)</span></label>
+                <input type="text" th:field="*{memo}"
+                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">사진 <span class="text-slate-400 font-normal">(선택)</span></label>
+                <label class="flex items-center gap-2 cursor-pointer w-full rounded-md border border-dashed border-slate-300
+                              px-3 py-2 text-sm text-slate-500 hover:border-blue-400 hover:text-blue-500 transition"
+                       id="image-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span id="image-label-text">사진을 선택하세요</span>
+                    <input type="file" name="imageFile" accept="image/jpeg,image/png,image/webp,image/gif"
+                           class="sr-only">
+                </label>
+                <img id="quick-image-preview"
+                     class="hidden mt-2 h-20 w-20 rounded-md object-cover border border-slate-200"
+                     alt="이미지 미리보기">
+            </div>
+
+            <input type="hidden" th:field="*{imageHash}" id="quick-image-hash">
+
+            <div class="flex gap-2 justify-end">
+                <button type="button"
+                        hx-get="/empty"
+                        hx-target="#modal"
+                        hx-swap="outerHTML"
+                        class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition">
+                    취소
+                </button>
+                <button type="submit"
+                        id="quick-submit-btn"
+                        class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                    등록
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    initImageUpload({
+        fileInputSelector:  '#modal input[name="imageFile"]',
+        previewSelector:    '#quick-image-preview',
+        hashInputSelector:  '#quick-image-hash',
+        submitSelector:     '#quick-submit-btn',
+        labelTextSelector:  '#image-label-text'
+    });
+</script>
+</body>
+</html>

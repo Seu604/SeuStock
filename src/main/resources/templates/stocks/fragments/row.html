@@ -10,7 +10,17 @@
     th:id="'item-' + ${stock.itemExternalId}"
     class="hover:bg-slate-50 transition">
 
-    <td class="px-4 py-3 text-sm text-slate-800" th:text="${stock.itemName}"></td>
+    <td class="px-4 py-3 text-sm text-slate-800">
+        <div class="flex items-center gap-3">
+            <img th:if="${stock.displayImageExternalId != null}"
+                 th:src="@{/images/{id}(id=${stock.displayImageExternalId})}"
+                 alt=""
+                 class="h-10 w-10 rounded-md object-cover border border-slate-200">
+            <span th:unless="${stock.displayImageExternalId != null}"
+                  class="h-10 w-10 rounded-md border border-slate-200 bg-slate-50"></span>
+            <span th:text="${stock.itemName}">품목명</span>
+        </div>
+    </td>
 
     <td class="px-4 py-3 text-sm text-right font-mono font-medium"
         th:classappend="${stock.count == 0} ? 'text-slate-400' : 'text-slate-800'"

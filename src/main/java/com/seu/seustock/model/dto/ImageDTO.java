@@ -10,12 +10,14 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
-public class ItemDTO {
+public class ImageDTO {
     private Long id;
     private UUID externalId;
     private Long userId;
-    private String name;
-    private String description;
-    private UUID primaryImageExternalId;
+    private String storagePath;
+    private String originalFilename;
+    private String contentType;
+    private Long sizeBytes;
+    private String contentHash;
     private LocalDateTime createdAt;
 }

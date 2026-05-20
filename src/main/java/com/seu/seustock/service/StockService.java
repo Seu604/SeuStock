@@ -2,6 +2,7 @@ package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.*;
 import com.seu.seustock.model.dto.*;
+import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,12 @@ public class StockService {
     private final StockMapper stockMapper;
     private final StockTransactionMapper transactionMapper;
     private final ItemMapper itemMapper;
+    private final ItemImageMapper itemImageMapper;
     private final SpaceMapper spaceMapper;
     private final ShelfMapper shelfMapper;
     private final BoxMapper boxMapper;
     private final UserMapper userMapper;
+    private final ImageStorageService imageStorageService;
 
     private record VerifiedLocation(SpaceDTO space, ShelfDTO shelf, BoxDTO box) {
         Long shelfId() {
@@ -88,6 +91,36 @@ public class StockService {
             tx.setStockId(unit.getId());
             tx.setTransactionType("IN");
             tx.setMemo(form.getMemo() != null ? form.getMemo() : "초기 등록");
+            transactionMapper.insertTransaction(tx);
+        }
+    }
+
+    @Transactional
+    public void createWithNewItem(QuickStockForm form, String username) {
+        UserDTO user = getUser(username);
+
+        ItemDTO item = new ItemDTO();
+        item.setUserId(user.getId());
+        item.setName(form.getName());
+        item.setDescription(form.getDescription());
+        itemMapper.insertItem(item);
+        attachPrimaryImageIfPresent(item.getId(), user, form);
+
+        VerifiedLocation location = resolveVerifiedLocation(
+                form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username);
+
+        for (int i = 0; i < form.getCount(); i++) {
+            StockDTO unit = new StockDTO();
+            unit.setItemId(item.getId());
+            unit.setSpaceId(location.space().getId());
+            unit.setShelfId(location.shelfId());
+            unit.setBoxId(location.boxId());
+            stockMapper.insertStock(unit);
+
+            StockTransactionDTO tx = new StockTransactionDTO();
+            tx.setStockId(unit.getId());
+            tx.setTransactionType("IN");
+            tx.setMemo(form.getMemo() != null ? form.getMemo() : "빠른 등록");
             transactionMapper.insertTransaction(tx);
         }
     }
@@ -170,11 +203,15 @@ public class StockService {
     private ItemDTO getVerifiedItem(UUID itemExternalId, String username) {
         ItemDTO item = itemMapper.findByExternalId(itemExternalId)
                 .orElseThrow(() -> new NoSuchElementException("품목을 찾을 수 없습니다."));
+        verifyItemOwner(item, username);
+        return item;
+    }
+
+    private void verifyItemOwner(ItemDTO item, String username) {
         UserDTO user = getUser(username);
         if (!item.getUserId().equals(user.getId())) {
             throw new SecurityException("접근 권한이 없습니다.");
         }
-        return item;
     }
 
     private VerifiedLocation resolveVerifiedLocation(UUID spaceExternalId,
@@ -221,5 +258,13 @@ public class StockService {
     private UserDTO getUser(String username) {
         return userMapper.findByUsername(username)
                 .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+    }
+
+    private void attachPrimaryImageIfPresent(Long itemId, UserDTO user, QuickStockForm form) {
+        ImageDTO image = imageStorageService.store(form.getImageFile(), user, form.getImageHash());
+        if (image == null) {
+            return;
+        }
+        itemImageMapper.insertItemImage(itemId, image.getId(), 0, true);
     }
 }

@@ -36,8 +36,15 @@ class StockMapperTest {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private ImageMapper imageMapper;
+
+    @Autowired
+    private ItemImageMapper itemImageMapper;
+
     private Long itemId;
     private Long spaceId;
+    private Long userId;
 
     @BeforeEach
     void setUp() {
@@ -45,6 +52,7 @@ class StockMapperTest {
         user.setUsername("testuser");
         user.setPassword("password");
         userMapper.insertUser(user);
+        userId = user.getId();
 
         ItemDTO item = new ItemDTO();
         item.setUserId(user.getId());
@@ -157,6 +165,24 @@ class StockMapperTest {
         assertThat(panel.get(0).getItemName()).isEqualTo("노트북");
         assertThat(panel.get(0).getCount()).isEqualTo(2);
         assertThat(panel.get(0).getItemExternalId()).isNotNull();
+    }
+
+    @Test
+    void findPanelBySpaceDirectOnly_includesItemPrimaryImage() {
+        var image = new com.seu.seustock.model.dto.ImageDTO();
+        image.setUserId(userId);
+        image.setStoragePath("/tmp/notebook.jpg");
+        image.setOriginalFilename("notebook.jpg");
+        image.setContentType("image/jpeg");
+        image.setSizeBytes(128L);
+        imageMapper.insertImage(image);
+        itemImageMapper.insertItemImage(itemId, image.getId(), 0, true);
+        stockMapper.insertStock(buildStock());
+
+        List<StockPanelDTO> panel = stockMapper.findPanelBySpaceDirectOnly(spaceId);
+
+        assertThat(panel).hasSize(1);
+        assertThat(panel.get(0).getDisplayImageExternalId()).isNotNull();
     }
 
     @Test

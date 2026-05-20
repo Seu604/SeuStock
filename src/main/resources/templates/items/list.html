@@ -14,9 +14,18 @@
     </div>
 
     <!-- 품목 추가 폼 -->
-    <form th:action="@{/items}" th:object="${form}" method="post"
+    <form th:action="@{/items}" th:object="${form}" method="post" enctype="multipart/form-data"
           class="mb-6 rounded-lg border border-slate-200 bg-white p-4">
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-start">
+            <div class="w-40">
+                <input type="file" th:field="*{imageFile}" accept="image/jpeg,image/png,image/webp,image/gif"
+                       class="block w-full text-xs text-slate-500
+                              file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2
+                              file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+                <img id="item-list-preview"
+                     class="hidden mt-1 h-16 w-16 rounded-md object-cover border border-slate-200"
+                     alt="이미지 미리보기">
+            </div>
             <div class="flex-1">
                 <input type="text" th:field="*{name}"
                        th:classappend="${#fields.hasErrors('name')} ? 'border-red-400'"
@@ -40,11 +49,13 @@
                       class="mt-1 block text-xs text-red-500"></span>
             </div>
             <button type="submit"
+                    id="item-list-submit-btn"
                     class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white
                            hover:bg-blue-700 transition whitespace-nowrap self-start">
                 + 추가
             </button>
         </div>
+        <input type="hidden" th:field="*{imageHash}">
     </form>
 
     <!-- 품목 목록 테이블 -->
@@ -52,6 +63,9 @@
         <table class="w-full">
             <thead class="bg-slate-50 border-b border-slate-200">
                 <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-20">
+                        이미지
+                    </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-40">
                         품목명
                     </th>
@@ -69,7 +83,7 @@
             <tbody class="divide-y divide-slate-100" id="item-list">
 
                 <tr th:if="${items.empty}">
-                    <td colspan="4" class="px-4 py-8 text-center text-sm text-slate-400">
+                    <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-400">
                         등록된 품목이 없습니다. 위에서 추가해보세요.
                     </td>
                 </tr>
@@ -84,5 +98,13 @@
 
 </main>
 
+<script>
+    initImageUpload({
+        fileInputSelector: '#imageFile',
+        previewSelector:   '#item-list-preview',
+        hashInputSelector: '#imageHash',
+        submitSelector:    '#item-list-submit-btn'
+    });
+</script>
 </body>
 </html>

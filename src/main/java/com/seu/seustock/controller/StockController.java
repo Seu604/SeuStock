@@ -1,8 +1,10 @@
 package com.seu.seustock.controller;
 
 import com.seu.seustock.model.dto.StockPanelDTO;
+import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
+import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ItemService;
 import com.seu.seustock.service.ShelfService;
 import com.seu.seustock.service.StockService;
@@ -23,6 +25,7 @@ public class StockController {
 
     private final StockService stockService;
     private final ShelfService shelfService;
+    private final BoxService boxService;
     private final ItemService itemService;
 
     /* ── 재고 패널 조회 ── */
@@ -56,7 +59,7 @@ public class StockController {
                              HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
         model.addAttribute("stocks", stockService.findPanelByBox(spaceExternalId, shelfExternalId, boxExternalId, username));
-        model.addAttribute("breadcrumb", shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName());
+        model.addAttribute("breadcrumb", boxService.findByExternalId(spaceExternalId, shelfExternalId, boxExternalId, username).getName());
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("boxExternalId", boxExternalId);
@@ -95,18 +98,46 @@ public class StockController {
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username, model);
     }
 
+    /* ── 빠른 등록 (품목+재고 동시 생성) ── */
+
+    @GetMapping("/stocks/quick")
+    public String quickModal(@RequestParam UUID spaceId,
+                             @RequestParam(required = false) UUID shelfId,
+                             @RequestParam(required = false) UUID boxId,
+                             Model model) {
+        model.addAttribute("spaceId", spaceId);
+        model.addAttribute("shelfId", shelfId);
+        model.addAttribute("boxId", boxId);
+        model.addAttribute("form", new QuickStockForm());
+        return "stocks/fragments/quick-modal :: modal";
+    }
+
+    @PostMapping("/stocks/quick")
+    public String createQuick(@Valid @ModelAttribute("form") QuickStockForm form,
+                              BindingResult result,
+                              HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        if (result.hasErrors()) {
+            model.addAttribute("spaceId", form.getSpaceExternalId());
+            model.addAttribute("shelfId", form.getShelfExternalId());
+            model.addAttribute("boxId", form.getBoxExternalId());
+            return "stocks/fragments/quick-modal :: modal";
+        }
+        stockService.createWithNewItem(form, username);
+        return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username, model);
+    }
+
     /* ── 재고 삭제 ── */
 
     @DeleteMapping("/stocks")
-    @ResponseBody
     public String delete(@RequestParam UUID itemExternalId,
                          @RequestParam UUID spaceExternalId,
                          @RequestParam(required = false) UUID shelfExternalId,
                          @RequestParam(required = false) UUID boxExternalId,
-                         HttpSession session) {
-        stockService.deleteUnits(itemExternalId, spaceExternalId, shelfExternalId, boxExternalId,
-                (String) session.getAttribute("loginUser"));
-        return "";
+                         HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        stockService.deleteUnits(itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, username);
+        return buildPanelResponse(spaceExternalId, shelfExternalId, boxExternalId, username, model);
     }
 
     /* ── 입고 ── */
@@ -173,10 +204,11 @@ public class StockController {
         String breadcrumb;
         if (boxExternalId != null) {
             stocks = stockService.findPanelByBox(spaceExternalId, shelfExternalId, boxExternalId, username);
-            breadcrumb = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName();
+            breadcrumb = boxService.findByExternalId(spaceExternalId, shelfExternalId, boxExternalId, username).getName();
         } else if (shelfExternalId != null) {
+            String shelfName = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName();
             stocks = stockService.findPanelByShelf(spaceExternalId, shelfExternalId, username);
-            breadcrumb = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName() + " (선반 직접 재고)";
+            breadcrumb = shelfName + " (선반 직접 재고)";
         } else {
             stocks = stockService.findPanelBySpace(spaceExternalId, username);
             breadcrumb = "공간 직접 재고";

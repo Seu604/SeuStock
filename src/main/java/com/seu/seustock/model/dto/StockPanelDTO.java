@@ -12,5 +12,6 @@ import java.util.UUID;
 public class StockPanelDTO {
     private UUID itemExternalId;
     private String itemName;
+    private UUID displayImageExternalId;
     private Integer count;
 }

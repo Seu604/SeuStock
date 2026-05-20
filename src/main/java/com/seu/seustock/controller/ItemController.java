@@ -53,7 +53,7 @@ public class ItemController {
 
     @PutMapping("/{externalId}")
     public String updateRow(@PathVariable UUID externalId,
-                            @Valid ItemForm form,
+                            @Valid @ModelAttribute("form") ItemForm form,
                             BindingResult result,
                             HttpSession session,
                             Model model) {

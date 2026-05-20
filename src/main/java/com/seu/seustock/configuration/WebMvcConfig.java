@@ -10,7 +10,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new LoginCheckInterceptor())
-                .addPathPatterns("/spaces/**", "/stocks/**", "/shelves/**", "/boxes/**", "/items/**")
+                .addPathPatterns("/spaces/**", "/stocks/**", "/shelves/**", "/boxes/**", "/items/**", "/images/**")
                 .excludePathPatterns("/login", "/register", "/register/check-username");
     }
 }
