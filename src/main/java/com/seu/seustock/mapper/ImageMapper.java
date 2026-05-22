@@ -2,6 +2,7 @@ package com.seu.seustock.mapper;
 
 import com.seu.seustock.model.dto.ImageDTO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -13,5 +14,5 @@ public interface ImageMapper {
     Optional<ImageDTO> findByExternalId(UUID externalId);
     Optional<ImageDTO> findPrimaryByItemId(Long itemId);
     Optional<ImageDTO> findPrimaryByStockId(Long stockId);
-    Optional<ImageDTO> findByUserIdAndContentHash(Long userId, String contentHash);
+    Optional<ImageDTO> findByUserIdAndContentHash(@Param("userId") Long userId, @Param("contentHash") String contentHash);
 }

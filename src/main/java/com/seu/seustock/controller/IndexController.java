@@ -15,6 +15,6 @@ public class IndexController {
     @GetMapping("/empty")
     @ResponseBody
     public String empty() {
-        return "";
+        return "<div id=\"modal\"></div>";
     }
 }

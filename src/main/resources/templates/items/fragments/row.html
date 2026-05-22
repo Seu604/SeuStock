@@ -2,84 +2,97 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!-- 읽기 모드 행 -->
-<tr th:fragment="view" th:id="'item-' + ${item.externalId}">
-    <td class="px-4 py-3">
+<!-- 읽기 모드 카드 -->
+<div th:fragment="view"
+     th:id="'item-' + ${item.externalId}"
+     data-item-card
+     class="rounded-lg border border-slate-200 bg-white p-4 flex flex-col gap-3">
+
+    <div class="flex items-center gap-3">
         <img th:if="${item.primaryImageExternalId != null}"
              th:src="@{/images/{id}(id=${item.primaryImageExternalId})}"
              alt=""
-             class="h-10 w-10 rounded-md object-cover border border-slate-200">
+             class="h-14 w-14 rounded-md object-cover border border-slate-200 shrink-0">
         <div th:unless="${item.primaryImageExternalId != null}"
-             class="h-10 w-10 rounded-md border border-slate-200 bg-slate-50"></div>
-    </td>
-    <td class="px-4 py-3 text-sm font-medium text-slate-800" th:text="${item.name}"></td>
-    <td class="px-4 py-3 text-sm text-slate-500"
-        th:text="${item.description != null and !item.description.isEmpty()} ? ${item.description} : '—'"></td>
-    <td class="px-4 py-3 text-sm text-slate-500"
-        th:text="${#temporals.format(item.createdAt, 'yyyy-MM-dd')}"></td>
-    <td class="px-4 py-3 text-sm flex gap-2">
-        <button class="text-blue-600 hover:text-blue-800 transition"
-                th:attr="hx-get=@{/items/{id}/edit(id=${item.externalId})}"
-                hx-target="closest tr"
-                hx-swap="outerHTML">수정</button>
-        <button class="text-red-500 hover:text-red-700 transition"
-                th:attr="hx-delete=@{/items/{id}(id=${item.externalId})},hx-confirm=|'${item.name}' 품목을 삭제하시겠습니까?|"
-                hx-target="closest tr"
-                hx-swap="outerHTML">삭제</button>
-    </td>
-</tr>
+             class="h-14 w-14 rounded-md border border-slate-200 bg-slate-50 shrink-0"></div>
+        <div class="min-w-0">
+            <p class="text-sm font-semibold text-slate-800 truncate" th:text="${item.name}"></p>
+            <p class="text-xs text-slate-400 mt-0.5"
+               th:text="${#temporals.format(item.createdAt, 'yyyy-MM-dd')}"></p>
+        </div>
+    </div>
 
-<!-- 수정 모드 행 -->
-<tr th:fragment="edit" th:id="'item-' + ${item.externalId}">
-    <td class="px-4 py-3">
+    <p class="text-sm text-slate-500 flex-1 min-h-[1.25rem]"
+       th:text="${item.description != null and !item.description.isEmpty()} ? ${item.description} : '—'"></p>
+
+    <div class="flex gap-2 justify-end border-t border-slate-100 pt-2">
+        <button class="text-sm text-blue-600 hover:text-blue-800 transition"
+                th:attr="hx-get=@{/items/{id}/edit(id=${item.externalId})},hx-target='#item-' + ${item.externalId}"
+                hx-swap="outerHTML">수정</button>
+        <button class="text-sm text-red-500 hover:text-red-700 transition"
+                th:attr="hx-delete=@{/items/{id}(id=${item.externalId})},hx-confirm=|'${item.name}' 품목을 삭제하시겠습니까?|,hx-target='#item-' + ${item.externalId}"
+                hx-swap="outerHTML">삭제</button>
+    </div>
+</div>
+
+<!-- 수정 모드 카드 -->
+<div th:fragment="edit"
+     th:id="'item-' + ${item.externalId}"
+     data-item-card
+     class="rounded-lg border border-blue-300 bg-white p-4 flex flex-col gap-3">
+
+    <div>
         <input type="file" name="imageFile" data-image-file
                accept="image/jpeg,image/png,image/webp,image/gif"
-               class="block w-32 text-xs text-slate-500
-                      file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2 file:py-1
+               class="block w-full text-xs text-slate-500
+                      file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2
                       file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
         <img data-image-preview
-             class="hidden mt-1 h-12 w-12 rounded-md object-cover border border-slate-200"
+             class="hidden mt-2 h-14 w-14 rounded-md object-cover border border-slate-200"
              alt="">
         <input type="hidden" name="imageHash" data-image-hash value="">
-    </td>
-    <td class="px-4 py-3">
+    </div>
+
+    <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">품목명 *</label>
         <input type="text" name="name" th:value="${item.name}"
-               class="w-full rounded-md border border-slate-300 px-2 py-1 text-sm
+               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-    </td>
-    <td class="px-4 py-3">
+    </div>
+
+    <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">설명</label>
         <input type="text" name="description" th:value="${item.description}"
-               class="w-full rounded-md border border-slate-300 px-2 py-1 text-sm
+               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                placeholder="설명 (선택)">
-    </td>
-    <td class="px-4 py-3 text-sm text-slate-500"
-        th:text="${#temporals.format(item.createdAt, 'yyyy-MM-dd')}"></td>
-    <td class="px-4 py-3 text-sm flex gap-2">
-        <button class="text-blue-600 hover:text-blue-800 transition"
-                th:attr="hx-put=@{/items/{id}(id=${item.externalId})}"
-                hx-target="closest tr"
+    </div>
+
+    <p class="text-xs text-slate-400"
+       th:text="${#temporals.format(item.createdAt, 'yyyy-MM-dd')}"></p>
+
+    <div class="flex gap-2 justify-end border-t border-slate-100 pt-2">
+        <button class="text-sm text-blue-600 hover:text-blue-800 transition"
+                th:attr="hx-put=@{/items/{id}(id=${item.externalId})},hx-target='#item-' + ${item.externalId},hx-include='#item-' + ${item.externalId}"
                 hx-swap="outerHTML"
                 hx-encoding="multipart/form-data"
-                hx-include="closest tr"
                 data-submit-btn>저장</button>
-        <button class="text-slate-500 hover:text-slate-700 transition"
-                th:attr="hx-get=@{/items/{id}/cancel(id=${item.externalId})}"
-                hx-target="closest tr"
+        <button class="text-sm text-slate-500 hover:text-slate-700 transition"
+                th:attr="hx-get=@{/items/{id}/cancel(id=${item.externalId})},hx-target='#item-' + ${item.externalId}"
                 hx-swap="outerHTML">취소</button>
-    </td>
-</tr>
+    </div>
+</div>
 
 <script>
 (function () {
-    var tr = document.currentScript.closest('tr');
-    if (!tr) return;
+    var card = document.currentScript.closest('[data-item-card]');
+    if (!card) return;
     initImageUpload({
         fileInputSelector: '[data-image-file]',
         previewSelector:   '[data-image-preview]',
         hashInputSelector: '[data-image-hash]',
         submitSelector:    '[data-submit-btn]'
-    }, tr);
+    }, card);
 })();
 </script>
 </body>

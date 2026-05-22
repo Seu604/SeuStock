@@ -35,7 +35,7 @@ Spring Boot 4.0.6 / Java 25 / Gradle (Kotlin DSL) web app for personal inventory
 
 ```
 com.seu.seustock
-├── configuration/   UUIDTypeHandler, LoginCheckInterceptor, WebMvcConfig, AppConfig
+├── configuration/   UUIDTypeHandler, LoginCheckInterceptor, WebMvcConfig, AppConfig, GlobalExceptionHandler
 ├── controller/      @Controller classes returning Thymeleaf view names
 ├── mapper/          @Mapper interfaces (MyBatis)
 ├── model/
@@ -63,15 +63,29 @@ com.seu.seustock
 - `java.util.UUID` has no built-in TypeHandler in MyBatis 3.5.x. `UUIDTypeHandler` in `configuration/` is registered via `mybatis.type-handlers-package=com.seu.seustock.configuration`. All XML `<resultMap>` entries for `external_id` rely on this handler.
 
 **Authentication**
-- Session-based, not Spring Security. `LoginCheckInterceptor` guards `/spaces/**`, `/stocks/**`, `/shelves/**`, `/boxes/**`, `/items/**` by checking `session.getAttribute("loginUser")` (a username string). All controllers read ownership from this attribute.
+- Session-based, not Spring Security. `LoginCheckInterceptor` guards `/spaces/**`, `/stocks/**`, `/shelves/**`, `/boxes/**`, `/items/**`, `/images/**` by checking `session.getAttribute("loginUser")` (a username string). All controllers read ownership from this attribute.
 - `spring-security-crypto` (BCrypt) is used for password hashing via `AppConfig.passwordEncoder()`. The full Spring Security web filter chain is commented out in `build.gradle.kts`.
 
 **Service ownership pattern**
 - Every service method that touches user-owned data follows the same sequence: resolve entity by external UUID → fetch owning user record → compare `userId` against the session username → throw `SecurityException` if mismatch. When adding new service methods, mirror this pattern rather than skipping the ownership check.
 
+**Exception handling**
+- `GlobalExceptionHandler` (`@ControllerAdvice`) maps exceptions to error views:
+  - `NoSuchElementException` → 404 (`error/404`)
+  - `SecurityException` → 403 (`error/403`)
+  - `IllegalArgumentException` / `IllegalStateException` → 400 (`error/400`)
+- Service methods use these standard exceptions rather than custom exception types.
+
+**Image storage**
+- `ImageStorageService` handles file upload, deduplication, and serving. Files are stored on disk at `seustock.upload-dir` (defaults to `uploads/images` relative to the working directory, configured in `application.properties`).
+- Deduplication: if the client sends a SHA-256 `contentHash` and the user already has an image with that hash, the existing `ImageDTO` is returned without writing a new file.
+- Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`.
+- Images are linked to items or stocks via junction tables `item_images` / `stock_images` (with `display_order` and `is_primary` columns). `ImageMapper`, `ItemImageMapper`, and `StockImageMapper` are the corresponding mappers.
+- `GET /images/{externalId}` serves image files with ownership enforcement.
+
 ## Database schema
 
-Source of truth: `schema/schema-v1.sql`. The file `docker/postgres/init/init-v1.sql` is a copy used for Docker container initialization — keep them in sync on every schema change.
+Source of truth: `docker/postgres/init/init.sql` (used for Docker container initialization). The file `data/init-v1.sql` is a formatting-only copy — keep them in sync on every schema change.
 
 Domain hierarchy (physical storage):
 ```
@@ -82,6 +96,8 @@ Inventory model:
 - `items`: master catalog of item definitions (name, description — no location or quantity)
 - `stocks`: each row is **one physical unit** of an item at a location (`space_id` required; `shelf_id` and `box_id` optional). Tracks `serial_number`, `lot_number`, `expiration_date`, and `status` (IN_STOCK, DISPATCHED, LOST, DAMAGED, DISPOSED). There is no quantity column — count is derived by counting rows.
 - `stock_transactions`: append-only ledger; every status change on a stock unit writes a row with `transaction_type` IN, OUT, MOVE, or ADJUST.
+- `images`: one row per uploaded file; deduplicated by `(user_id, content_hash)`.
+- `item_images` / `stock_images`: junction tables linking images to items or stocks.
 
 If `box_id` is set, `shelf_id` must also be set. The schema enforces this with `chk_box_requires_shelf`.
 

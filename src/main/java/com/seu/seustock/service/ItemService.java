@@ -38,7 +38,7 @@ public class ItemService {
     }
 
     @Transactional
-    public void create(String username, ItemForm form) {
+    public ItemDTO create(String username, ItemForm form) {
         UserDTO user = getUser(username);
         ItemDTO item = new ItemDTO();
         item.setUserId(user.getId());
@@ -46,6 +46,7 @@ public class ItemService {
         item.setDescription(form.getDescription());
         itemMapper.insertItem(item);
         attachPrimaryImageIfPresent(item.getId(), user, form);
+        return itemMapper.findById(item.getId()).orElseThrow();
     }
 
     @Transactional

@@ -24,8 +24,13 @@ public class ItemController {
     public String list(HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
         model.addAttribute("items", itemService.findAllByUsername(username));
-        model.addAttribute("form", new ItemForm());
         return "items/list";
+    }
+
+    @GetMapping("/new")
+    public String newModal(Model model) {
+        model.addAttribute("form", new ItemForm());
+        return "items/fragments/modal :: modal";
     }
 
     @PostMapping
@@ -34,12 +39,12 @@ public class ItemController {
                          HttpSession session,
                          Model model) {
         if (result.hasErrors()) {
-            String username = (String) session.getAttribute("loginUser");
-            model.addAttribute("items", itemService.findAllByUsername(username));
-            return "items/list";
+            return "items/fragments/modal :: modal";
         }
-        itemService.create((String) session.getAttribute("loginUser"), form);
-        return "redirect:/items";
+        String username = (String) session.getAttribute("loginUser");
+        ItemDTO created = itemService.create(username, form);
+        model.addAttribute("item", created);
+        return "items/fragments/modal :: created";
     }
 
     /* ── HTMX 인라인 수정 ── */

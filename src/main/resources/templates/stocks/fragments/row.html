@@ -43,7 +43,7 @@
         <button type="button"
                 class="text-xs text-red-400 hover:text-red-600 transition"
                 th:attr="hx-delete=@{/stocks(itemExternalId=${stock.itemExternalId},spaceExternalId=${spaceExternalId},shelfExternalId=${shelfExternalId},boxExternalId=${boxExternalId})},hx-confirm='이 위치의 재고를 모두 삭제하시겠습니까?'"
-                hx-target="closest tr" hx-swap="outerHTML">삭제</button>
+                hx-target="#stock-panel" hx-swap="outerHTML">삭제</button>
     </td>
 
 </tr>

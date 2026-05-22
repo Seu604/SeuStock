@@ -23,7 +23,7 @@
 
 <th:block th:fragment="panel-content">
 
-    <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+    <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-y-2">
         <div class="flex items-center gap-2 text-sm text-slate-600">
             <span class="text-slate-400">📦</span>
             <span th:text="${breadcrumb}">위치</span>
@@ -44,7 +44,8 @@
         </div>
     </div>
 
-    <table class="w-full">
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[480px]">
         <thead class="bg-slate-50 border-b border-slate-200">
             <tr>
                 <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">품목명</th>
@@ -67,6 +68,7 @@
 
         </tbody>
     </table>
+    </div>
 
 </th:block>
 

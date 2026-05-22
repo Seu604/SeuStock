@@ -112,8 +112,10 @@ CREATE TABLE images (
                         original_filename VARCHAR(255),
                         content_type      VARCHAR(100),
                         size_bytes        BIGINT,
+                        content_hash      VARCHAR(64),
                         created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        CONSTRAINT uq_images_user_hash UNIQUE (user_id, content_hash)
 );
 
 CREATE TABLE item_images (
