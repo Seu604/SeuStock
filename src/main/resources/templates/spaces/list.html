@@ -15,7 +15,7 @@
 
     <!-- 공간 추가 폼 -->
     <form th:action="@{/spaces}" th:object="${form}" method="post"
-          class="mb-6 flex flex-col sm:flex-row gap-2">
+          class="mb-6 flex flex-col sm:flex-row sm:items-start gap-2">
         <div class="flex-1">
             <input type="text" th:field="*{name}"
                    th:classappend="${#fields.hasErrors('name')} ? 'border-red-400'"
@@ -51,7 +51,7 @@
                     </th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100" id="space-list">
+            <tbody class="divide-y divide-slate-100" id="space-list" th:fragment="space-list">
 
                 <tr th:if="${spaces.empty}">
                     <td colspan="3" class="px-4 py-8 text-center text-sm text-slate-400">

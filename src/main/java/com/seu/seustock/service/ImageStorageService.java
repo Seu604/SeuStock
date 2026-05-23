@@ -53,8 +53,11 @@ public class ImageStorageService {
             return null;
         }
 
-        if (contentHash != null && !contentHash.isBlank()) {
-            Optional<ImageDTO> existing = imageMapper.findByUserIdAndContentHash(owner.getId(), contentHash);
+        // 빈 문자열은 null로 정규화 — DB UNIQUE 제약이 NULL을 중복으로 취급하지 않음
+        String normalizedHash = (contentHash != null && !contentHash.isBlank()) ? contentHash : null;
+
+        if (normalizedHash != null) {
+            Optional<ImageDTO> existing = imageMapper.findByUserIdAndContentHash(owner.getId(), normalizedHash);
             if (existing.isPresent()) {
                 return existing.get();
             }
@@ -90,12 +93,12 @@ public class ImageStorageService {
         image.setOriginalFilename(originalFilename);
         image.setContentType(contentType);
         image.setSizeBytes(file.getSize());
-        image.setContentHash(contentHash);
+        image.setContentHash(normalizedHash);
         try {
             imageMapper.insertImage(image);
         } catch (DataIntegrityViolationException e) {
-            if (contentHash != null) {
-                return imageMapper.findByUserIdAndContentHash(owner.getId(), contentHash)
+            if (normalizedHash != null) {
+                return imageMapper.findByUserIdAndContentHash(owner.getId(), normalizedHash)
                         .orElseThrow(() -> e);
             }
             throw e;

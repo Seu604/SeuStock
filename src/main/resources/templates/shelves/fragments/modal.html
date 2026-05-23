@@ -12,8 +12,8 @@
         <form th:object="${form}"
               method="post"
               th:attr="hx-post=@{/spaces/{id}/shelves(id=${spaceExternalId})}"
-              hx-target="#shelf-list"
-              hx-swap="beforeend">
+              hx-target="#modal"
+              hx-swap="outerHTML">
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-slate-700 mb-1">선반 이름</label>

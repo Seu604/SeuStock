@@ -92,9 +92,10 @@ public class SpaceController {
     }
 
     @DeleteMapping("/{externalId}")
-    @ResponseBody
-    public String delete(@PathVariable UUID externalId, HttpSession session) {
-        spaceService.delete(externalId, (String) session.getAttribute("loginUser"));
-        return "";
+    public String delete(@PathVariable UUID externalId, HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        spaceService.delete(externalId, username);
+        model.addAttribute("spaces", spaceService.findAllByUsername(username));
+        return "spaces/list :: space-list";
     }
 }

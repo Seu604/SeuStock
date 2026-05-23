@@ -11,9 +11,9 @@
 
         <form th:object="${form}"
               method="post"
-              th:attr="hx-post=@{/shelves/{id}/boxes(id=${shelfExternalId})},
-                       hx-target='#box-list-' + ${shelfExternalId}"
-              hx-swap="beforeend">
+              th:attr="hx-post=@{/shelves/{id}/boxes(id=${shelfExternalId})}"
+              hx-target="#modal"
+              hx-swap="outerHTML">
 
             <input type="hidden" name="spaceExternalId" th:value="${spaceExternalId}">
 

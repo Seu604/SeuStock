@@ -30,7 +30,8 @@
                 th:attr="hx-get=@{/items/{id}/edit(id=${item.externalId})},hx-target='#item-' + ${item.externalId}"
                 hx-swap="outerHTML">수정</button>
         <button class="text-sm text-red-500 hover:text-red-700 transition"
-                th:attr="hx-delete=@{/items/{id}(id=${item.externalId})},hx-confirm=|'${item.name}' 품목을 삭제하시겠습니까?|,hx-target='#item-' + ${item.externalId}"
+                th:attr="hx-delete=@{/items/{id}(id=${item.externalId})},hx-confirm=|'${item.name}' 품목을 삭제하시겠습니까?|"
+                hx-target="#item-list"
                 hx-swap="outerHTML">삭제</button>
     </div>
 </div>

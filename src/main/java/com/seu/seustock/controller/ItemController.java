@@ -81,9 +81,10 @@ public class ItemController {
     }
 
     @DeleteMapping("/{externalId}")
-    @ResponseBody
-    public String delete(@PathVariable UUID externalId, HttpSession session) {
-        itemService.delete(externalId, (String) session.getAttribute("loginUser"));
-        return "";
+    public String delete(@PathVariable UUID externalId, HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        itemService.delete(externalId, username);
+        model.addAttribute("items", itemService.findAllByUsername(username));
+        return "items/list :: item-list";
     }
 }

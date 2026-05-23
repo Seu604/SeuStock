@@ -36,17 +36,8 @@
                 위치 구조
             </div>
 
-            <ul id="shelf-list" class="py-1">
-
-                <li th:if="${shelves.empty}"
-                    class="px-3 py-4 text-xs text-slate-400 text-center">
-                    선반이 없습니다.
-                </li>
-
-                <th:block th:each="shelf : ${shelves}">
-                    <th:block th:replace="~{shelves/fragments/tree-item :: tree-item(shelf=${shelf}, spaceExternalId=${space.externalId})}"></th:block>
-                </th:block>
-
+            <ul id="shelf-list" class="py-1" th:fragment="shelf-list">
+                <th:block th:replace="~{spaces/fragments/shelf-list-response :: shelf-list-content}"></th:block>
             </ul>
 
             <!-- 공간 직접 재고 진입점 -->

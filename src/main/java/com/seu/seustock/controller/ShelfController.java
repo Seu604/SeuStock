@@ -1,6 +1,5 @@
 package com.seu.seustock.controller;
 
-import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.model.form.ShelfForm;
 import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ShelfService;
@@ -49,18 +48,21 @@ public class ShelfController {
             model.addAttribute("spaceExternalId", spaceExternalId);
             return "shelves/fragments/modal :: modal";
         }
-        ShelfDTO shelf = shelfService.create(spaceExternalId, form, username);
+        shelfService.create(spaceExternalId, form, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
-        model.addAttribute("shelf", shelf);
-        return "shelves/fragments/created :: created";
+        model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
+        return "spaces/fragments/shelf-list-response :: shelf-list-response";
     }
 
     @DeleteMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}")
-    @ResponseBody
     public String delete(@PathVariable UUID spaceExternalId,
                          @PathVariable UUID shelfExternalId,
-                         HttpSession session) {
-        shelfService.delete(spaceExternalId, shelfExternalId, (String) session.getAttribute("loginUser"));
-        return "";
+                         HttpSession session,
+                         Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        shelfService.delete(spaceExternalId, shelfExternalId, username);
+        model.addAttribute("spaceExternalId", spaceExternalId);
+        model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
+        return "spaces/detail :: shelf-list";
     }
 }

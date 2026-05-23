@@ -23,17 +23,19 @@
         </button>
     </div>
 
-    <p id="item-empty-msg"
-       th:if="${items.empty}"
-       class="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400">
-        등록된 품목이 없습니다. 위 버튼으로 추가해보세요.
-    </p>
+    <div id="item-list" th:fragment="item-list">
+        <p id="item-empty-msg"
+           th:if="${items.empty}"
+           class="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400">
+            등록된 품목이 없습니다. 위 버튼으로 추가해보세요.
+        </p>
 
-    <div id="item-cards"
-         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <th:block th:each="item : ${items}">
-            <div th:replace="~{items/fragments/row :: view}"></div>
-        </th:block>
+        <div id="item-cards"
+             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <th:block th:each="item : ${items}">
+                <div th:replace="~{items/fragments/row :: view}"></div>
+            </th:block>
+        </div>
     </div>
 
 </main>
