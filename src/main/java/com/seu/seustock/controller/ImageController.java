@@ -51,11 +51,16 @@ public class ImageController {
     }
 
     @PostMapping("/images/analyze")
-    public ResponseEntity<ImageAnalysisDTO> analyze(@RequestParam("imageFile") MultipartFile imageFile) {
-        log.info("[analyze] 요청 수신 — filename={}, contentType={}, size={}",
-                imageFile.getOriginalFilename(), imageFile.getContentType(), imageFile.getSize());
-        ImageAnalysisDTO result = imageAnalysisService.analyze(imageFile);
-        log.info("[analyze] 분석 완료 — name={}, description={}", result.getName(), result.getDescription());
+    public ResponseEntity<ImageAnalysisDTO> analyze(@RequestParam("imageFile") MultipartFile imageFile,
+                                                    @RequestParam(defaultValue = "0") int retryAttempt,
+                                                    @RequestParam(required = false) String previousName,
+                                                    @RequestParam(required = false) String previousDescription) {
+        log.info("[analyze] 요청 수신 — filename={}, contentType={}, size={}, retryAttempt={}",
+                imageFile.getOriginalFilename(), imageFile.getContentType(), imageFile.getSize(), retryAttempt);
+        ImageAnalysisDTO result = imageAnalysisService.analyze(
+                imageFile, retryAttempt, previousName, previousDescription);
+        log.info("[analyze] 분석 완료 — name={}, description={}",
+                result.getName(), result.getDescription());
         return ResponseEntity.ok(result);
     }
 }

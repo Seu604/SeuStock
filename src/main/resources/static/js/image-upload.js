@@ -110,3 +110,109 @@ function initImageUpload(config, root) {
         });
     }
 }
+
+function createImageAnalysisHandler(config, root) {
+    var scope = root || document;
+    var currentFile = null;
+    var retryAttempt = 0;
+    var ctrl = null;
+
+    function find(selector) {
+        return selector ? scope.querySelector(selector) : null;
+    }
+
+    function setBusy(isBusy) {
+        var fileInput = find(config.fileInputSelector);
+        var submitBtn = find(config.submitSelector);
+        var statusSpan = find(config.statusSelector);
+        var fileLabel = find(config.fileLabelSelector);
+        var retryBtn = find(config.retryButtonSelector);
+
+        if (fileInput) fileInput.disabled = isBusy;
+        if (submitBtn) submitBtn.disabled = isBusy;
+        if (retryBtn) {
+            retryBtn.disabled = isBusy || !currentFile;
+            if (isBusy) retryBtn.classList.add('hidden');
+        }
+        if (fileLabel) fileLabel.classList.toggle('opacity-50', isBusy);
+
+        if (statusSpan) {
+            statusSpan.classList.toggle('hidden', !isBusy);
+            if (isBusy) statusSpan.textContent = 'AI 분석 중...';
+        }
+    }
+
+    function showRetryButton() {
+        var retryBtn = find(config.retryButtonSelector);
+        if (!retryBtn) return;
+        retryBtn.classList.remove('hidden');
+        retryBtn.disabled = !currentFile;
+    }
+
+    async function analyze(file, attempt) {
+        if (!file) return;
+        currentFile = file;
+        if (ctrl) ctrl.abort();
+        var requestCtrl = new AbortController();
+        ctrl = requestCtrl;
+
+        var nameInput = find(config.nameInputSelector);
+        var descInput = find(config.descriptionInputSelector);
+        var statusSpan = find(config.statusSelector);
+
+        setBusy(true);
+        var dotTimer = statusSpan ? setInterval(function () {
+            var dots = (statusSpan.textContent.match(/\./g) || []).length;
+            statusSpan.textContent = 'AI 분석 중' + '.'.repeat(dots % 3 + 1);
+        }, 1000) : null;
+
+        try {
+            var fd = new FormData();
+            fd.append('imageFile', file);
+            fd.append('retryAttempt', String(attempt));
+            if (attempt > 0) {
+                fd.append('previousName', nameInput ? nameInput.value : '');
+                fd.append('previousDescription', descInput ? descInput.value : '');
+            }
+
+            var res = await fetch('/images/analyze', {
+                method: 'POST',
+                body: fd,
+                signal: requestCtrl.signal
+            });
+            if (!res.ok) return;
+
+            var data = await res.json();
+            if (nameInput && data.name) nameInput.value = data.name;
+            if (descInput && data.description) descInput.value = data.description;
+            retryAttempt = attempt;
+            showRetryButton();
+        } catch (e) {
+            if (e.name !== 'AbortError') console.warn('Image analysis failed:', e);
+        } finally {
+            if (dotTimer) clearInterval(dotTimer);
+            if (ctrl === requestCtrl) {
+                setBusy(false);
+            }
+        }
+    }
+
+    var retryBtn = find(config.retryButtonSelector);
+    if (retryBtn && retryBtn.dataset.imageAnalysisRetryInitialized !== 'true') {
+        retryBtn.dataset.imageAnalysisRetryInitialized = 'true';
+        retryBtn.addEventListener('click', function () {
+            analyze(currentFile, retryAttempt + 1);
+        });
+    }
+
+    return function (file) {
+        retryAttempt = 0;
+        currentFile = file;
+        var retryBtn = find(config.retryButtonSelector);
+        if (retryBtn) {
+            retryBtn.classList.add('hidden');
+            retryBtn.disabled = true;
+        }
+        analyze(file, 0);
+    };
+}

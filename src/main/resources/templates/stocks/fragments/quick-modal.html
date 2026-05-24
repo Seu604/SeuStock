@@ -40,6 +40,11 @@
                      alt="이미지 미리보기">
                 <span id="quick-analysis-status"
                       class="hidden mt-1 block text-xs text-blue-500">AI 분석 중...</span>
+                <button type="button"
+                        id="quick-analysis-retry-btn"
+                        class="hidden mt-2 text-xs font-semibold text-blue-600 hover:text-blue-800 transition">
+                    다시 분석
+                </button>
             </div>
 
             <div class="mb-3">
@@ -102,59 +107,23 @@
     </div>
 
     <script>
+    var analyzeQuickModalImage = createImageAnalysisHandler({
+        fileInputSelector:        '#modal input[name="imageFile"]',
+        nameInputSelector:        '#modal input[name="name"]',
+        descriptionInputSelector: '#modal input[name="description"]',
+        submitSelector:           '#quick-submit-btn',
+        statusSelector:           '#quick-analysis-status',
+        retryButtonSelector:      '#quick-analysis-retry-btn',
+        fileLabelSelector:        '#image-label'
+    });
+
     initImageUpload({
         fileInputSelector:  '#modal input[name="imageFile"]',
         previewSelector:    '#quick-image-preview',
         hashInputSelector:  '#quick-image-hash',
         submitSelector:     '#quick-submit-btn',
         labelTextSelector:  '#image-label-text',
-        onImageReady: async function (file) {
-            var modal      = document.getElementById('modal');
-            var prev       = modal && modal._analyzeCtrl;
-            if (prev) prev.abort();
-            var ctrl = new AbortController();
-            if (modal) modal._analyzeCtrl = ctrl;
-
-            var nameInput  = document.querySelector('#modal input[name="name"]');
-            var descInput  = document.querySelector('#modal input[name="description"]');
-            var fileInput  = document.querySelector('#modal input[name="imageFile"]');
-            var fileLabel  = document.getElementById('image-label');
-            var submitBtn  = document.getElementById('quick-submit-btn');
-            var statusSpan = document.getElementById('quick-analysis-status');
-
-            if (fileInput) fileInput.disabled = true;
-            if (fileLabel) fileLabel.classList.add('opacity-50');
-            if (statusSpan) statusSpan.classList.remove('hidden');
-            if (submitBtn)  submitBtn.disabled = true;
-
-            var dotCount = 1;
-            var dotTimer = statusSpan ? setInterval(function () {
-                dotCount = dotCount % 3 + 1;
-                statusSpan.textContent = 'AI 분석 중' + '.'.repeat(dotCount);
-            }, 1000) : null;
-
-            try {
-                var fd = new FormData();
-                fd.append('imageFile', file);
-                var res = await fetch('/images/analyze', {
-                    method: 'POST',
-                    body: fd,
-                    signal: ctrl.signal
-                });
-                if (!res.ok) return;
-                var data = await res.json();
-                if (nameInput && data.name)        nameInput.value = data.name;
-                if (descInput && data.description) descInput.value = data.description;
-            } catch (e) {
-                if (e.name !== 'AbortError') console.warn('Image analysis failed:', e);
-            } finally {
-                if (dotTimer) clearInterval(dotTimer);
-                if (fileInput) fileInput.disabled = false;
-                if (fileLabel) fileLabel.classList.remove('opacity-50');
-                if (statusSpan) statusSpan.classList.add('hidden');
-                if (submitBtn)  submitBtn.disabled = false;
-            }
-        }
+        onImageReady: analyzeQuickModalImage
     });
     </script>
 </div>

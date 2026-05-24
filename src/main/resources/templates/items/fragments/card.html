@@ -79,6 +79,11 @@
                       file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
         <span data-image-analysis-status
               class="hidden mt-1 block text-xs text-blue-500">AI 분석 중...</span>
+        <button type="button"
+                data-image-analysis-retry
+                class="hidden mt-2 text-xs font-semibold text-blue-600 hover:text-blue-800 transition">
+            다시 분석
+        </button>
         <input type="hidden" name="imageHash" data-image-hash value="">
     </div>
 
@@ -131,55 +136,22 @@
     (function () {
         var card = document.currentScript.closest('[data-item-card]');
         if (!card) return;
+        var analyzeImage = createImageAnalysisHandler({
+            fileInputSelector:        '[data-image-file]',
+            nameInputSelector:        'input[name="name"]',
+            descriptionInputSelector: 'input[name="description"]',
+            submitSelector:           '[data-submit-btn]',
+            statusSelector:           '[data-image-analysis-status]',
+            retryButtonSelector:      '[data-image-analysis-retry]'
+        }, card);
+
         initImageUpload({
             fileInputSelector:     '[data-image-file]',
             previewSelector:       '[data-image-preview]',
             hashInputSelector:     '[data-image-hash]',
             submitSelector:        '[data-submit-btn]',
             existingImageSelector: '[data-existing-image]',
-            onImageReady: async function (file) {
-                var prev = card._analyzeCtrl;
-                if (prev) prev.abort();
-                var ctrl = new AbortController();
-                card._analyzeCtrl = ctrl;
-
-                var nameInput = card.querySelector('input[name="name"]');
-                var descInput = card.querySelector('input[name="description"]');
-                var fileInput = card.querySelector('[data-image-file]');
-                var submitBtn = card.querySelector('[data-submit-btn]');
-                var statusSpan = card.querySelector('[data-image-analysis-status]');
-
-                if (fileInput) fileInput.disabled = true;
-                if (statusSpan) statusSpan.classList.remove('hidden');
-                if (submitBtn) submitBtn.disabled = true;
-
-                var dotCount = 1;
-                var dotTimer = statusSpan ? setInterval(function () {
-                    dotCount = dotCount % 3 + 1;
-                    statusSpan.textContent = 'AI 분석 중' + '.'.repeat(dotCount);
-                }, 1000) : null;
-
-                try {
-                    var fd = new FormData();
-                    fd.append('imageFile', file);
-                    var res = await fetch('/images/analyze', {
-                        method: 'POST',
-                        body: fd,
-                        signal: ctrl.signal
-                    });
-                    if (!res.ok) return;
-                    var data = await res.json();
-                    if (nameInput && data.name) nameInput.value = data.name;
-                    if (descInput && data.description) descInput.value = data.description;
-                } catch (e) {
-                    if (e.name !== 'AbortError') console.warn('Image analysis failed:', e);
-                } finally {
-                    if (dotTimer) clearInterval(dotTimer);
-                    if (fileInput) fileInput.disabled = false;
-                    if (statusSpan) statusSpan.classList.add('hidden');
-                    if (submitBtn) submitBtn.disabled = false;
-                }
-            }
+            onImageReady: analyzeImage
         }, card);
     })();
     </script>
