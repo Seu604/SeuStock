@@ -80,6 +80,13 @@ public class ItemController {
         return "items/fragments/card :: view";
     }
 
+    @GetMapping("/{externalId}/history")
+    public String history(@PathVariable UUID externalId, HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        model.addAttribute("history", itemService.findTransactionHistory(externalId, username));
+        return "items/fragments/history-modal :: modal";
+    }
+
     @DeleteMapping("/{externalId}")
     public String delete(@PathVariable UUID externalId, HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");

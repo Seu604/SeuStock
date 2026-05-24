@@ -8,6 +8,12 @@
      data-item-card
      class="relative rounded-lg border border-slate-200 bg-white p-4 flex flex-col gap-3">
 
+    <button class="absolute top-2 right-8 text-xs text-slate-400 hover:text-blue-600 transition"
+            th:attr="hx-get=@{/items/{id}/history(id=${item.externalId})}"
+            hx-target="#modal"
+            hx-swap="outerHTML"
+            aria-label="변경기록">기록</button>
+
     <button class="absolute top-2 right-2 text-slate-400 hover:text-blue-600 transition"
             th:attr="hx-get=@{/items/{id}/edit(id=${item.externalId})},hx-target='#item-' + ${item.externalId}"
             hx-swap="outerHTML"

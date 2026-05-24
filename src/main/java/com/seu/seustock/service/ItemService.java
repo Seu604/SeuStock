@@ -3,9 +3,11 @@ package com.seu.seustock.service;
 import com.seu.seustock.mapper.ItemImageMapper;
 import com.seu.seustock.mapper.ItemMapper;
 import com.seu.seustock.mapper.StockMapper;
+import com.seu.seustock.mapper.StockTransactionMapper;
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ItemDTO;
+import com.seu.seustock.model.dto.ItemTransactionHistoryDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.ItemForm;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class ItemService {
     private final StockMapper stockMapper;
     private final ItemImageMapper itemImageMapper;
     private final ImageStorageService imageStorageService;
+    private final StockTransactionMapper transactionMapper;
 
     public List<ItemDTO> findAllByUsername(String username) {
         UserDTO user = getUser(username);
@@ -58,6 +61,13 @@ public class ItemService {
         itemMapper.updateItem(item);
         attachPrimaryImageIfPresent(item.getId(), getUser(username), form);
         return itemMapper.findByExternalId(externalId).orElseThrow();
+    }
+
+    public List<ItemTransactionHistoryDTO> findTransactionHistory(UUID itemExternalId, String username) {
+        UserDTO user = getUser(username);
+        ItemDTO item = getItem(itemExternalId);
+        verifyOwner(item, username);
+        return transactionMapper.findHistoryByItemExternalId(itemExternalId, user.getId());
     }
 
     @Transactional

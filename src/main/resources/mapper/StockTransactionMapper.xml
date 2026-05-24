@@ -32,4 +32,44 @@
         ORDER BY created_at
     </select>
 
+    <resultMap id="HistoryResultMap" type="ItemTransactionHistoryDTO">
+        <result property="transactionExternalId" column="transaction_external_id"
+                typeHandler="com.seu.seustock.configuration.UUIDTypeHandler"/>
+        <result property="transactionType"       column="transaction_type"/>
+        <result property="memo"                  column="memo"/>
+        <result property="createdAt"             column="created_at"/>
+        <result property="stockExternalId"       column="stock_external_id"
+                typeHandler="com.seu.seustock.configuration.UUIDTypeHandler"/>
+        <result property="serialNumber"          column="serial_number"/>
+        <result property="lotNumber"             column="lot_number"/>
+        <result property="status"                column="status"/>
+        <result property="spaceName"             column="space_name"/>
+        <result property="shelfName"             column="shelf_name"/>
+        <result property="boxName"               column="box_name"/>
+    </resultMap>
+
+    <select id="findHistoryByItemExternalId" resultMap="HistoryResultMap">
+        SELECT
+            st.external_id  AS transaction_external_id,
+            st.transaction_type,
+            st.memo,
+            st.created_at,
+            s.external_id   AS stock_external_id,
+            s.serial_number,
+            s.lot_number,
+            s.status,
+            sp.name         AS space_name,
+            sh.name         AS shelf_name,
+            b.name          AS box_name
+        FROM stock_transactions st
+        JOIN stocks  s  ON st.stock_id  = s.id
+        JOIN items   i  ON s.item_id    = i.id
+        JOIN spaces  sp ON s.space_id   = sp.id
+        LEFT JOIN shelves sh ON s.shelf_id = sh.id
+        LEFT JOIN boxes   b  ON s.box_id   = b.id
+        WHERE i.external_id = #{itemExternalId, typeHandler=com.seu.seustock.configuration.UUIDTypeHandler}
+          AND i.user_id = #{userId}
+        ORDER BY st.created_at DESC
+    </select>
+
 </mapper>
