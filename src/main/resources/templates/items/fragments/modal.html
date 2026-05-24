@@ -102,7 +102,7 @@
 <!-- 성공 응답: OOB로 카드 추가 + 빈 상태 제거 + 모달 닫기 -->
 <th:block th:fragment="created">
     <div id="item-cards" hx-swap-oob="afterbegin">
-        <div th:replace="~{items/fragments/row :: view}"></div>
+        <div th:replace="~{items/fragments/card :: view}"></div>
     </div>
     <p id="item-empty-msg" hx-swap-oob="true"></p>
     <div id="modal"></div>

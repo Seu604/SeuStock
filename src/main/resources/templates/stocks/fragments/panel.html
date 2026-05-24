@@ -44,30 +44,16 @@
         </div>
     </div>
 
-    <div class="overflow-x-auto">
-    <table class="w-full min-w-[480px]">
-        <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">품목명</th>
-                <th class="px-4 py-2 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide w-20">수량</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-slate-500 uppercase tracking-wide w-28">입출고</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-slate-500 uppercase tracking-wide w-16">삭제</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
+    <div class="divide-y divide-slate-100">
 
-            <tr th:if="${stocks.empty}">
-                <td colspan="4" class="px-4 py-8 text-center text-sm text-slate-400">
-                    이 위치에 등록된 재고가 없습니다.
-                </td>
-            </tr>
+        <div th:if="${stocks.empty}" class="px-4 py-8 text-center text-sm text-slate-400">
+            이 위치에 등록된 재고가 없습니다.
+        </div>
 
-            <th:block th:each="stock : ${stocks}">
-                <th:block th:replace="~{stocks/fragments/row :: view(stock=${stock})}"></th:block>
-            </th:block>
+        <th:block th:each="stock : ${stocks}">
+            <th:block th:replace="~{stocks/fragments/row :: view(stock=${stock})}"></th:block>
+        </th:block>
 
-        </tbody>
-    </table>
     </div>
 
 </th:block>

@@ -53,7 +53,7 @@ public class ItemController {
     public String editRow(@PathVariable UUID externalId, HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
         model.addAttribute("item", itemService.findByExternalId(externalId, username));
-        return "items/fragments/row :: edit";
+        return "items/fragments/card :: edit";
     }
 
     @PutMapping("/{externalId}")
@@ -65,19 +65,19 @@ public class ItemController {
         if (result.hasErrors()) {
             String username = (String) session.getAttribute("loginUser");
             model.addAttribute("item", itemService.findByExternalId(externalId, username));
-            return "items/fragments/row :: edit";
+            return "items/fragments/card :: edit";
         }
         String username = (String) session.getAttribute("loginUser");
         ItemDTO updated = itemService.update(externalId, form, username);
         model.addAttribute("item", updated);
-        return "items/fragments/row :: view";
+        return "items/fragments/card :: view";
     }
 
     @GetMapping("/{externalId}/cancel")
     public String cancelEdit(@PathVariable UUID externalId, HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
         model.addAttribute("item", itemService.findByExternalId(externalId, username));
-        return "items/fragments/row :: view";
+        return "items/fragments/card :: view";
     }
 
     @DeleteMapping("/{externalId}")

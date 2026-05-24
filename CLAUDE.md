@@ -54,6 +54,7 @@ com.seu.seustock
 **Thymeleaf fragment convention**
 - Templates under `templates/<entity>/fragments/` are HTMX partial responses; controllers return them as `"<entity>/fragments/<file> :: <fragment-name>"`.
 - Templates directly under `templates/<entity>/` (e.g., `spaces/list`, `spaces/detail`) are full-page SSR views.
+- Items use a card layout: `items/fragments/card.html` exposes `view` (read mode) and `edit` (inline edit mode) fragments. Other entities (spaces, stocks) still use row-based fragments.
 
 **MyBatis XML mappers**
 - SQL lives in `src/main/resources/mapper/<Entity>Mapper.xml`.
@@ -82,6 +83,7 @@ com.seu.seustock
 - Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`.
 - Images are linked to items or stocks via junction tables `item_images` / `stock_images` (with `display_order` and `is_primary` columns). `ImageMapper`, `ItemImageMapper`, and `StockImageMapper` are the corresponding mappers.
 - `GET /images/{externalId}` serves image files with ownership enforcement.
+- `static/js/image-upload.js` provides the client-side image hash computation and preview initialization (`initImageUpload({...}, scopeEl)`). Include it in any template that supports image upload and call `initImageUpload` scoped to the relevant container element.
 
 ## Database schema
 
@@ -95,13 +97,11 @@ users → spaces → shelves → boxes
 Inventory model:
 - `items`: master catalog of item definitions (name, description — no location or quantity)
 - `stocks`: each row is **one physical unit** of an item at a location (`space_id` required; `shelf_id` and `box_id` optional). Tracks `serial_number`, `lot_number`, `expiration_date`, and `status` (IN_STOCK, DISPATCHED, LOST, DAMAGED, DISPOSED). There is no quantity column — count is derived by counting rows.
-- `stock_transactions`: append-only ledger; every status change on a stock unit writes a row with `transaction_type` IN, OUT, MOVE, or ADJUST.
+- `stock_transactions`: append-only ledger; every status change on a stock unit writes a row with `transaction_type` IN, OUT, MOVE, or ADJUST. Any service method that inserts or mutates a `stocks` row must also insert a corresponding `stock_transactions` row in the same `@Transactional` method.
 - `images`: one row per uploaded file; deduplicated by `(user_id, content_hash)`.
 - `item_images` / `stock_images`: junction tables linking images to items or stocks.
 
 If `box_id` is set, `shelf_id` must also be set. The schema enforces this with `chk_box_requires_shelf`.
-
-Reference queries for each entity are in `query/`.
 
 ## Testing
 
