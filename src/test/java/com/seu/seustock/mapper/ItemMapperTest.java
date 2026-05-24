@@ -1,6 +1,8 @@
 package com.seu.seustock.mapper;
 
 import com.seu.seustock.model.dto.ItemDTO;
+import com.seu.seustock.model.dto.SpaceDTO;
+import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,12 @@ class ItemMapperTest {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private SpaceMapper spaceMapper;
+
+    @Autowired
+    private StockMapper stockMapper;
 
     private Long userId;
 
@@ -66,6 +74,27 @@ class ItemMapperTest {
     void findById_notFound_returnsEmpty() {
         Optional<ItemDTO> found = itemMapper.findById(999L);
         assertThat(found).isEmpty();
+    }
+
+    @Test
+    void findByExternalId_includesStockAndSpaceCounts() {
+        ItemDTO item = buildItem("노트북", null);
+        itemMapper.insertItem(item);
+        SpaceDTO space = new SpaceDTO();
+        space.setUserId(userId);
+        space.setName("창고");
+        spaceMapper.insertSpace(space);
+        StockDTO stock = new StockDTO();
+        stock.setItemId(item.getId());
+        stock.setSpaceId(space.getId());
+        stockMapper.insertStock(stock);
+        ItemDTO persisted = itemMapper.findById(item.getId()).orElseThrow();
+
+        Optional<ItemDTO> found = itemMapper.findByExternalId(persisted.getExternalId());
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getStockCount()).isEqualTo(1);
+        assertThat(found.get().getSpaceCount()).isEqualTo(1);
     }
 
     @Test

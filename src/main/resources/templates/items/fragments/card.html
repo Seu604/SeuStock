@@ -60,16 +60,16 @@
 <div th:fragment="edit"
      th:id="'item-' + ${item.externalId}"
      data-item-card
-     class="grid gap-3 border-l-4 border-blue-500 bg-blue-50/40 px-4 py-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_8rem] md:items-start">
+     class="grid max-h-[calc(100vh-8rem)] gap-3 overflow-y-auto border-l-4 border-blue-500 bg-blue-50/40 px-4 py-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_8rem] md:items-start">
 
     <div class="min-w-0">
-        <div class="mb-2 flex items-center gap-3 md:block">
+        <div class="mb-2 w-20 md:w-full">
             <img th:src="${item.primaryImageExternalId != null} ? @{/images/{id}(id=${item.primaryImageExternalId})} : @{/image/item_placeholder_v2.png}"
                  data-existing-image
                  alt=""
-                 class="h-16 w-16 shrink-0 rounded-md object-cover border border-slate-200 md:h-28 md:w-full">
+                 class="aspect-square w-full rounded-md object-cover border border-slate-200">
             <img data-image-preview
-                 class="hidden h-16 w-16 shrink-0 rounded-md object-cover border border-slate-200 md:h-28 md:w-full"
+                 class="hidden aspect-square w-full rounded-md object-cover border border-slate-200"
                  alt="">
         </div>
         <input type="file" name="imageFile" data-image-file
@@ -77,6 +77,8 @@
                class="block w-full text-xs text-slate-500
                       file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2
                       file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+        <span data-image-analysis-status
+              class="hidden mt-1 block text-xs text-blue-500">AI 분석 중...</span>
         <input type="hidden" name="imageHash" data-image-hash value="">
     </div>
 
@@ -134,7 +136,50 @@
             previewSelector:       '[data-image-preview]',
             hashInputSelector:     '[data-image-hash]',
             submitSelector:        '[data-submit-btn]',
-            existingImageSelector: '[data-existing-image]'
+            existingImageSelector: '[data-existing-image]',
+            onImageReady: async function (file) {
+                var prev = card._analyzeCtrl;
+                if (prev) prev.abort();
+                var ctrl = new AbortController();
+                card._analyzeCtrl = ctrl;
+
+                var nameInput = card.querySelector('input[name="name"]');
+                var descInput = card.querySelector('input[name="description"]');
+                var fileInput = card.querySelector('[data-image-file]');
+                var submitBtn = card.querySelector('[data-submit-btn]');
+                var statusSpan = card.querySelector('[data-image-analysis-status]');
+
+                if (fileInput) fileInput.disabled = true;
+                if (statusSpan) statusSpan.classList.remove('hidden');
+                if (submitBtn) submitBtn.disabled = true;
+
+                var dotCount = 1;
+                var dotTimer = statusSpan ? setInterval(function () {
+                    dotCount = dotCount % 3 + 1;
+                    statusSpan.textContent = 'AI 분석 중' + '.'.repeat(dotCount);
+                }, 1000) : null;
+
+                try {
+                    var fd = new FormData();
+                    fd.append('imageFile', file);
+                    var res = await fetch('/images/analyze', {
+                        method: 'POST',
+                        body: fd,
+                        signal: ctrl.signal
+                    });
+                    if (!res.ok) return;
+                    var data = await res.json();
+                    if (nameInput && data.name) nameInput.value = data.name;
+                    if (descInput && data.description) descInput.value = data.description;
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.warn('Image analysis failed:', e);
+                } finally {
+                    if (dotTimer) clearInterval(dotTimer);
+                    if (fileInput) fileInput.disabled = false;
+                    if (statusSpan) statusSpan.classList.add('hidden');
+                    if (submitBtn) submitBtn.disabled = false;
+                }
+            }
         }, card);
     })();
     </script>

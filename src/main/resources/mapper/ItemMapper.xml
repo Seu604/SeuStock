@@ -32,7 +32,15 @@
                    WHERE ii.item_id = i.id
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
-               ) AS primary_image_external_id
+               ) AS primary_image_external_id,
+               (SELECT COUNT(*)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS stock_count,
+               (SELECT COUNT(DISTINCT s.space_id)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS space_count
         FROM items i
         WHERE i.id = #{id}
     </select>
@@ -46,7 +54,15 @@
                    WHERE ii.item_id = i.id
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
-               ) AS primary_image_external_id
+               ) AS primary_image_external_id,
+               (SELECT COUNT(*)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS stock_count,
+               (SELECT COUNT(DISTINCT s.space_id)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS space_count
         FROM items i
         WHERE i.external_id = #{externalId}
     </select>
