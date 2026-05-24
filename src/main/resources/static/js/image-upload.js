@@ -11,22 +11,26 @@
  * @param {Element} [root]                    - Scope root element (defaults to document)
  */
 function initImageUpload(config, root) {
-    var scope      = root || document;
-    var fileInput  = scope.querySelector(config.fileInputSelector);
-    var previewImg = scope.querySelector(config.previewSelector);
-    var hashInput  = scope.querySelector(config.hashInputSelector);
-    var submitBtn  = scope.querySelector(config.submitSelector);
-    var labelText  = config.labelTextSelector
-                      ? scope.querySelector(config.labelTextSelector)
-                      : null;
+    var scope       = root || document;
+    var fileInput   = scope.querySelector(config.fileInputSelector);
+    var previewImg  = scope.querySelector(config.previewSelector);
+    var hashInput   = scope.querySelector(config.hashInputSelector);
+    var submitBtn   = scope.querySelector(config.submitSelector);
+    var existingImg = config.existingImageSelector
+                       ? scope.querySelector(config.existingImageSelector)
+                       : null;
+    var labelText   = config.labelTextSelector
+                       ? scope.querySelector(config.labelTextSelector)
+                       : null;
 
     if (!fileInput) return;
 
     fileInput.addEventListener('change', async function () {
         var file = this.files[0];
-        if (previewImg) previewImg.classList.add('hidden');
-        if (hashInput)  hashInput.value = '';
-        if (labelText)  labelText.textContent = file ? file.name : '사진을 선택하세요';
+        if (existingImg) existingImg.classList.add('hidden');
+        if (previewImg)  previewImg.classList.add('hidden');
+        if (hashInput)   hashInput.value = '';
+        if (labelText)   labelText.textContent = file ? file.name : '사진을 선택하세요';
         if (!file) return;
 
         if (previewImg) {
