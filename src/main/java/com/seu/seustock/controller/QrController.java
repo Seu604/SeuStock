@@ -31,15 +31,15 @@ public class QrController {
     private final ShelfService shelfService;
     private final SpaceService spaceService;
 
-    @Value("${app.base-url}")
-    private String baseUrl;
+    @Value("${app.qr-base-url}")
+    private String qrBaseUrl;
 
     @GetMapping("/api/qr/modal")
     public String qrModal(@RequestParam String type,
                           @RequestParam UUID externalId,
                           @RequestParam String name,
                           org.springframework.ui.Model model) {
-        String qrUrl = String.format("%s/qr/%ss/%s", baseUrl, type, externalId);
+        String qrUrl = String.format("%s/qr/%ss/%s", qrBaseUrl, type, externalId);
         model.addAttribute("title", name + " QR 코드");
         model.addAttribute("qrUrl", qrUrl);
         return "fragments/qr-modal :: modal";
