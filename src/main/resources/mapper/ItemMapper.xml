@@ -10,6 +10,7 @@
         <result property="userId"      column="user_id"/>
         <result property="name"        column="name"/>
         <result property="description" column="description"/>
+        <result property="active"      column="active"/>
         <result property="primaryImageExternalId" column="primary_image_external_id"/>
         <result property="createdAt"   column="created_at"/>
     </resultMap>
@@ -21,7 +22,7 @@
     </insert>
 
     <select id="findById" parameterType="long" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -35,7 +36,7 @@
     </select>
 
     <select id="findByExternalId" parameterType="java.util.UUID" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -49,7 +50,7 @@
     </select>
 
     <select id="findByUserId" parameterType="long" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -60,12 +61,19 @@
                ) AS primary_image_external_id
         FROM items i
         WHERE i.user_id = #{userId}
+          AND i.active = TRUE
     </select>
 
     <update id="updateItem" parameterType="ItemDTO">
         UPDATE items
         SET name        = #{name},
             description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <update id="deactivateById" parameterType="long">
+        UPDATE items
+        SET active = FALSE
         WHERE id = #{id}
     </update>
 

@@ -75,6 +75,19 @@
         WHERE item_id = #{itemId}
     </select>
 
+    <select id="countByItemId" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM stocks
+        WHERE item_id = #{itemId}
+    </select>
+
+    <select id="countInStockByItemId" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM stocks
+        WHERE item_id = #{itemId}
+          AND status = 'IN_STOCK'
+    </select>
+
     <select id="findBySpaceId" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
                serial_number, lot_number, expiration_date, status, created_at

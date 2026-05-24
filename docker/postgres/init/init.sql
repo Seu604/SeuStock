@@ -67,6 +67,7 @@ CREATE TABLE items (
 --     -- 예를 들어 '바코드', '규격' 등의 컬럼이 추가될 수 있음
 --     sku VARCHAR(100) UNIQUE, -- Stock Keeping Unit
                        description TEXT,
+                       active BOOLEAN NOT NULL DEFAULT TRUE,
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        FOREIGN KEY (user_id) REFERENCES users(id)
 --                        FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE

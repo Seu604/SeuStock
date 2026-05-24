@@ -206,6 +206,9 @@ public class StockService {
         ItemDTO item = itemMapper.findByExternalId(itemExternalId)
                 .orElseThrow(() -> new NoSuchElementException("품목을 찾을 수 없습니다."));
         verifyItemOwner(item, username);
+        if (!item.isActive()) {
+            throw new IllegalStateException("비활성화된 품목은 재고 작업을 할 수 없습니다.");
+        }
         return item;
     }
 
