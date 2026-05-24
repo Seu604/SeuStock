@@ -10,5 +10,4 @@ import lombok.ToString;
 public class ImageAnalysisDTO {
     private String name;
     private String description;
-    private String memo;
 }

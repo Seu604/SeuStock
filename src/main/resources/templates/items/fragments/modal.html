@@ -38,6 +38,8 @@
                 <img id="item-modal-preview"
                      class="hidden mt-2 w-full aspect-square rounded-md object-cover border border-slate-200"
                      alt="이미지 미리보기">
+                <span id="item-modal-analysis-status"
+                      class="hidden mt-1 block text-xs text-blue-500">AI 분석 중...</span>
             </div>
 
             <div class="mb-3">
@@ -46,8 +48,7 @@
                        th:classappend="${#fields.hasErrors('name')} ? 'border-red-400'"
                        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                       placeholder="예: 충전기, 드라이버 세트"
-                       autofocus>
+                       placeholder="예: 충전기, 드라이버 세트">
                 <span th:if="${#fields.hasErrors('name')}"
                       th:errors="*{name}"
                       class="mt-1 block text-xs text-red-500"></span>
@@ -87,17 +88,64 @@
             </div>
         </form>
     </div>
-</div>
 
-<script>
+    <script>
     initImageUpload({
         fileInputSelector:  '#modal input[name="imageFile"]',
         previewSelector:    '#item-modal-preview',
         hashInputSelector:  '#item-modal-image-hash',
         submitSelector:     '#item-modal-submit-btn',
-        labelTextSelector:  '#item-modal-image-label-text'
+        labelTextSelector:  '#item-modal-image-label-text',
+        onImageReady: async function (file) {
+            var modal      = document.getElementById('modal');
+            var prev       = modal && modal._analyzeCtrl;
+            if (prev) prev.abort();
+            var ctrl = new AbortController();
+            if (modal) modal._analyzeCtrl = ctrl;
+
+            var nameInput  = document.querySelector('#modal input[name="name"]');
+            var descInput  = document.querySelector('#modal input[name="description"]');
+            var fileInput  = document.querySelector('#modal input[name="imageFile"]');
+            var fileLabel  = document.getElementById('item-modal-image-label');
+            var submitBtn  = document.getElementById('item-modal-submit-btn');
+            var statusSpan = document.getElementById('item-modal-analysis-status');
+
+            if (fileInput) fileInput.disabled = true;
+            if (fileLabel) fileLabel.classList.add('opacity-50');
+            if (statusSpan) statusSpan.classList.remove('hidden');
+            if (submitBtn)  submitBtn.disabled = true;
+
+            var dotCount = 1;
+            var dotTimer = statusSpan ? setInterval(function () {
+                dotCount = dotCount % 3 + 1;
+                statusSpan.textContent = 'AI 분석 중' + '.'.repeat(dotCount);
+            }, 1000) : null;
+
+            try {
+                var fd = new FormData();
+                fd.append('imageFile', file);
+                var res = await fetch('/images/analyze', {
+                    method: 'POST',
+                    body: fd,
+                    signal: ctrl.signal
+                });
+                if (!res.ok) return;
+                var data = await res.json();
+                if (nameInput && data.name)        nameInput.value = data.name;
+                if (descInput && data.description) descInput.value = data.description;
+            } catch (e) {
+                if (e.name !== 'AbortError') console.warn('Image analysis failed:', e);
+            } finally {
+                if (dotTimer) clearInterval(dotTimer);
+                if (fileInput) fileInput.disabled = false;
+                if (fileLabel) fileLabel.classList.remove('opacity-50');
+                if (statusSpan) statusSpan.classList.add('hidden');
+                if (submitBtn)  submitBtn.disabled = false;
+            }
+        }
     });
-</script>
+    </script>
+</div>
 
 <!-- 성공 응답: OOB로 카드 추가 + 빈 상태 제거 + 모달 닫기 -->
 <th:block th:fragment="created">

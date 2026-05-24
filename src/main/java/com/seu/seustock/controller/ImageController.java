@@ -6,6 +6,8 @@ import com.seu.seustock.service.ImageAnalysisService;
 import com.seu.seustock.service.ImageStorageService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.MediaType;
@@ -23,6 +25,8 @@ import java.util.UUID;
 @Controller
 @RequiredArgsConstructor
 public class ImageController {
+
+    private static final Logger log = LoggerFactory.getLogger(ImageController.class);
 
     private final ImageStorageService imageStorageService;
     private final ImageAnalysisService imageAnalysisService;
@@ -48,6 +52,10 @@ public class ImageController {
 
     @PostMapping("/images/analyze")
     public ResponseEntity<ImageAnalysisDTO> analyze(@RequestParam("imageFile") MultipartFile imageFile) {
-        return ResponseEntity.ok(imageAnalysisService.analyze(imageFile));
+        log.info("[analyze] 요청 수신 — filename={}, contentType={}, size={}",
+                imageFile.getOriginalFilename(), imageFile.getContentType(), imageFile.getSize());
+        ImageAnalysisDTO result = imageAnalysisService.analyze(imageFile);
+        log.info("[analyze] 분석 완료 — name={}, description={}", result.getName(), result.getDescription());
+        return ResponseEntity.ok(result);
     }
 }

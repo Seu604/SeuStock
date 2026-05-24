@@ -93,6 +93,10 @@ function initImageUpload(config, root) {
                 console.warn('SHA-256 hash computation failed:', err);
             }
         }
+
+        if (typeof config.onImageReady === 'function') {
+            config.onImageReady(effectiveFile);
+        }
     });
 
     if (submitBtn) {

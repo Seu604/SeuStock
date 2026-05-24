@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew test --tests "com.seu.seustock.mapper.*"
 ```
 
-The `spring-boot-docker-compose` dependency automatically starts `compose.yaml` when running via Gradle. Docker must be running. PostgreSQL is exposed on port **5435** (mapped from container's 5432).
+The `spring-boot-docker-compose` dependency automatically starts `compose.yaml` when running via Gradle. Docker must be running. PostgreSQL is exposed on port **5433** (mapped from container's 5432). The app runs on port **8080**.
 
 ## Architecture
 
@@ -99,7 +99,14 @@ com.seu.seustock
 - Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`.
 - Images are linked to items or stocks via junction tables `item_images` / `stock_images` (with `display_order` and `is_primary` columns). `ImageMapper`, `ItemImageMapper`, and `StockImageMapper` are the corresponding mappers.
 - `GET /images/{externalId}` serves image files with ownership enforcement.
-- `static/js/image-upload.js` provides the client-side image hash computation and preview initialization (`initImageUpload({...}, scopeEl)`). Include it in any template that supports image upload and call `initImageUpload` scoped to the relevant container element.
+- `static/js/image-upload.js` provides the client-side image hash computation and preview initialization (`initImageUpload({...}, scopeEl)`). Include it in any template that supports image upload and call `initImageUpload` scoped to the relevant container element. The optional `onImageReady(file)` callback fires after the preview is initialized and the hash is computed — use it for async operations like AI analysis.
+
+**Image analysis (AI)**
+- `ImageAnalysisService` sends uploaded images to a local Ollama instance via Spring AI (`spring-ai-starter-model-ollama`) and returns an `ImageAnalysisDTO` with `name` and `description` fields populated in Korean.
+- Endpoint: `POST /images/analyze` (multipart). Requires Ollama running locally; not guarded by authentication (analysis is stateless).
+- Images larger than 1024px on either side are automatically resized to JPEG before the Ollama call. The model is configured via `spring.ai.ollama.chat.model` (default `gemma4:e2b`).
+- The modal templates (`items/fragments/modal.html`, `stocks/fragments/quick-modal.html`) call this endpoint on image selection and prefill the name/description fields. An abort controller on the modal element cancels in-flight requests when a new image is chosen before the prior response arrives.
+- Ollama is **not** required for tests — `application-test.properties` omits the AI configuration entirely.
 
 ## Database schema
 
