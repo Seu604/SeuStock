@@ -34,6 +34,16 @@ public class BoxService {
         return box;
     }
 
+    public BoxDTO findById(Long id) {
+        return boxMapper.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+    }
+
+    public BoxDTO findByExternalIdOnly(UUID externalId) {
+        return boxMapper.findByExternalId(externalId)
+                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+    }
+
     public List<BoxDTO> findAllByShelfId(UUID spaceExternalId, UUID shelfExternalId, String username) {
         ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
         return boxMapper.findByShelfId(shelf.getId());

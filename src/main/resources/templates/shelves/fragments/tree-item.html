@@ -26,6 +26,14 @@
                 onclick="event.stopPropagation()"></button>
 
         <span class="flex items-center gap-0.5 shrink-0">
+            <!-- QR 코드 버튼 -->
+            <button type="button"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    th:attr="hx-get=@{/api/qr/modal(type='shelf',externalId=${shelf.externalId},name=${shelf.name})}"
+                    hx-target="#modal"
+                    hx-swap="outerHTML"
+                    onclick="event.stopPropagation()"
+                    title="QR 코드">📷</button>
             <!-- Shelf 수정 버튼 -->
             <button type="button"
                     class="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-600"

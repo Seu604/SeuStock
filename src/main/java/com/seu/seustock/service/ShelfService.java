@@ -34,6 +34,15 @@ public class ShelfService {
         return shelf;
     }
 
+    public ShelfDTO findById(Long id) {
+        return shelfMapper.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
+    }
+
+    public ShelfDTO findByExternalIdOnly(UUID externalId) {
+        return getShelf(externalId);
+    }
+
     public ShelfDTO create(UUID spaceExternalId, ShelfForm form, String username) {
         SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
         ShelfDTO shelf = new ShelfDTO();

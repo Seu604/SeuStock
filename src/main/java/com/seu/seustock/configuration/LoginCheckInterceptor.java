@@ -13,7 +13,10 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
                              Object handler) throws Exception {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("loginUser") == null) {
-            response.sendRedirect("/login");
+            String requestURI = request.getRequestURI();
+            String queryString = request.getQueryString();
+            String fullPath = (queryString != null) ? requestURI + "?" + queryString : requestURI;
+            response.sendRedirect("/login?redirect=" + fullPath);
             return false;
         }
         return true;
