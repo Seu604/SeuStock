@@ -59,17 +59,20 @@ public class UserController {
     }
 
     @GetMapping("/login")
-    public String loginForm(HttpSession session, Model model) {
+    public String loginForm(@RequestParam(required = false) String redirect,
+                            HttpSession session, Model model) {
         if (session.getAttribute("loginUser") != null) {
             return "redirect:/";
         }
         model.addAttribute("form", new LoginForm());
+        model.addAttribute("redirect", redirect);
         return "login";
     }
 
     @PostMapping("/login")
     public String login(@Valid @ModelAttribute("form") LoginForm form,
                         BindingResult result,
+                        @RequestParam(required = false) String redirect,
                         HttpServletRequest request,
                         HttpSession session) {
         if (result.hasErrors()) {
@@ -84,6 +87,10 @@ public class UserController {
 
         session.invalidate();
         request.getSession(true).setAttribute("loginUser", user.get().getUsername());
+
+        if (redirect != null && !redirect.isBlank()) {
+            return "redirect:" + redirect;
+        }
         return "redirect:/";
     }
 

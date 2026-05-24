@@ -16,6 +16,9 @@ public class ItemDTO {
     private Long userId;
     private String name;
     private String description;
+    private boolean active;
     private UUID primaryImageExternalId;
     private LocalDateTime createdAt;
+    private int stockCount;
+    private int spaceCount;
 }

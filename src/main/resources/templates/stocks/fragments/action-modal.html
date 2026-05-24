@@ -32,11 +32,7 @@
         <!-- 입고 섹션 -->
         <div id="action-section-in">
             <p class="text-sm text-slate-500 mb-3">입고할 수량을 입력해주세요.</p>
-            <form method="post"
-                  hx-post="/stocks/in"
-                  hx-target="#stock-panel"
-                  hx-swap="outerHTML"
-                  hx-confirm="입고 처리하시겠습니까?">
+            <form id="in-form">
                 <input type="hidden" name="itemExternalId"  th:value="${itemExternalId}">
                 <input type="hidden" name="spaceExternalId" th:value="${spaceExternalId}">
                 <input type="hidden" name="shelfExternalId" th:value="${shelfExternalId}">
@@ -44,8 +40,11 @@
                 <div class="mb-3">
                     <label class="block text-sm font-medium text-slate-700 mb-1">수량</label>
                     <input type="number" name="count" value="1" min="1"
+                           id="in-count-input"
+                           th:data-current-count="${currentCount}"
                            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
                                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <p id="in-count-msg" class="mt-1 text-xs text-slate-500"></p>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-slate-700 mb-1">메모 <span class="text-slate-400 font-normal">(선택)</span></label>
@@ -55,14 +54,17 @@
                            placeholder="예: 발주 입고">
                 </div>
                 <div class="flex gap-2 justify-end">
-                    <!-- hx-disinherit로 부모 form의 hx-confirm 상속 차단 -->
                     <button type="button"
                             hx-get="/empty" hx-target="#modal" hx-swap="outerHTML"
-                            hx-disinherit="hx-confirm"
                             class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition">
                         취소
                     </button>
-                    <button type="submit"
+                    <button type="button"
+                            hx-post="/stocks/in"
+                            hx-include="#in-form"
+                            hx-target="#stock-panel"
+                            hx-swap="outerHTML"
+                            hx-confirm="입고 처리하시겠습니까?"
                             class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
                         입고
                     </button>
@@ -73,11 +75,7 @@
         <!-- 출고 섹션 -->
         <div id="action-section-out" class="hidden">
             <p class="text-sm text-slate-500 mb-3">출고할 수량을 입력해주세요.</p>
-            <form method="post"
-                  hx-post="/stocks/out"
-                  hx-target="#stock-panel"
-                  hx-swap="outerHTML"
-                  hx-confirm="출고 처리하시겠습니까?">
+            <form id="out-form">
                 <input type="hidden" name="itemExternalId"  th:value="${itemExternalId}">
                 <input type="hidden" name="spaceExternalId" th:value="${spaceExternalId}">
                 <input type="hidden" name="shelfExternalId" th:value="${shelfExternalId}">
@@ -85,8 +83,11 @@
                 <div class="mb-3">
                     <label class="block text-sm font-medium text-slate-700 mb-1">수량</label>
                     <input type="number" name="count" value="1" min="1"
+                           id="out-count-input"
+                           th:data-current-count="${currentCount}"
                            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
                                   focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition">
+                    <p id="out-count-msg" class="mt-1 text-xs text-slate-500"></p>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-slate-700 mb-1">메모 <span class="text-slate-400 font-normal">(선택)</span></label>
@@ -98,11 +99,15 @@
                 <div class="flex gap-2 justify-end">
                     <button type="button"
                             hx-get="/empty" hx-target="#modal" hx-swap="outerHTML"
-                            hx-disinherit="hx-confirm"
                             class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition">
                         취소
                     </button>
-                    <button type="submit"
+                    <button type="button"
+                            hx-post="/stocks/out"
+                            hx-include="#out-form"
+                            hx-target="#stock-panel"
+                            hx-swap="outerHTML"
+                            hx-confirm="출고 처리하시겠습니까?"
                             class="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700 transition">
                         출고
                     </button>
@@ -150,7 +155,50 @@
                 btn.classList.add('text-slate-500');
             }
         });
+        document.getElementById('in-count-msg').textContent = '';
+        document.getElementById('out-count-msg').textContent = '';
     }
+
+    function updateInMsg() {
+        var input = document.getElementById('in-count-input');
+        var msg = document.getElementById('in-count-msg');
+        var count = parseInt(input.value, 10);
+        var current = parseInt(input.dataset.currentCount, 10);
+        if (isNaN(count)) {
+            msg.textContent = '';
+        } else if (count <= 0) {
+            msg.textContent = '1개 이상 입력해주세요';
+        } else if (count > 50) {
+            msg.textContent = '50개 이상 입력할 수 없습니다';
+        } else {
+            msg.textContent = count + '개가 추가되어 총 ' + (current + count) + '개가 됩니다';
+        }
+    }
+
+    function updateOutMsg() {
+        var input = document.getElementById('out-count-input');
+        var msg = document.getElementById('out-count-msg');
+        var count = parseInt(input.value, 10);
+        var current = parseInt(input.dataset.currentCount, 10);
+        if (isNaN(count)) {
+            msg.textContent = '';
+        } else if (count <= 0) {
+            msg.textContent = '1개 이상 입력해주세요';
+        } else if (count > 50) {
+            msg.textContent = '50개 이상 입력할 수 없습니다';
+        } else if (current - count <= 0) {
+            msg.textContent = '재고의 총 수량은 0개 이하가 될 수 없습니다';
+        } else {
+            msg.textContent = count + '개가 출고되어 총 ' + (current - count) + '개가 됩니다';
+        }
+    }
+
+    (function() {
+        var inInput = document.getElementById('in-count-input');
+        var outInput = document.getElementById('out-count-input');
+        if (inInput) { inInput.addEventListener('input', updateInMsg); }
+        if (outInput) { outInput.addEventListener('input', updateOutMsg); }
+    })();
     </script>
 
 </div>

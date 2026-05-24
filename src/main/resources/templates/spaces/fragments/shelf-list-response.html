@@ -14,7 +14,7 @@
 </th:block>
 
 <th:block th:fragment="shelf-list-response">
-    <ul id="shelf-list" class="py-1" hx-swap-oob="true">
+    <ul id="shelf-list" hx-swap-oob="true">
         <th:block th:replace="~{:: shelf-list-content}"></th:block>
     </ul>
     <div id="modal"></div>

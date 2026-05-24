@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{fragments/layout :: head(~{::title})}">
+    <title>내 재고 · SeuStock</title>
+</head>
+<body class="min-h-screen bg-slate-50 flex flex-col">
+
+<nav th:replace="~{fragments/layout :: nav}"></nav>
+
+<main class="mx-auto w-full max-w-5xl px-4 py-10">
+
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">내 재고</h1>
+            <p class="mt-1 text-sm text-slate-500"
+               th:text="${filtered} ? '선택한 조건에 맞는 개별 재고입니다.' : '현재 보유 중인 개별 재고입니다.'"></p>
+        </div>
+        <a th:if="${filtered}"
+           href="/stocks"
+           class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+            전체 보기
+        </a>
+    </div>
+
+    <div id="stock-detail-list"
+         class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <div class="hidden md:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_8rem] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div>품목</div>
+            <div>위치</div>
+            <div>식별정보</div>
+            <div>상태</div>
+            <div class="text-right">관리</div>
+        </div>
+
+        <p th:if="${stocks.empty}"
+           class="px-4 py-10 text-center text-sm text-slate-400">
+            표시할 재고가 없습니다.
+        </p>
+
+        <div th:if="${!stocks.empty}" class="divide-y divide-slate-100">
+            <th:block th:each="stock : ${stocks}">
+                <th:block th:replace="~{stocks/fragments/detail-row :: view(stock=${stock})}"></th:block>
+            </th:block>
+        </div>
+    </div>
+
+</main>
+
+</body>
+</html>

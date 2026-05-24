@@ -3,9 +3,12 @@ package com.seu.seustock.service;
 import com.seu.seustock.mapper.ItemImageMapper;
 import com.seu.seustock.mapper.ItemMapper;
 import com.seu.seustock.mapper.StockMapper;
+import com.seu.seustock.mapper.StockTransactionMapper;
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ItemDTO;
+import com.seu.seustock.model.dto.ItemSpaceStockDTO;
+import com.seu.seustock.model.dto.ItemTransactionHistoryDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.ItemForm;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ public class ItemService {
     private final StockMapper stockMapper;
     private final ItemImageMapper itemImageMapper;
     private final ImageStorageService imageStorageService;
+    private final StockTransactionMapper transactionMapper;
 
     public List<ItemDTO> findAllByUsername(String username) {
         UserDTO user = getUser(username);
@@ -60,12 +64,30 @@ public class ItemService {
         return itemMapper.findByExternalId(externalId).orElseThrow();
     }
 
+    public List<ItemSpaceStockDTO> findSpaceStock(UUID itemExternalId, String username) {
+        UserDTO user = getUser(username);
+        ItemDTO item = getItem(itemExternalId);
+        verifyOwner(item, username);
+        return stockMapper.findSpaceStockByItem(itemExternalId, user.getId());
+    }
+
+    public List<ItemTransactionHistoryDTO> findTransactionHistory(UUID itemExternalId, String username) {
+        UserDTO user = getUser(username);
+        ItemDTO item = getItem(itemExternalId);
+        verifyOwner(item, username);
+        return transactionMapper.findHistoryByItemExternalId(itemExternalId, user.getId());
+    }
+
     @Transactional
     public void delete(UUID externalId, String username) {
         ItemDTO item = getItem(externalId);
         verifyOwner(item, username);
-        if (!stockMapper.findByItemId(item.getId()).isEmpty()) {
+        if (stockMapper.countInStockByItemId(item.getId()) > 0) {
             throw new IllegalStateException("재고가 있는 품목은 삭제할 수 없습니다.");
+        }
+        if (stockMapper.countByItemId(item.getId()) > 0) {
+            itemMapper.deactivateById(item.getId());
+            return;
         }
         itemMapper.deleteById(item.getId());
     }

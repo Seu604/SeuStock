@@ -23,15 +23,25 @@
         </button>
     </div>
 
-    <div id="item-list" th:fragment="item-list">
+    <div id="item-list"
+         th:fragment="item-list"
+         class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <div class="hidden md:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,0.7fr)_minmax(0,0.8fr)_8rem] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div>품목</div>
+            <div>설명</div>
+            <div>재고</div>
+            <div>공간</div>
+            <div class="text-right">관리</div>
+        </div>
+
         <p id="item-empty-msg"
            th:if="${items.empty}"
-           class="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400">
+           class="px-4 py-10 text-center text-sm text-slate-400">
             등록된 품목이 없습니다. 위 버튼으로 추가해보세요.
         </p>
 
         <div id="item-cards"
-             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+             class="divide-y divide-slate-100">
             <th:block th:each="item : ${items}">
                 <div th:replace="~{items/fragments/card :: view}"></div>
             </th:block>

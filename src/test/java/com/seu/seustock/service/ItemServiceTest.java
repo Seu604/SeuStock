@@ -4,7 +4,6 @@ import com.seu.seustock.mapper.ItemMapper;
 import com.seu.seustock.mapper.StockMapper;
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.ItemDTO;
-import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,7 +11,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,12 +30,14 @@ class ItemServiceTest {
     private UserMapper userMapper;
     @Mock
     private StockMapper stockMapper;
+    @Mock
+    private ImageStorageService imageStorageService;
 
     @InjectMocks
     private ItemService itemService;
 
     @Test
-    void delete_rejectsItemWithStock() {
+    void delete_rejectsItemWithCurrentStock() {
         ItemDTO item = new ItemDTO();
         item.setId(10L);
         item.setExternalId(ITEM_EXTERNAL_ID);
@@ -47,12 +47,33 @@ class ItemServiceTest {
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
-        when(stockMapper.findByItemId(item.getId())).thenReturn(List.of(new StockDTO()));
+        when(stockMapper.countInStockByItemId(item.getId())).thenReturn(1);
 
         assertThatThrownBy(() -> itemService.delete(ITEM_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("재고");
 
+        verify(itemMapper, never()).deactivateById(any());
+        verify(itemMapper, never()).deleteById(any());
+    }
+
+    @Test
+    void delete_deactivatesItemWithOnlyHistory() {
+        ItemDTO item = new ItemDTO();
+        item.setId(10L);
+        item.setExternalId(ITEM_EXTERNAL_ID);
+        item.setUserId(1L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(stockMapper.countInStockByItemId(item.getId())).thenReturn(0);
+        when(stockMapper.countByItemId(item.getId())).thenReturn(1);
+
+        itemService.delete(ITEM_EXTERNAL_ID, USERNAME);
+
+        verify(itemMapper).deactivateById(item.getId());
         verify(itemMapper, never()).deleteById(any());
     }
 
@@ -95,10 +116,12 @@ class ItemServiceTest {
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
-        when(stockMapper.findByItemId(item.getId())).thenReturn(List.of());
+        when(stockMapper.countInStockByItemId(item.getId())).thenReturn(0);
+        when(stockMapper.countByItemId(item.getId())).thenReturn(0);
 
         itemService.delete(ITEM_EXTERNAL_ID, USERNAME);
 
+        verify(itemMapper, never()).deactivateById(any());
         verify(itemMapper).deleteById(item.getId());
     }
 }

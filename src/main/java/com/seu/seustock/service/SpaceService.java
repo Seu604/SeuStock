@@ -32,6 +32,15 @@ public class SpaceService {
         return space;
     }
 
+    public SpaceDTO findById(Long id) {
+        return spaceMapper.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("공간을 찾을 수 없습니다."));
+    }
+
+    public Long getUserIdByUsername(String username) {
+        return getUser(username).getId();
+    }
+
     public void create(String username, SpaceForm form) {
         UserDTO user = getUser(username);
         SpaceDTO space = new SpaceDTO();

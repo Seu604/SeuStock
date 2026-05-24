@@ -10,8 +10,11 @@
         <result property="userId"      column="user_id"/>
         <result property="name"        column="name"/>
         <result property="description" column="description"/>
+        <result property="active"      column="active"/>
         <result property="primaryImageExternalId" column="primary_image_external_id"/>
         <result property="createdAt"   column="created_at"/>
+        <result property="stockCount"  column="stock_count"/>
+        <result property="spaceCount"  column="space_count"/>
     </resultMap>
 
     <insert id="insertItem" parameterType="ItemDTO"
@@ -21,7 +24,7 @@
     </insert>
 
     <select id="findById" parameterType="long" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -29,13 +32,21 @@
                    WHERE ii.item_id = i.id
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
-               ) AS primary_image_external_id
+               ) AS primary_image_external_id,
+               (SELECT COUNT(*)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS stock_count,
+               (SELECT COUNT(DISTINCT s.space_id)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS space_count
         FROM items i
         WHERE i.id = #{id}
     </select>
 
     <select id="findByExternalId" parameterType="java.util.UUID" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -43,13 +54,21 @@
                    WHERE ii.item_id = i.id
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
-               ) AS primary_image_external_id
+               ) AS primary_image_external_id,
+               (SELECT COUNT(*)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS stock_count,
+               (SELECT COUNT(DISTINCT s.space_id)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS space_count
         FROM items i
         WHERE i.external_id = #{externalId}
     </select>
 
     <select id="findByUserId" parameterType="long" resultMap="ItemResultMap">
-        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.created_at,
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
                (
                    SELECT img.external_id
                    FROM item_images ii
@@ -57,15 +76,30 @@
                    WHERE ii.item_id = i.id
                    ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
                    LIMIT 1
-               ) AS primary_image_external_id
+               ) AS primary_image_external_id,
+               (SELECT COUNT(*)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS stock_count,
+               (SELECT COUNT(DISTINCT s.space_id)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS space_count
         FROM items i
         WHERE i.user_id = #{userId}
+          AND i.active = TRUE
     </select>
 
     <update id="updateItem" parameterType="ItemDTO">
         UPDATE items
         SET name        = #{name},
             description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <update id="deactivateById" parameterType="long">
+        UPDATE items
+        SET active = FALSE
         WHERE id = #{id}
     </update>
 

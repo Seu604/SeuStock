@@ -31,6 +31,38 @@ public class ShelfController {
         return "shelves/fragments/box-list :: box-list";
     }
 
+    @GetMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}/edit")
+    public String editModal(@PathVariable UUID spaceExternalId,
+                            @PathVariable UUID shelfExternalId,
+                            HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        var shelf = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username);
+        ShelfForm form = new ShelfForm();
+        form.setName(shelf.getName());
+        model.addAttribute("spaceExternalId", spaceExternalId);
+        model.addAttribute("shelfExternalId", shelfExternalId);
+        model.addAttribute("form", form);
+        return "shelves/fragments/modal :: edit-modal";
+    }
+
+    @PatchMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}")
+    public String rename(@PathVariable UUID spaceExternalId,
+                         @PathVariable UUID shelfExternalId,
+                         @Valid @ModelAttribute("form") ShelfForm form,
+                         BindingResult result,
+                         HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        if (result.hasErrors()) {
+            model.addAttribute("spaceExternalId", spaceExternalId);
+            model.addAttribute("shelfExternalId", shelfExternalId);
+            return "shelves/fragments/modal :: edit-modal";
+        }
+        shelfService.rename(spaceExternalId, shelfExternalId, form, username);
+        model.addAttribute("spaceExternalId", spaceExternalId);
+        model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
+        return "spaces/fragments/shelf-list-response :: shelf-list-response";
+    }
+
     @GetMapping("/spaces/{spaceExternalId}/shelves/new")
     public String newModal(@PathVariable UUID spaceExternalId, Model model) {
         model.addAttribute("spaceExternalId", spaceExternalId);

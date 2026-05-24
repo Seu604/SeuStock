@@ -6,6 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:replace="${titleContent}">SeuStock</title>
+    <link rel="stylesheet" as="style" crossorigin
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="/js/image-upload.js"></script>
@@ -13,6 +15,9 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['"Pretendard Variable"', 'Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+                    },
                     colors: {
                         primary: {
                             DEFAULT: '#3b82f6',
@@ -38,6 +43,9 @@
                 <span class="text-slate-300">|</span>
                 <a href="/items"
                    class="text-slate-600 hover:text-slate-900 transition">내 품목</a>
+                <span class="text-slate-300">|</span>
+                <a href="/stocks"
+                   class="text-slate-600 hover:text-slate-900 transition">내 재고</a>
                 <span class="text-slate-300">|</span>
                 <span class="text-slate-500" th:text="${session.loginUser}"></span>
                 <a href="/logout"
@@ -68,6 +76,8 @@
                        class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">내 공간</a>
                     <a href="/items"
                        class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">내 품목</a>
+                    <a href="/stocks"
+                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">내 재고</a>
                     <hr class="border-slate-100 mx-2 my-1"/>
                     <a href="/logout"
                        class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">로그아웃</a>

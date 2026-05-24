@@ -7,6 +7,7 @@ import com.seu.seustock.model.dto.*;
 import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
+import com.seu.seustock.model.form.StockUpdateForm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +68,33 @@ public class StockService {
             throw new SecurityException("접근 권한이 없습니다.");
         }
         return stockMapper.findPanelByBoxId(box.getId());
+    }
+
+    public List<StockDetailDTO> searchDetails(UUID itemExternalId,
+                                              UUID spaceExternalId,
+                                              UUID shelfExternalId,
+                                              UUID boxExternalId,
+                                              String username) {
+        UserDTO user = getUser(username);
+        return stockMapper.searchDetails(user.getId(), itemExternalId, spaceExternalId, shelfExternalId, boxExternalId);
+    }
+
+    public StockDetailDTO findDetailByExternalId(UUID externalId, String username) {
+        UserDTO user = getUser(username);
+        return stockMapper.findDetailByExternalId(externalId, user.getId())
+                .orElseThrow(() -> new NoSuchElementException("재고를 찾을 수 없습니다."));
+    }
+
+    @Transactional
+    public StockDetailDTO updateDetails(UUID externalId, StockUpdateForm form, String username) {
+        UserDTO user = getUser(username);
+        normalize(form);
+        int updated = stockMapper.updateDetails(externalId, user.getId(), form);
+        if (updated != 1) {
+            throw new NoSuchElementException("수정 가능한 재고를 찾을 수 없습니다.");
+        }
+        return stockMapper.findDetailByExternalId(externalId, user.getId())
+                .orElseThrow(() -> new NoSuchElementException("재고를 찾을 수 없습니다."));
     }
 
     @Transactional
@@ -206,6 +234,9 @@ public class StockService {
         ItemDTO item = itemMapper.findByExternalId(itemExternalId)
                 .orElseThrow(() -> new NoSuchElementException("품목을 찾을 수 없습니다."));
         verifyItemOwner(item, username);
+        if (!item.isActive()) {
+            throw new IllegalStateException("비활성화된 품목은 재고 작업을 할 수 없습니다.");
+        }
         return item;
     }
 
@@ -268,5 +299,17 @@ public class StockService {
             return;
         }
         itemImageMapper.insertItemImage(itemId, image.getId(), 0, true);
+    }
+
+    private void normalize(StockUpdateForm form) {
+        form.setSerialNumber(blankToNull(form.getSerialNumber()));
+        form.setLotNumber(blankToNull(form.getLotNumber()));
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

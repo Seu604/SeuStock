@@ -34,6 +34,16 @@ public class BoxService {
         return box;
     }
 
+    public BoxDTO findById(Long id) {
+        return boxMapper.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+    }
+
+    public BoxDTO findByExternalIdOnly(UUID externalId) {
+        return boxMapper.findByExternalId(externalId)
+                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+    }
+
     public List<BoxDTO> findAllByShelfId(UUID spaceExternalId, UUID shelfExternalId, String username) {
         ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
         return boxMapper.findByShelfId(shelf.getId());
@@ -46,6 +56,17 @@ public class BoxService {
         box.setName(form.getName());
         boxMapper.insertBox(box);
         return boxMapper.findById(box.getId()).orElseThrow();
+    }
+
+    public void rename(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, BoxForm form, String username) {
+        ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
+        BoxDTO box = boxMapper.findByExternalId(boxExternalId)
+                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+        if (!box.getShelfId().equals(shelf.getId())) {
+            throw new SecurityException("접근 권한이 없습니다.");
+        }
+        box.setName(form.getName());
+        boxMapper.updateBox(box);
     }
 
     public void delete(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {

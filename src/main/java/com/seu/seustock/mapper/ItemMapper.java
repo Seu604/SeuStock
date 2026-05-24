@@ -14,5 +14,6 @@ public interface ItemMapper {
     Optional<ItemDTO> findByExternalId(UUID externalId);
     List<ItemDTO> findByUserId(Long userId);
     void updateItem(ItemDTO item);
+    void deactivateById(Long id);
     void deleteById(Long id);
 }

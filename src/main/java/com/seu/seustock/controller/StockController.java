@@ -4,6 +4,7 @@ import com.seu.seustock.model.dto.StockPanelDTO;
 import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
+import com.seu.seustock.model.form.StockUpdateForm;
 import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ItemService;
 import com.seu.seustock.service.ShelfService;
@@ -27,6 +28,63 @@ public class StockController {
     private final ShelfService shelfService;
     private final BoxService boxService;
     private final ItemService itemService;
+
+    /* ── 내 재고 페이지 ── */
+
+    @GetMapping("/stocks")
+    public String list(@RequestParam(required = false) UUID itemExternalId,
+                       @RequestParam(required = false) UUID spaceExternalId,
+                       @RequestParam(required = false) UUID shelfExternalId,
+                       @RequestParam(required = false) UUID boxExternalId,
+                       HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        model.addAttribute("stocks", stockService.searchDetails(
+                itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, username));
+        model.addAttribute("itemExternalId", itemExternalId);
+        model.addAttribute("spaceExternalId", spaceExternalId);
+        model.addAttribute("shelfExternalId", shelfExternalId);
+        model.addAttribute("boxExternalId", boxExternalId);
+        model.addAttribute("filtered", itemExternalId != null || spaceExternalId != null
+                || shelfExternalId != null || boxExternalId != null);
+        return "stocks/list";
+    }
+
+    @GetMapping("/stocks/{stockExternalId}/edit")
+    public String editRow(@PathVariable UUID stockExternalId,
+                          HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        StockUpdateForm form = new StockUpdateForm();
+        var stock = stockService.findDetailByExternalId(stockExternalId, username);
+        form.setSerialNumber(stock.getSerialNumber());
+        form.setLotNumber(stock.getLotNumber());
+        form.setExpirationDate(stock.getExpirationDate());
+        model.addAttribute("stock", stock);
+        model.addAttribute("form", form);
+        return "stocks/fragments/detail-row :: edit";
+    }
+
+    @PutMapping("/stocks/{stockExternalId}")
+    public String updateRow(@PathVariable UUID stockExternalId,
+                            @Valid @ModelAttribute("form") StockUpdateForm form,
+                            BindingResult result,
+                            HttpSession session,
+                            Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        if (result.hasErrors()) {
+            model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
+            return "stocks/fragments/detail-row :: edit";
+        }
+        model.addAttribute("stock", stockService.updateDetails(stockExternalId, form, username));
+        return "stocks/fragments/detail-row :: view";
+    }
+
+    @GetMapping("/stocks/{stockExternalId}/cancel")
+    public String cancelEdit(@PathVariable UUID stockExternalId,
+                             HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
+        return "stocks/fragments/detail-row :: view";
+    }
 
     /* ── 재고 패널 조회 ── */
 
@@ -148,12 +206,14 @@ public class StockController {
                              @RequestParam UUID spaceExternalId,
                              @RequestParam(required = false) UUID shelfExternalId,
                              @RequestParam(required = false) UUID boxExternalId,
+                             @RequestParam(defaultValue = "0") Integer count,
                              Model model) {
         model.addAttribute("itemName", itemName);
         model.addAttribute("itemExternalId", itemExternalId);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("boxExternalId", boxExternalId);
+        model.addAttribute("currentCount", count);
         return "stocks/fragments/action-modal :: modal";
     }
 

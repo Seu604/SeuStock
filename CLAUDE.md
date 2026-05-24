@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew test --tests "com.seu.seustock.mapper.*"
 ```
 
-The `spring-boot-docker-compose` dependency automatically starts `compose.yaml` when running via Gradle. Docker must be running. PostgreSQL is exposed on port **5433** (mapped from container's 5432).
+The `spring-boot-docker-compose` dependency automatically starts `compose.yaml` when running via Gradle. Docker must be running. PostgreSQL is exposed on port **5433** (mapped from container's 5432). The app runs on port **8080**.
 
 ## Architecture
 
@@ -54,7 +54,23 @@ com.seu.seustock
 **Thymeleaf fragment convention**
 - Templates under `templates/<entity>/fragments/` are HTMX partial responses; controllers return them as `"<entity>/fragments/<file> :: <fragment-name>"`.
 - Templates directly under `templates/<entity>/` (e.g., `spaces/list`, `spaces/detail`) are full-page SSR views.
-- Items use a card layout: `items/fragments/card.html` exposes `view` (read mode) and `edit` (inline edit mode) fragments. Other entities (spaces, stocks) still use row-based fragments.
+- Items use a card layout: `items/fragments/card.html` exposes `view` (read mode) and `edit` (inline edit mode) fragments. New items are created via a modal. Other entities (spaces, shelves, boxes) still use row-based fragments.
+- Stocks use modal-based actions: `/stocks/new` (standard form), `/stocks/quick` (create item + stock together via `QuickStockForm` and `StockService.createWithNewItem()`), `/stocks/in-form`, `/stocks/out-form`, and an action selection modal. There is no inline row editing for stocks.
+
+**Enums**
+- `StockStatus`: `IN_STOCK`, `DISPATCHED`, `LOST`, `DAMAGED`, `DISPOSED` — each carries a Korean `label` field.
+- `TransactionType`: `IN`, `OUT`, `MOVE`, `ADJUST` — each carries a Korean `label` field.
+- MyBatis maps these via the default `EnumTypeHandler` (stores the enum name as a string). Always use enum constants; never pass raw strings to mapper parameters or compare against them.
+
+**Stock location validation**
+- `StockService` validates the full location hierarchy in one step via the private `resolveVerifiedLocation()` method, which returns a `VerifiedLocation` record (space + optional shelf + optional box).
+- This method checks cross-entity constraints (e.g., box must belong to the specified shelf) and enforces ownership, raising `SecurityException` or `NoSuchElementException` on any mismatch.
+- New stock-related service methods must call `resolveVerifiedLocation()` rather than performing piecemeal lookups.
+
+**Stock panel queries**
+- `StockPanelDTO` is a read-only aggregate DTO that groups stocks by item at a location (item name, primary image, unit count).
+- Service methods: `findPanelBySpace()`, `findPanelByShelf()`, `findPanelByBox()`.
+- The underlying mapper queries use a `DirectOnly` suffix (e.g., `findPanelBySpaceDirectOnly`) — they count only stocks directly at the given location, not in child containers.
 
 **MyBatis XML mappers**
 - SQL lives in `src/main/resources/mapper/<Entity>Mapper.xml`.
@@ -83,7 +99,14 @@ com.seu.seustock
 - Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`.
 - Images are linked to items or stocks via junction tables `item_images` / `stock_images` (with `display_order` and `is_primary` columns). `ImageMapper`, `ItemImageMapper`, and `StockImageMapper` are the corresponding mappers.
 - `GET /images/{externalId}` serves image files with ownership enforcement.
-- `static/js/image-upload.js` provides the client-side image hash computation and preview initialization (`initImageUpload({...}, scopeEl)`). Include it in any template that supports image upload and call `initImageUpload` scoped to the relevant container element.
+- `static/js/image-upload.js` provides the client-side image hash computation and preview initialization (`initImageUpload({...}, scopeEl)`). Include it in any template that supports image upload and call `initImageUpload` scoped to the relevant container element. The optional `onImageReady(file)` callback fires after the preview is initialized and the hash is computed — use it for async operations like AI analysis.
+
+**Image analysis (AI)**
+- `ImageAnalysisService` sends uploaded images to a local Ollama instance via Spring AI (`spring-ai-starter-model-ollama`) and returns an `ImageAnalysisDTO` with `name` and `description` fields populated in Korean.
+- Endpoint: `POST /images/analyze` (multipart). Requires Ollama running locally; not guarded by authentication (analysis is stateless).
+- Images larger than 1024px on either side are automatically resized to JPEG before the Ollama call. The model is configured via `spring.ai.ollama.chat.model` (default `gemma4:e2b`).
+- The modal templates (`items/fragments/modal.html`, `stocks/fragments/quick-modal.html`) call this endpoint on image selection and prefill the name/description fields. An abort controller on the modal element cancels in-flight requests when a new image is chosen before the prior response arrives.
+- Ollama is **not** required for tests — `application-test.properties` omits the AI configuration entirely.
 
 ## Database schema
 
@@ -96,8 +119,8 @@ users → spaces → shelves → boxes
 
 Inventory model:
 - `items`: master catalog of item definitions (name, description — no location or quantity)
-- `stocks`: each row is **one physical unit** of an item at a location (`space_id` required; `shelf_id` and `box_id` optional). Tracks `serial_number`, `lot_number`, `expiration_date`, and `status` (IN_STOCK, DISPATCHED, LOST, DAMAGED, DISPOSED). There is no quantity column — count is derived by counting rows.
-- `stock_transactions`: append-only ledger; every status change on a stock unit writes a row with `transaction_type` IN, OUT, MOVE, or ADJUST. Any service method that inserts or mutates a `stocks` row must also insert a corresponding `stock_transactions` row in the same `@Transactional` method.
+- `stocks`: each row is **one physical unit** of an item at a location (`space_id` required; `shelf_id` and `box_id` optional). Tracks `serial_number`, `lot_number`, `expiration_date`, and `status` (`StockStatus` enum). There is no quantity column — count is derived by counting rows.
+- `stock_transactions`: append-only ledger; every status change on a stock unit writes a row with `transaction_type` (`TransactionType` enum). Any service method that inserts or mutates a `stocks` row must also insert a corresponding `stock_transactions` row in the same `@Transactional` method.
 - `images`: one row per uploaded file; deduplicated by `(user_id, content_hash)`.
 - `item_images` / `stock_images`: junction tables linking images to items or stocks.
 

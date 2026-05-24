@@ -2,7 +2,10 @@ package com.seu.seustock.mapper;
 
 import com.seu.seustock.model.StockStatus;
 import com.seu.seustock.model.dto.StockDTO;
+import com.seu.seustock.model.dto.ItemSpaceStockDTO;
+import com.seu.seustock.model.dto.StockDetailDTO;
 import com.seu.seustock.model.dto.StockPanelDTO;
+import com.seu.seustock.model.form.StockUpdateForm;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -16,6 +19,8 @@ public interface StockMapper {
     Optional<StockDTO> findById(Long id);
     Optional<StockDTO> findByExternalId(UUID externalId);
     List<StockDTO> findByItemId(Long itemId);
+    int countByItemId(Long itemId);
+    int countInStockByItemId(Long itemId);
     List<StockDTO> findBySpaceId(Long spaceId);
     List<StockDTO> findByBoxId(Long boxId);
     List<StockDTO> findByShelfIdDirectOnly(Long shelfId);
@@ -33,4 +38,20 @@ public interface StockMapper {
     List<StockPanelDTO> findPanelByBoxId(Long boxId);
     List<StockPanelDTO> findPanelByShelfDirectOnly(Long shelfId);
     List<StockPanelDTO> findPanelBySpaceDirectOnly(Long spaceId);
+
+    List<ItemSpaceStockDTO> findSpaceStockByItem(@Param("itemExternalId") UUID itemExternalId,
+                                                 @Param("userId") Long userId);
+
+    List<StockDetailDTO> searchDetails(@Param("userId") Long userId,
+                                       @Param("itemExternalId") UUID itemExternalId,
+                                       @Param("spaceExternalId") UUID spaceExternalId,
+                                       @Param("shelfExternalId") UUID shelfExternalId,
+                                       @Param("boxExternalId") UUID boxExternalId);
+
+    Optional<StockDetailDTO> findDetailByExternalId(@Param("externalId") UUID externalId,
+                                                    @Param("userId") Long userId);
+
+    int updateDetails(@Param("externalId") UUID externalId,
+                      @Param("userId") Long userId,
+                      @Param("form") StockUpdateForm form);
 }

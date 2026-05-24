@@ -34,12 +34,30 @@ public class ShelfService {
         return shelf;
     }
 
+    public ShelfDTO findById(Long id) {
+        return shelfMapper.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
+    }
+
+    public ShelfDTO findByExternalIdOnly(UUID externalId) {
+        return getShelf(externalId);
+    }
+
     public ShelfDTO create(UUID spaceExternalId, ShelfForm form, String username) {
         SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
         ShelfDTO shelf = new ShelfDTO();
         shelf.setSpaceId(space.getId());
         shelf.setName(form.getName());
         shelfMapper.insertShelf(shelf);
+        return shelfMapper.findById(shelf.getId()).orElseThrow();
+    }
+
+    public ShelfDTO rename(UUID spaceExternalId, UUID shelfExternalId, ShelfForm form, String username) {
+        SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
+        ShelfDTO shelf = getShelf(shelfExternalId);
+        verifyShelfOwnership(shelf, space);
+        shelf.setName(form.getName());
+        shelfMapper.updateShelf(shelf);
         return shelfMapper.findById(shelf.getId()).orElseThrow();
     }
 
