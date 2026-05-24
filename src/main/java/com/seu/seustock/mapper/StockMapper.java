@@ -1,5 +1,6 @@
 package com.seu.seustock.mapper;
 
+import com.seu.seustock.model.StockStatus;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.StockPanelDTO;
 import org.apache.ibatis.annotations.Mapper;
@@ -19,7 +20,7 @@ public interface StockMapper {
     List<StockDTO> findByBoxId(Long boxId);
     List<StockDTO> findByShelfIdDirectOnly(Long shelfId);
     List<StockDTO> findBySpaceIdDirectOnly(Long spaceId);
-    int updateStatusIfInStock(@Param("id") Long id, @Param("status") String status);
+    int updateStatusIfInStock(@Param("id") Long id, @Param("status") StockStatus status);
     void deleteById(Long id);
     void deleteInStockByItemAndBox(@Param("itemId") Long itemId, @Param("boxId") Long boxId);
     void deleteInStockByItemAndShelf(@Param("itemId") Long itemId, @Param("shelfId") Long shelfId);

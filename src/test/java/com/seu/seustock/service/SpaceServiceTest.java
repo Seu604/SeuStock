@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,6 +52,34 @@ class SpaceServiceTest {
         assertThatThrownBy(() -> spaceService.delete(SPACE_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("재고");
+
+        verify(spaceMapper, never()).deleteById(any());
+    }
+
+    @Test
+    void delete_rejectsSpaceOwnedByAnotherUser() {
+        SpaceDTO space = new SpaceDTO();
+        space.setId(10L);
+        space.setExternalId(SPACE_EXTERNAL_ID);
+        space.setUserId(99L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> spaceService.delete(SPACE_EXTERNAL_ID, USERNAME))
+                .isInstanceOf(SecurityException.class);
+
+        verify(spaceMapper, never()).deleteById(any());
+    }
+
+    @Test
+    void delete_rejectsNotFound() {
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> spaceService.delete(SPACE_EXTERNAL_ID, USERNAME))
+                .isInstanceOf(NoSuchElementException.class);
 
         verify(spaceMapper, never()).deleteById(any());
     }

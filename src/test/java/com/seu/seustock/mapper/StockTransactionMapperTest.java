@@ -1,5 +1,6 @@
 package com.seu.seustock.mapper;
 
+import com.seu.seustock.model.TransactionType;
 import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
@@ -65,7 +66,7 @@ class StockTransactionMapperTest {
         stockId = stock.getId();
     }
 
-    private StockTransactionDTO buildTransaction(String type, String memo) {
+    private StockTransactionDTO buildTransaction(TransactionType type, String memo) {
         StockTransactionDTO tx = new StockTransactionDTO();
         tx.setStockId(stockId);
         tx.setTransactionType(type);
@@ -75,7 +76,7 @@ class StockTransactionMapperTest {
 
     @Test
     void insertTransaction_thenFindById() {
-        StockTransactionDTO tx = buildTransaction("IN", "입고");
+        StockTransactionDTO tx = buildTransaction(TransactionType.IN, "입고");
         stockTransactionMapper.insertTransaction(tx);
 
         Optional<StockTransactionDTO> found = stockTransactionMapper.findById(tx.getId());
@@ -84,7 +85,7 @@ class StockTransactionMapperTest {
         assertThat(found.get().getId()).isNotNull();
         assertThat(found.get().getExternalId()).isNotNull();
         assertThat(found.get().getStockId()).isEqualTo(stockId);
-        assertThat(found.get().getTransactionType()).isEqualTo("IN");
+        assertThat(found.get().getTransactionType()).isEqualTo(TransactionType.IN);
         assertThat(found.get().getMemo()).isEqualTo("입고");
     }
 
@@ -96,14 +97,14 @@ class StockTransactionMapperTest {
 
     @Test
     void findByStockId_returnsAllTransactions() {
-        stockTransactionMapper.insertTransaction(buildTransaction("IN", "입고"));
-        stockTransactionMapper.insertTransaction(buildTransaction("OUT", "출고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "입고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.OUT, "출고"));
 
         List<StockTransactionDTO> txList = stockTransactionMapper.findByStockId(stockId);
 
         assertThat(txList).hasSize(2);
         assertThat(txList).extracting(StockTransactionDTO::getTransactionType)
-                .containsExactly("IN", "OUT");
+                .containsExactly(TransactionType.IN, TransactionType.OUT);
     }
 
     @Test

@@ -109,6 +109,33 @@ class ImageMapperTest {
         assertThat(found.get().getOriginalFilename()).isEqualTo("stock.jpg");
     }
 
+    @Test
+    void findByUserIdAndContentHash_returnsMatchingImage() {
+        ImageDTO image = buildImage("hash-test.jpg");
+        image.setContentHash("abc123hash");
+        imageMapper.insertImage(image);
+
+        Optional<ImageDTO> found = imageMapper.findByUserIdAndContentHash(user.getId(), "abc123hash");
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getOriginalFilename()).isEqualTo("hash-test.jpg");
+    }
+
+    @Test
+    void findByUserIdAndContentHash_notFound_returnsEmpty() {
+        assertThat(imageMapper.findByUserIdAndContentHash(user.getId(), "nonexistent")).isEmpty();
+    }
+
+    @Test
+    void findPrimaryByItemId_noImage_returnsEmpty() {
+        assertThat(imageMapper.findPrimaryByItemId(item.getId())).isEmpty();
+    }
+
+    @Test
+    void findPrimaryByStockId_noImage_returnsEmpty() {
+        assertThat(imageMapper.findPrimaryByStockId(stock.getId())).isEmpty();
+    }
+
     private ImageDTO buildImage(String filename) {
         ImageDTO image = new ImageDTO();
         image.setUserId(user.getId());

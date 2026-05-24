@@ -1,6 +1,10 @@
 package com.seu.seustock.mapper;
 
+import com.seu.seustock.model.StockStatus;
+import com.seu.seustock.model.dto.BoxDTO;
+import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ItemDTO;
+import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.StockPanelDTO;
@@ -15,6 +19,7 @@ import org.springframework.test.context.jdbc.Sql;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,6 +39,12 @@ class StockMapperTest {
     private SpaceMapper spaceMapper;
 
     @Autowired
+    private ShelfMapper shelfMapper;
+
+    @Autowired
+    private BoxMapper boxMapper;
+
+    @Autowired
     private UserMapper userMapper;
 
     @Autowired
@@ -45,6 +56,8 @@ class StockMapperTest {
     private Long itemId;
     private Long spaceId;
     private Long userId;
+    private Long shelfId;
+    private Long boxId;
 
     @BeforeEach
     void setUp() {
@@ -65,12 +78,41 @@ class StockMapperTest {
         space.setName("창고");
         spaceMapper.insertSpace(space);
         spaceId = space.getId();
+
+        ShelfDTO shelf = new ShelfDTO();
+        shelf.setSpaceId(spaceId);
+        shelf.setName("A선반");
+        shelfMapper.insertShelf(shelf);
+        shelfId = shelf.getId();
+
+        BoxDTO box = new BoxDTO();
+        box.setShelfId(shelfId);
+        box.setName("1번박스");
+        boxMapper.insertBox(box);
+        boxId = box.getId();
     }
 
     private StockDTO buildStock() {
         StockDTO stock = new StockDTO();
         stock.setItemId(itemId);
         stock.setSpaceId(spaceId);
+        return stock;
+    }
+
+    private StockDTO buildStockOnShelf() {
+        StockDTO stock = new StockDTO();
+        stock.setItemId(itemId);
+        stock.setSpaceId(spaceId);
+        stock.setShelfId(shelfId);
+        return stock;
+    }
+
+    private StockDTO buildStockOnBox() {
+        StockDTO stock = new StockDTO();
+        stock.setItemId(itemId);
+        stock.setSpaceId(spaceId);
+        stock.setShelfId(shelfId);
+        stock.setBoxId(boxId);
         return stock;
     }
 
@@ -87,7 +129,7 @@ class StockMapperTest {
         assertThat(found.get().getExternalId()).isNotNull();
         assertThat(found.get().getItemId()).isEqualTo(itemId);
         assertThat(found.get().getSpaceId()).isEqualTo(spaceId);
-        assertThat(found.get().getStatus()).isEqualTo("IN_STOCK");
+        assertThat(found.get().getStatus()).isEqualTo(StockStatus.IN_STOCK);
         assertThat(found.get().getSerialNumber()).isEqualTo("SN-001");
     }
 
@@ -95,6 +137,23 @@ class StockMapperTest {
     void findById_notFound_returnsEmpty() {
         Optional<StockDTO> found = stockMapper.findById(999L);
         assertThat(found).isEmpty();
+    }
+
+    @Test
+    void findByExternalId() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        Optional<StockDTO> found = stockMapper.findByExternalId(externalId);
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getId()).isEqualTo(stock.getId());
+    }
+
+    @Test
+    void findByExternalId_notFound_returnsEmpty() {
+        assertThat(stockMapper.findByExternalId(UUID.randomUUID())).isEmpty();
     }
 
     @Test
@@ -122,26 +181,26 @@ class StockMapperTest {
         StockDTO stock = buildStock();
         stockMapper.insertStock(stock);
 
-        int updated = stockMapper.updateStatusIfInStock(stock.getId(), "DISPATCHED");
+        int updated = stockMapper.updateStatusIfInStock(stock.getId(), StockStatus.DISPATCHED);
 
         Optional<StockDTO> found = stockMapper.findById(stock.getId());
         assertThat(updated).isEqualTo(1);
         assertThat(found).isPresent();
-        assertThat(found.get().getStatus()).isEqualTo("DISPATCHED");
+        assertThat(found.get().getStatus()).isEqualTo(StockStatus.DISPATCHED);
     }
 
     @Test
     void updateStatusIfInStock_alreadyDispatched_returnsZero() {
         StockDTO stock = buildStock();
         stockMapper.insertStock(stock);
-        stockMapper.updateStatusIfInStock(stock.getId(), "DISPATCHED");
+        stockMapper.updateStatusIfInStock(stock.getId(), StockStatus.DISPATCHED);
 
-        int updated = stockMapper.updateStatusIfInStock(stock.getId(), "DAMAGED");
+        int updated = stockMapper.updateStatusIfInStock(stock.getId(), StockStatus.DAMAGED);
 
         Optional<StockDTO> found = stockMapper.findById(stock.getId());
         assertThat(updated).isZero();
         assertThat(found).isPresent();
-        assertThat(found.get().getStatus()).isEqualTo("DISPATCHED");
+        assertThat(found.get().getStatus()).isEqualTo(StockStatus.DISPATCHED);
     }
 
     @Test
@@ -168,8 +227,19 @@ class StockMapperTest {
     }
 
     @Test
+    void findPanelBySpaceDirectOnly_excludesStocksOnShelf() {
+        stockMapper.insertStock(buildStock());        // 공간 직접 재고
+        stockMapper.insertStock(buildStockOnShelf()); // 선반 재고 — 제외돼야 함
+
+        List<StockPanelDTO> panel = stockMapper.findPanelBySpaceDirectOnly(spaceId);
+
+        assertThat(panel).hasSize(1);
+        assertThat(panel.get(0).getCount()).isEqualTo(1);
+    }
+
+    @Test
     void findPanelBySpaceDirectOnly_includesItemPrimaryImage() {
-        var image = new com.seu.seustock.model.dto.ImageDTO();
+        var image = new ImageDTO();
         image.setUserId(userId);
         image.setStoragePath("/tmp/notebook.jpg");
         image.setOriginalFilename("notebook.jpg");
@@ -191,12 +261,45 @@ class StockMapperTest {
         stockMapper.insertStock(unit1);
         StockDTO unit2 = buildStock();
         stockMapper.insertStock(unit2);
-        stockMapper.updateStatusIfInStock(unit2.getId(), "DISPATCHED");
+        stockMapper.updateStatusIfInStock(unit2.getId(), StockStatus.DISPATCHED);
 
         List<StockPanelDTO> panel = stockMapper.findPanelBySpaceDirectOnly(spaceId);
 
         assertThat(panel).hasSize(1);
         assertThat(panel.get(0).getCount()).isEqualTo(1);
+    }
+
+    @Test
+    void findPanelByShelfDirectOnly_groupsByItem() {
+        stockMapper.insertStock(buildStockOnShelf());
+        stockMapper.insertStock(buildStockOnShelf());
+
+        List<StockPanelDTO> panel = stockMapper.findPanelByShelfDirectOnly(shelfId);
+
+        assertThat(panel).hasSize(1);
+        assertThat(panel.get(0).getCount()).isEqualTo(2);
+    }
+
+    @Test
+    void findPanelByShelfDirectOnly_excludesStocksOnBox() {
+        stockMapper.insertStock(buildStockOnShelf()); // 선반 직접 재고
+        stockMapper.insertStock(buildStockOnBox());   // 박스 재고 — 제외돼야 함
+
+        List<StockPanelDTO> panel = stockMapper.findPanelByShelfDirectOnly(shelfId);
+
+        assertThat(panel).hasSize(1);
+        assertThat(panel.get(0).getCount()).isEqualTo(1);
+    }
+
+    @Test
+    void findPanelByBoxId_groupsByItem() {
+        stockMapper.insertStock(buildStockOnBox());
+        stockMapper.insertStock(buildStockOnBox());
+
+        List<StockPanelDTO> panel = stockMapper.findPanelByBoxId(boxId);
+
+        assertThat(panel).hasSize(1);
+        assertThat(panel.get(0).getCount()).isEqualTo(2);
     }
 
     @Test
@@ -208,7 +311,29 @@ class StockMapperTest {
         List<StockDTO> units = stockMapper.findInStockByItemAndSpace(itemId, spaceId);
 
         assertThat(units).hasSize(3);
-        assertThat(units).extracting(StockDTO::getStatus).containsOnly("IN_STOCK");
+        assertThat(units).extracting(StockDTO::getStatus).containsOnly(StockStatus.IN_STOCK);
+    }
+
+    @Test
+    void findInStockByItemAndShelf() {
+        stockMapper.insertStock(buildStockOnShelf());
+        stockMapper.insertStock(buildStockOnShelf());
+
+        List<StockDTO> units = stockMapper.findInStockByItemAndShelf(itemId, shelfId);
+
+        assertThat(units).hasSize(2);
+        assertThat(units).extracting(StockDTO::getStatus).containsOnly(StockStatus.IN_STOCK);
+    }
+
+    @Test
+    void findInStockByItemAndBox() {
+        stockMapper.insertStock(buildStockOnBox());
+        stockMapper.insertStock(buildStockOnBox());
+
+        List<StockDTO> units = stockMapper.findInStockByItemAndBox(itemId, boxId);
+
+        assertThat(units).hasSize(2);
+        assertThat(units).extracting(StockDTO::getStatus).containsOnly(StockStatus.IN_STOCK);
     }
 
     @Test
@@ -219,5 +344,25 @@ class StockMapperTest {
         stockMapper.deleteInStockByItemAndSpace(itemId, spaceId);
 
         assertThat(stockMapper.findBySpaceId(spaceId)).isEmpty();
+    }
+
+    @Test
+    void deleteInStockByItemAndShelf() {
+        stockMapper.insertStock(buildStockOnShelf());
+        stockMapper.insertStock(buildStockOnShelf());
+
+        stockMapper.deleteInStockByItemAndShelf(itemId, shelfId);
+
+        assertThat(stockMapper.findInStockByItemAndShelf(itemId, shelfId)).isEmpty();
+    }
+
+    @Test
+    void deleteInStockByItemAndBox() {
+        stockMapper.insertStock(buildStockOnBox());
+        stockMapper.insertStock(buildStockOnBox());
+
+        stockMapper.deleteInStockByItemAndBox(itemId, boxId);
+
+        assertThat(stockMapper.findInStockByItemAndBox(itemId, boxId)).isEmpty();
     }
 }

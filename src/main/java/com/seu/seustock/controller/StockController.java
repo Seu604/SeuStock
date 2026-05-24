@@ -140,6 +140,23 @@ public class StockController {
         return buildPanelResponse(spaceExternalId, shelfExternalId, boxExternalId, username, model);
     }
 
+    /* ── 통합 액션 모달 ── */
+
+    @GetMapping("/stocks/action-form")
+    public String actionForm(@RequestParam UUID itemExternalId,
+                             @RequestParam String itemName,
+                             @RequestParam UUID spaceExternalId,
+                             @RequestParam(required = false) UUID shelfExternalId,
+                             @RequestParam(required = false) UUID boxExternalId,
+                             Model model) {
+        model.addAttribute("itemName", itemName);
+        model.addAttribute("itemExternalId", itemExternalId);
+        model.addAttribute("spaceExternalId", spaceExternalId);
+        model.addAttribute("shelfExternalId", shelfExternalId);
+        model.addAttribute("boxExternalId", boxExternalId);
+        return "stocks/fragments/action-modal :: modal";
+    }
+
     /* ── 입고 ── */
 
     @GetMapping("/stocks/in-form")

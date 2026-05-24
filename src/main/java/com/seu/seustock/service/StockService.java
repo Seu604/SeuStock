@@ -1,6 +1,8 @@
 package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.*;
+import com.seu.seustock.model.StockStatus;
+import com.seu.seustock.model.TransactionType;
 import com.seu.seustock.model.dto.*;
 import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
@@ -89,7 +91,7 @@ public class StockService {
 
             StockTransactionDTO tx = new StockTransactionDTO();
             tx.setStockId(unit.getId());
-            tx.setTransactionType("IN");
+            tx.setTransactionType(TransactionType.IN);
             tx.setMemo(form.getMemo() != null ? form.getMemo() : "초기 등록");
             transactionMapper.insertTransaction(tx);
         }
@@ -119,7 +121,7 @@ public class StockService {
 
             StockTransactionDTO tx = new StockTransactionDTO();
             tx.setStockId(unit.getId());
-            tx.setTransactionType("IN");
+            tx.setTransactionType(TransactionType.IN);
             tx.setMemo(form.getMemo() != null ? form.getMemo() : "빠른 등록");
             transactionMapper.insertTransaction(tx);
         }
@@ -144,7 +146,7 @@ public class StockService {
 
             StockTransactionDTO tx = new StockTransactionDTO();
             tx.setStockId(unit.getId());
-            tx.setTransactionType("IN");
+            tx.setTransactionType(TransactionType.IN);
             tx.setMemo(form.getMemo());
             transactionMapper.insertTransaction(tx);
         }
@@ -173,14 +175,14 @@ public class StockService {
         }
 
         for (StockDTO unit : units.subList(0, form.getCount())) {
-            int updated = stockMapper.updateStatusIfInStock(unit.getId(), "DISPATCHED");
+            int updated = stockMapper.updateStatusIfInStock(unit.getId(), StockStatus.DISPATCHED);
             if (updated != 1) {
                 throw new IllegalStateException("재고 상태가 변경되어 출고할 수 없습니다.");
             }
 
             StockTransactionDTO tx = new StockTransactionDTO();
             tx.setStockId(unit.getId());
-            tx.setTransactionType("OUT");
+            tx.setTransactionType(TransactionType.OUT);
             tx.setMemo(form.getMemo());
             transactionMapper.insertTransaction(tx);
         }

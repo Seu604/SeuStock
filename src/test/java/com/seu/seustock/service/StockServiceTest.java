@@ -1,6 +1,9 @@
 package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.*;
+import com.seu.seustock.model.StockStatus;
+import com.seu.seustock.model.TransactionType;
+import com.seu.seustock.model.dto.StockTransactionDTO;
 import com.seu.seustock.model.dto.*;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
@@ -155,7 +158,7 @@ class StockServiceTest {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
         when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of(stock));
-        when(stockMapper.updateStatusIfInStock(stock.getId(), "DISPATCHED")).thenReturn(0);
+        when(stockMapper.updateStatusIfInStock(stock.getId(), StockStatus.DISPATCHED)).thenReturn(0);
 
         assertThatThrownBy(() -> stockService.dispatchUnits(form, USERNAME))
                 .isInstanceOf(IllegalStateException.class)
@@ -174,6 +177,76 @@ class StockServiceTest {
                 .isInstanceOf(SecurityException.class);
 
         verify(stockMapper, never()).deleteInStockByItemAndShelf(any(), any());
+    }
+
+    @Test
+    void create_happyPath_spaceOnly() {
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        doAnswer(invocation -> { ((StockDTO) invocation.getArgument(0)).setId(501L); return null; })
+                .when(stockMapper).insertStock(any());
+
+        stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME);
+
+        verify(stockMapper).insertStock(any());
+        verify(transactionMapper).insertTransaction(any());
+    }
+
+    @Test
+    void addUnits_insertsStockAndTransactionForEachUnit() {
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        doAnswer(invocation -> { ((StockDTO) invocation.getArgument(0)).setId(501L); return null; })
+                .when(stockMapper).insertStock(any());
+
+        StockInOutForm form = stockInOutForm(SPACE_EXTERNAL_ID, null, null);
+        form.setCount(3);
+        stockService.addUnits(form, USERNAME);
+
+        verify(stockMapper, times(3)).insertStock(any());
+        verify(transactionMapper, times(3)).insertTransaction(any());
+    }
+
+    @Test
+    void addUnits_rejectsItemOwnedByAnotherUser() {
+        when(itemMapper.findByExternalId(OTHER_ITEM_EXTERNAL_ID)).thenReturn(Optional.of(otherUserItem));
+
+        StockInOutForm form = stockInOutForm(SPACE_EXTERNAL_ID, null, null);
+        form.setItemExternalId(OTHER_ITEM_EXTERNAL_ID);
+        assertThatThrownBy(() -> stockService.addUnits(form, USERNAME))
+                .isInstanceOf(SecurityException.class);
+
+        verify(stockMapper, never()).insertStock(any());
+    }
+
+    @Test
+    void dispatchUnits_updatesStatusAndRecordsTransaction() {
+        StockDTO unit = new StockDTO();
+        unit.setId(700L);
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of(unit));
+        when(stockMapper.updateStatusIfInStock(unit.getId(), StockStatus.DISPATCHED)).thenReturn(1);
+
+        stockService.dispatchUnits(stockInOutForm(SPACE_EXTERNAL_ID, null, null), USERNAME);
+
+        verify(stockMapper).updateStatusIfInStock(unit.getId(), StockStatus.DISPATCHED);
+        ArgumentCaptor<StockTransactionDTO> txCaptor = ArgumentCaptor.forClass(StockTransactionDTO.class);
+        verify(transactionMapper).insertTransaction(txCaptor.capture());
+        assertThat(txCaptor.getValue().getTransactionType()).isEqualTo(TransactionType.OUT);
+    }
+
+    @Test
+    void dispatchUnits_rejectsInsufficientStock() {
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of());
+
+        assertThatThrownBy(() -> stockService.dispatchUnits(stockInOutForm(SPACE_EXTERNAL_ID, null, null), USERNAME))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("재고가 부족");
+
+        verify(transactionMapper, never()).insertTransaction(any());
     }
 
     private StockForm stockForm(UUID itemExternalId, UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId) {
