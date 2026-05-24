@@ -167,6 +167,18 @@ class StockMapperTest {
     }
 
     @Test
+    void countByItemId_countsAllStatuses() {
+        StockDTO inStock = buildStock();
+        stockMapper.insertStock(inStock);
+        StockDTO dispatched = buildStock();
+        stockMapper.insertStock(dispatched);
+        stockMapper.updateStatusIfInStock(dispatched.getId(), StockStatus.DISPATCHED);
+
+        assertThat(stockMapper.countByItemId(itemId)).isEqualTo(2);
+        assertThat(stockMapper.countInStockByItemId(itemId)).isEqualTo(1);
+    }
+
+    @Test
     void findBySpaceId() {
         stockMapper.insertStock(buildStock());
         stockMapper.insertStock(buildStock());

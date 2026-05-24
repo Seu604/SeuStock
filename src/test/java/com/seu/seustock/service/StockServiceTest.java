@@ -91,6 +91,18 @@ class StockServiceTest {
     }
 
     @Test
+    void create_rejectsInactiveItem() {
+        item.setActive(false);
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+
+        assertThatThrownBy(() -> stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("비활성화");
+
+        verify(stockMapper, never()).insertStock(any());
+    }
+
+    @Test
     void create_rejectsShelfFromDifferentSpace() {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
@@ -281,6 +293,7 @@ class StockServiceTest {
         dto.setId(id);
         dto.setExternalId(externalId);
         dto.setUserId(userId);
+        dto.setActive(true);
         return dto;
     }
 

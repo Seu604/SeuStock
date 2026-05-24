@@ -16,6 +16,8 @@ public interface StockMapper {
     Optional<StockDTO> findById(Long id);
     Optional<StockDTO> findByExternalId(UUID externalId);
     List<StockDTO> findByItemId(Long itemId);
+    int countByItemId(Long itemId);
+    int countInStockByItemId(Long itemId);
     List<StockDTO> findBySpaceId(Long spaceId);
     List<StockDTO> findByBoxId(Long boxId);
     List<StockDTO> findByShelfIdDirectOnly(Long shelfId);

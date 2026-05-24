@@ -59,6 +59,7 @@ class ItemMapperTest {
         assertThat(found.get().getName()).isEqualTo("노트북");
         assertThat(found.get().getDescription()).isEqualTo("업무용 노트북");
         assertThat(found.get().getUserId()).isEqualTo(userId);
+        assertThat(found.get().isActive()).isTrue();
     }
 
     @Test
@@ -76,6 +77,23 @@ class ItemMapperTest {
 
         assertThat(items).hasSize(2);
         assertThat(items).extracting(ItemDTO::getName).containsExactlyInAnyOrder("노트북", "마우스");
+    }
+
+    @Test
+    void deactivateById_excludesItemFromUserList() {
+        ItemDTO activeItem = buildItem("활성아이템", null);
+        itemMapper.insertItem(activeItem);
+        ItemDTO inactiveItem = buildItem("비활성아이템", null);
+        itemMapper.insertItem(inactiveItem);
+
+        itemMapper.deactivateById(inactiveItem.getId());
+
+        Optional<ItemDTO> found = itemMapper.findById(inactiveItem.getId());
+        List<ItemDTO> items = itemMapper.findByUserId(userId);
+
+        assertThat(found).isPresent();
+        assertThat(found.get().isActive()).isFalse();
+        assertThat(items).extracting(ItemDTO::getName).containsExactly("활성아이템");
     }
 
     @Test

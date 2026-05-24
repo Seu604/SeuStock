@@ -64,8 +64,12 @@ public class ItemService {
     public void delete(UUID externalId, String username) {
         ItemDTO item = getItem(externalId);
         verifyOwner(item, username);
-        if (!stockMapper.findByItemId(item.getId()).isEmpty()) {
+        if (stockMapper.countInStockByItemId(item.getId()) > 0) {
             throw new IllegalStateException("재고가 있는 품목은 삭제할 수 없습니다.");
+        }
+        if (stockMapper.countByItemId(item.getId()) > 0) {
+            itemMapper.deactivateById(item.getId());
+            return;
         }
         itemMapper.deleteById(item.getId());
     }
