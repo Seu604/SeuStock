@@ -3,7 +3,9 @@ package com.seu.seustock.mapper;
 import com.seu.seustock.model.StockStatus;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.ItemSpaceStockDTO;
+import com.seu.seustock.model.dto.StockDetailDTO;
 import com.seu.seustock.model.dto.StockPanelDTO;
+import com.seu.seustock.model.form.StockUpdateForm;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -39,4 +41,17 @@ public interface StockMapper {
 
     List<ItemSpaceStockDTO> findSpaceStockByItem(@Param("itemExternalId") UUID itemExternalId,
                                                  @Param("userId") Long userId);
+
+    List<StockDetailDTO> searchDetails(@Param("userId") Long userId,
+                                       @Param("itemExternalId") UUID itemExternalId,
+                                       @Param("spaceExternalId") UUID spaceExternalId,
+                                       @Param("shelfExternalId") UUID shelfExternalId,
+                                       @Param("boxExternalId") UUID boxExternalId);
+
+    Optional<StockDetailDTO> findDetailByExternalId(@Param("externalId") UUID externalId,
+                                                    @Param("userId") Long userId);
+
+    int updateDetails(@Param("externalId") UUID externalId,
+                      @Param("userId") Long userId,
+                      @Param("form") StockUpdateForm form);
 }

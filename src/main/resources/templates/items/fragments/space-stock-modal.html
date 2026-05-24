@@ -24,13 +24,14 @@
         </div>
 
         <div class="divide-y divide-slate-100">
-            <div th:each="ss : ${spaceStocks}"
-                 class="flex items-center justify-between py-2.5">
+            <a th:each="ss : ${spaceStocks}"
+               th:href="@{/stocks(itemExternalId=${externalId},spaceExternalId=${ss.spaceExternalId})}"
+               class="flex items-center justify-between py-2.5 hover:bg-slate-50 transition">
                 <span class="text-sm text-slate-700" th:text="${ss.spaceName}"></span>
                 <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5
                              text-xs font-semibold text-blue-700"
                       th:text="${ss.count} + '개'"></span>
-            </div>
+            </a>
         </div>
 
         <div class="flex justify-end border-t border-slate-100 pt-2">

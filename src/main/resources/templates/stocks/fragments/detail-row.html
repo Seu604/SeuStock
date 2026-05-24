@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="view(stock)"
+     th:id="'stock-' + ${stock.externalId}"
+     class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_8rem] md:items-center">
+
+    <div class="flex min-w-0 items-center gap-3">
+        <img th:src="${stock.displayImageExternalId != null} ? @{/images/{id}(id=${stock.displayImageExternalId})} : @{/image/item_placeholder_v2.png}"
+             alt=""
+             class="h-12 w-12 shrink-0 rounded-md border border-slate-200 object-cover">
+        <div class="min-w-0">
+            <p class="truncate text-sm font-semibold text-slate-800" th:text="${stock.itemName}">품목명</p>
+            <p class="mt-0.5 text-xs text-slate-400"
+               th:text="${#temporals.format(stock.createdAt, 'yyyy-MM-dd')}">등록일</p>
+        </div>
+    </div>
+
+    <div class="min-w-0 text-sm text-slate-600">
+        <span th:text="${stock.spaceName}">공간</span>
+        <th:block th:if="${stock.shelfName != null}">
+            <span class="text-slate-300"> / </span><span th:text="${stock.shelfName}">선반</span>
+        </th:block>
+        <th:block th:if="${stock.boxName != null}">
+            <span class="text-slate-300"> / </span><span th:text="${stock.boxName}">박스</span>
+        </th:block>
+    </div>
+
+    <div class="text-sm text-slate-600">
+        <p>
+            <span class="text-xs text-slate-400">SN</span>
+            <span th:text="${stock.serialNumber != null and !stock.serialNumber.isEmpty()} ? ${stock.serialNumber} : '-'"></span>
+        </p>
+        <p class="mt-0.5">
+            <span class="text-xs text-slate-400">LOT</span>
+            <span th:text="${stock.lotNumber != null and !stock.lotNumber.isEmpty()} ? ${stock.lotNumber} : '-'"></span>
+        </p>
+    </div>
+
+    <div class="text-sm">
+        <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700"
+              th:text="${stock.status.label}">재고중</span>
+        <p class="mt-1 text-xs text-slate-400"
+           th:text="${stock.expirationDate != null ? '유통기한 ' + #temporals.format(stock.expirationDate, 'yyyy-MM-dd') : '유통기한 -'}"></p>
+    </div>
+
+    <div class="flex justify-end">
+        <button type="button"
+                th:attr="hx-get=@{/stocks/{id}/edit(id=${stock.externalId})},hx-target='#stock-' + ${stock.externalId}"
+                hx-swap="outerHTML"
+                class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+            수정
+        </button>
+    </div>
+</div>
+
+<div th:fragment="edit"
+     th:id="'stock-' + ${stock.externalId}"
+     th:object="${form}"
+     class="grid gap-3 border-l-4 border-blue-500 bg-blue-50/40 px-4 py-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_8rem] md:items-start">
+
+    <div class="flex min-w-0 items-center gap-3">
+        <img th:src="${stock.displayImageExternalId != null} ? @{/images/{id}(id=${stock.displayImageExternalId})} : @{/image/item_placeholder_v2.png}"
+             alt=""
+             class="h-12 w-12 shrink-0 rounded-md border border-slate-200 object-cover">
+        <div class="min-w-0">
+            <p class="truncate text-sm font-semibold text-slate-800" th:text="${stock.itemName}">품목명</p>
+            <p class="mt-0.5 text-xs text-slate-400"
+               th:text="${stock.spaceName}">위치</p>
+        </div>
+    </div>
+
+    <div class="text-sm text-slate-600">
+        <span th:text="${stock.spaceName}">공간</span>
+        <th:block th:if="${stock.shelfName != null}">
+            <span class="text-slate-300"> / </span><span th:text="${stock.shelfName}">선반</span>
+        </th:block>
+        <th:block th:if="${stock.boxName != null}">
+            <span class="text-slate-300"> / </span><span th:text="${stock.boxName}">박스</span>
+        </th:block>
+    </div>
+
+    <div class="space-y-2">
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-500">시리얼 번호</label>
+            <input type="text" th:field="*{serialNumber}"
+                   class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <p th:if="${#fields.hasErrors('serialNumber')}" th:errors="*{serialNumber}"
+               class="mt-1 text-xs text-red-500"></p>
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-500">로트 번호</label>
+            <input type="text" th:field="*{lotNumber}"
+                   class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <p th:if="${#fields.hasErrors('lotNumber')}" th:errors="*{lotNumber}"
+               class="mt-1 text-xs text-red-500"></p>
+        </div>
+    </div>
+
+    <div>
+        <label class="mb-1 block text-xs font-medium text-slate-500">유통기한</label>
+        <input type="date" th:field="*{expirationDate}"
+               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <p class="mt-2 text-xs text-slate-400" th:text="${stock.status.label}">재고중</p>
+    </div>
+
+    <div class="flex justify-end gap-2">
+        <button type="button"
+                th:attr="hx-put=@{/stocks/{id}(id=${stock.externalId})},hx-target='#stock-' + ${stock.externalId},hx-include='#stock-' + ${stock.externalId}"
+                hx-swap="outerHTML"
+                class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
+            저장
+        </button>
+        <button type="button"
+                th:attr="hx-get=@{/stocks/{id}/cancel(id=${stock.externalId})},hx-target='#stock-' + ${stock.externalId}"
+                hx-swap="outerHTML"
+                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+            취소
+        </button>
+    </div>
+</div>
+
+</body>
+</html>

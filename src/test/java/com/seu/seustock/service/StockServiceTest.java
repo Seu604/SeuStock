@@ -7,6 +7,7 @@ import com.seu.seustock.model.dto.StockTransactionDTO;
 import com.seu.seustock.model.dto.*;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
+import com.seu.seustock.model.form.StockUpdateForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,6 +38,7 @@ class StockServiceTest {
     private static final UUID OTHER_SHELF_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
     private static final UUID BOX_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000001000");
     private static final UUID OTHER_BOX_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000001001");
+    private static final UUID STOCK_EXTERNAL_ID = UUID.fromString("00000000-0000-0000-0000-000000010000");
 
     @Mock
     private StockMapper stockMapper;
@@ -259,6 +262,35 @@ class StockServiceTest {
                 .hasMessageContaining("재고가 부족");
 
         verify(transactionMapper, never()).insertTransaction(any());
+    }
+
+    @Test
+    void updateDetails_trimsBlankValuesAndReturnsUpdatedStock() {
+        StockUpdateForm form = new StockUpdateForm();
+        form.setSerialNumber(" SN-1 ");
+        form.setLotNumber(" ");
+        StockDetailDTO updated = new StockDetailDTO();
+        updated.setExternalId(STOCK_EXTERNAL_ID);
+        updated.setSerialNumber("SN-1");
+
+        when(stockMapper.updateDetails(eq(STOCK_EXTERNAL_ID), eq(user.getId()), same(form))).thenReturn(1);
+        when(stockMapper.findDetailByExternalId(STOCK_EXTERNAL_ID, user.getId())).thenReturn(Optional.of(updated));
+
+        StockDetailDTO result = stockService.updateDetails(STOCK_EXTERNAL_ID, form, USERNAME);
+
+        assertThat(result.getSerialNumber()).isEqualTo("SN-1");
+        assertThat(form.getSerialNumber()).isEqualTo("SN-1");
+        assertThat(form.getLotNumber()).isNull();
+    }
+
+    @Test
+    void updateDetails_rejectsMissingOrUnauthorizedStock() {
+        StockUpdateForm form = new StockUpdateForm();
+        when(stockMapper.updateDetails(eq(STOCK_EXTERNAL_ID), eq(user.getId()), same(form))).thenReturn(0);
+
+        assertThatThrownBy(() -> stockService.updateDetails(STOCK_EXTERNAL_ID, form, USERNAME))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("수정 가능한 재고");
     }
 
     private StockForm stockForm(UUID itemExternalId, UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId) {

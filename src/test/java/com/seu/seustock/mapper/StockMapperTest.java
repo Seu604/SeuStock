@@ -7,8 +7,10 @@ import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
+import com.seu.seustock.model.dto.StockDetailDTO;
 import com.seu.seustock.model.dto.StockPanelDTO;
 import com.seu.seustock.model.dto.UserDTO;
+import com.seu.seustock.model.form.StockUpdateForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
@@ -376,5 +378,61 @@ class StockMapperTest {
         stockMapper.deleteInStockByItemAndBox(itemId, boxId);
 
         assertThat(stockMapper.findInStockByItemAndBox(itemId, boxId)).isEmpty();
+    }
+
+    @Test
+    void searchDetails_returnsUserOwnedInStockUnits() {
+        StockDTO stock = buildStockOnBox();
+        stock.setSerialNumber("SN-001");
+        stockMapper.insertStock(stock);
+        StockDTO dispatched = buildStockOnBox();
+        stockMapper.insertStock(dispatched);
+        stockMapper.updateStatusIfInStock(dispatched.getId(), StockStatus.DISPATCHED);
+
+        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null);
+
+        assertThat(details).hasSize(1);
+        assertThat(details.get(0).getExternalId()).isNotNull();
+        assertThat(details.get(0).getItemName()).isEqualTo("노트북");
+        assertThat(details.get(0).getSpaceName()).isEqualTo("창고");
+        assertThat(details.get(0).getShelfName()).isEqualTo("A선반");
+        assertThat(details.get(0).getBoxName()).isEqualTo("1번박스");
+        assertThat(details.get(0).getSerialNumber()).isEqualTo("SN-001");
+    }
+
+    @Test
+    void searchDetails_filtersByItemAndLocationExternalIds() {
+        StockDTO spaceStock = buildStock();
+        stockMapper.insertStock(spaceStock);
+        StockDTO boxStock = buildStockOnBox();
+        stockMapper.insertStock(boxStock);
+
+        var item = itemMapper.findById(itemId).orElseThrow();
+        var space = spaceMapper.findById(spaceId).orElseThrow();
+        var shelf = shelfMapper.findById(shelfId).orElseThrow();
+        var box = boxMapper.findById(boxId).orElseThrow();
+
+        List<StockDetailDTO> details = stockMapper.searchDetails(
+                userId, item.getExternalId(), space.getExternalId(), shelf.getExternalId(), box.getExternalId());
+
+        assertThat(details).hasSize(1);
+        assertThat(details.get(0).getBoxName()).isEqualTo("1번박스");
+    }
+
+    @Test
+    void updateDetails_updatesOnlyOwnedInStockUnit() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+        StockUpdateForm form = new StockUpdateForm();
+        form.setSerialNumber("SN-UPDATED");
+        form.setLotNumber("LOT-A");
+
+        int updated = stockMapper.updateDetails(externalId, userId, form);
+
+        assertThat(updated).isEqualTo(1);
+        StockDTO found = stockMapper.findById(stock.getId()).orElseThrow();
+        assertThat(found.getSerialNumber()).isEqualTo("SN-UPDATED");
+        assertThat(found.getLotNumber()).isEqualTo("LOT-A");
     }
 }

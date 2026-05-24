@@ -34,17 +34,26 @@
         </button>
     </form>
 
-    <!-- 공간 목록 카드 -->
-    <div class="flex flex-col gap-3" id="space-list" th:fragment="space-list">
+    <!-- 공간 목록 -->
+    <div id="space-list"
+         th:fragment="space-list"
+         class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <div class="hidden md:grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_8rem] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div>공간</div>
+            <div>등록일</div>
+            <div class="text-right">관리</div>
+        </div>
 
         <div th:if="${spaces.empty}"
-             class="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-400">
+             class="px-4 py-10 text-center text-sm text-slate-400">
             등록된 공간이 없습니다. 위에서 추가해보세요.
         </div>
 
-        <th:block th:each="space : ${spaces}">
-            <th:block th:replace="~{spaces/fragments/row :: view}"></th:block>
-        </th:block>
+        <div th:if="${!spaces.empty}" class="divide-y divide-slate-100">
+            <th:block th:each="space : ${spaces}">
+                <th:block th:replace="~{spaces/fragments/row :: view}"></th:block>
+            </th:block>
+        </div>
 
     </div>
 
