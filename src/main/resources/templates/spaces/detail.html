@@ -73,6 +73,17 @@
             if (arrow) arrow.textContent = '▶';
         }
     }
+
+    document.body.addEventListener('htmx:afterSwap', function (event) {
+        if (!event.detail.target || event.detail.target.id !== 'modal') return;
+        initImageUpload({
+            fileInputSelector:  '#modal input[name="imageFile"]',
+            previewSelector:    '#quick-image-preview',
+            hashInputSelector:  '#quick-image-hash',
+            submitSelector:     '#quick-submit-btn',
+            labelTextSelector:  '#image-label-text'
+        }, event.detail.target);
+    });
 </script>
 
 </body>

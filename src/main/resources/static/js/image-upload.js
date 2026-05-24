@@ -1,3 +1,30 @@
+function toWebP(file, quality) {
+    return new Promise(function (resolve) {
+        if (file.type === 'image/webp' || file.type === 'image/gif') {
+            resolve(null);
+            return;
+        }
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+            URL.revokeObjectURL(url);
+            try {
+                var canvas = document.createElement('canvas');
+                canvas.width  = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                canvas.toBlob(function (blob) {
+                    resolve(blob ? new File([blob], 'image.webp', { type: 'image/webp' }) : null);
+                }, 'image/webp', quality);
+            } catch (e) {
+                resolve(null);
+            }
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); resolve(null); };
+        img.src = url;
+    });
+}
+
 /**
  * Initializes image preview, SHA-256 hash computation, and submit button
  * idempotency guard for a file input element.
@@ -23,7 +50,8 @@ function initImageUpload(config, root) {
                        ? scope.querySelector(config.labelTextSelector)
                        : null;
 
-    if (!fileInput) return;
+    if (!fileInput || fileInput.dataset.imageUploadInitialized === 'true') return;
+    fileInput.dataset.imageUploadInitialized = 'true';
 
     fileInput.addEventListener('change', async function () {
         var file = this.files[0];
@@ -33,18 +61,30 @@ function initImageUpload(config, root) {
         if (labelText)   labelText.textContent = file ? file.name : '사진을 선택하세요';
         if (!file) return;
 
+        var converted = await toWebP(file, 0.85);
+        var effectiveFile = file;
+
+        if (converted) {
+            try {
+                var dt = new DataTransfer();
+                dt.items.add(converted);
+                fileInput.files = dt.files;
+                effectiveFile = converted;
+            } catch (e) {
+                // DataTransfer 미지원 환경 — 원본 유지
+            }
+        }
+
         if (previewImg) {
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                previewImg.src = e.target.result;
-                previewImg.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
+            var objUrl = URL.createObjectURL(effectiveFile);
+            previewImg.onload = function () { URL.revokeObjectURL(objUrl); };
+            previewImg.src = objUrl;
+            previewImg.classList.remove('hidden');
         }
 
         if (hashInput && window.crypto && crypto.subtle) {
             try {
-                var buf    = await file.arrayBuffer();
+                var buf    = await effectiveFile.arrayBuffer();
                 var digest = await crypto.subtle.digest('SHA-256', buf);
                 hashInput.value = Array.from(new Uint8Array(digest))
                     .map(function (b) { return b.toString(16).padStart(2, '0'); })
