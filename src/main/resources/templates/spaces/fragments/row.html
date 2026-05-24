@@ -2,48 +2,43 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!-- 읽기 모드 행 -->
-<tr th:fragment="view" th:id="'space-' + ${space.externalId}">
-    <td class="px-4 py-3 text-sm text-slate-800">
+<!-- 읽기 모드 카드 -->
+<div th:fragment="view" th:id="'space-' + ${space.externalId}"
+     class="rounded-lg border border-slate-200 bg-white p-4 flex items-center justify-between">
+    <div class="min-w-0">
         <a th:href="@{/spaces/{id}(id=${space.externalId})}"
-           class="text-blue-600 hover:underline font-medium"
+           class="block truncate text-sm font-medium text-blue-600 hover:underline"
            th:text="${space.name}"></a>
-    </td>
-    <td class="px-4 py-3 text-sm text-slate-500"
-        th:text="${#temporals.format(space.createdAt, 'yyyy-MM-dd')}"></td>
-    <td class="px-4 py-3 text-sm flex gap-2">
-        <button class="text-blue-600 hover:text-blue-800 transition"
-                th:attr="hx-get=@{/spaces/{id}/edit(id=${space.externalId})}"
-                hx-target="closest tr"
+        <p class="mt-0.5 text-xs text-slate-400"
+           th:text="${#temporals.format(space.createdAt, 'yyyy-MM-dd')}"></p>
+    </div>
+    <div class="ml-4 flex shrink-0 items-center gap-3">
+        <button class="text-sm text-blue-600 hover:text-blue-800 transition"
+                th:attr="hx-get=@{/spaces/{id}/edit(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
                 hx-swap="outerHTML">수정</button>
-        <button class="text-red-500 hover:text-red-700 transition"
+        <button class="text-sm text-red-500 hover:text-red-700 transition"
                 th:attr="hx-delete=@{/spaces/{id}(id=${space.externalId})},hx-confirm=|'${space.name}' 공간을 삭제하시겠습니까?|"
                 hx-target="#space-list"
                 hx-swap="outerHTML">삭제</button>
-    </td>
-</tr>
+    </div>
+</div>
 
-<!-- 수정 모드 행 -->
-<tr th:fragment="edit" th:id="'space-' + ${space.externalId}">
-    <td class="px-4 py-3">
-        <input type="text" name="name" th:value="${space.name}"
-               class="w-full rounded-md border border-slate-300 px-2 py-1 text-sm
-                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-    </td>
-    <td class="px-4 py-3 text-sm text-slate-500"
-        th:text="${#temporals.format(space.createdAt, 'yyyy-MM-dd')}"></td>
-    <td class="px-4 py-3 text-sm flex gap-2">
-        <button class="text-blue-600 hover:text-blue-800 transition"
-                th:attr="hx-put=@{/spaces/{id}(id=${space.externalId})}"
-                hx-target="closest tr"
+<!-- 수정 모드 카드 -->
+<div th:fragment="edit" th:id="'space-' + ${space.externalId}"
+     class="rounded-lg border border-blue-300 bg-white p-4 flex items-center gap-3">
+    <input type="text" name="name" th:value="${space.name}"
+           class="flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    <div class="flex shrink-0 items-center gap-3">
+        <button class="text-sm text-blue-600 hover:text-blue-800 transition"
+                th:attr="hx-put=@{/spaces/{id}(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
                 hx-swap="outerHTML"
-                hx-include="closest tr">저장</button>
-        <button class="text-slate-500 hover:text-slate-700 transition"
-                th:attr="hx-get=@{/spaces/{id}/cancel(id=${space.externalId})}"
-                hx-target="closest tr"
+                hx-include="closest div[id]">저장</button>
+        <button class="text-sm text-slate-500 hover:text-slate-700 transition"
+                th:attr="hx-get=@{/spaces/{id}/cancel(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
                 hx-swap="outerHTML">취소</button>
-    </td>
-</tr>
+    </div>
+</div>
 
 </body>
 </html>

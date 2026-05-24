@@ -32,11 +32,7 @@
         <!-- 입고 섹션 -->
         <div id="action-section-in">
             <p class="text-sm text-slate-500 mb-3">입고할 수량을 입력해주세요.</p>
-            <form method="post"
-                  hx-post="/stocks/in"
-                  hx-target="#stock-panel"
-                  hx-swap="outerHTML"
-                  hx-confirm="입고 처리하시겠습니까?">
+            <form id="in-form">
                 <input type="hidden" name="itemExternalId"  th:value="${itemExternalId}">
                 <input type="hidden" name="spaceExternalId" th:value="${spaceExternalId}">
                 <input type="hidden" name="shelfExternalId" th:value="${shelfExternalId}">
@@ -55,14 +51,17 @@
                            placeholder="예: 발주 입고">
                 </div>
                 <div class="flex gap-2 justify-end">
-                    <!-- hx-disinherit로 부모 form의 hx-confirm 상속 차단 -->
                     <button type="button"
                             hx-get="/empty" hx-target="#modal" hx-swap="outerHTML"
-                            hx-disinherit="hx-confirm"
                             class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition">
                         취소
                     </button>
-                    <button type="submit"
+                    <button type="button"
+                            hx-post="/stocks/in"
+                            hx-include="#in-form"
+                            hx-target="#stock-panel"
+                            hx-swap="outerHTML"
+                            hx-confirm="입고 처리하시겠습니까?"
                             class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
                         입고
                     </button>
@@ -73,11 +72,7 @@
         <!-- 출고 섹션 -->
         <div id="action-section-out" class="hidden">
             <p class="text-sm text-slate-500 mb-3">출고할 수량을 입력해주세요.</p>
-            <form method="post"
-                  hx-post="/stocks/out"
-                  hx-target="#stock-panel"
-                  hx-swap="outerHTML"
-                  hx-confirm="출고 처리하시겠습니까?">
+            <form id="out-form">
                 <input type="hidden" name="itemExternalId"  th:value="${itemExternalId}">
                 <input type="hidden" name="spaceExternalId" th:value="${spaceExternalId}">
                 <input type="hidden" name="shelfExternalId" th:value="${shelfExternalId}">
@@ -98,11 +93,15 @@
                 <div class="flex gap-2 justify-end">
                     <button type="button"
                             hx-get="/empty" hx-target="#modal" hx-swap="outerHTML"
-                            hx-disinherit="hx-confirm"
                             class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition">
                         취소
                     </button>
-                    <button type="submit"
+                    <button type="button"
+                            hx-post="/stocks/out"
+                            hx-include="#out-form"
+                            hx-target="#stock-panel"
+                            hx-swap="outerHTML"
+                            hx-confirm="출고 처리하시겠습니까?"
                             class="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700 transition">
                         출고
                     </button>

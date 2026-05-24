@@ -48,6 +48,17 @@ public class BoxService {
         return boxMapper.findById(box.getId()).orElseThrow();
     }
 
+    public void rename(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, BoxForm form, String username) {
+        ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
+        BoxDTO box = boxMapper.findByExternalId(boxExternalId)
+                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+        if (!box.getShelfId().equals(shelf.getId())) {
+            throw new SecurityException("접근 권한이 없습니다.");
+        }
+        box.setName(form.getName());
+        boxMapper.updateBox(box);
+    }
+
     public void delete(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
         ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
         BoxDTO box = boxMapper.findByExternalId(boxExternalId)

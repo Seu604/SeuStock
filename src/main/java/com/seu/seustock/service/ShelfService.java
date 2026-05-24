@@ -43,6 +43,15 @@ public class ShelfService {
         return shelfMapper.findById(shelf.getId()).orElseThrow();
     }
 
+    public ShelfDTO rename(UUID spaceExternalId, UUID shelfExternalId, ShelfForm form, String username) {
+        SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
+        ShelfDTO shelf = getShelf(shelfExternalId);
+        verifyShelfOwnership(shelf, space);
+        shelf.setName(form.getName());
+        shelfMapper.updateShelf(shelf);
+        return shelfMapper.findById(shelf.getId()).orElseThrow();
+    }
+
     public void delete(UUID spaceExternalId, UUID shelfExternalId, String username) {
         SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
         ShelfDTO shelf = getShelf(shelfExternalId);

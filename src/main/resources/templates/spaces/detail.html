@@ -12,19 +12,10 @@
 <main class="mx-auto w-full max-w-5xl px-4 py-10">
 
     <!-- 헤더 -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-y-2">
-        <div class="flex items-center gap-2 text-sm text-slate-500">
-            <a href="/spaces" class="hover:text-slate-800 transition">내 공간</a>
-            <span>›</span>
-            <span class="font-semibold text-slate-800" th:text="${space.name}"></span>
-        </div>
-        <button th:attr="hx-get=@{/spaces/{id}/shelves/new(id=${space.externalId})}"
-                hx-target="#modal"
-                hx-swap="outerHTML"
-                class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white
-                       hover:bg-blue-700 transition">
-            + 선반 추가
-        </button>
+    <div class="mb-6 flex items-center gap-2 text-sm text-slate-500">
+        <a href="/spaces" class="hover:text-slate-800 transition">내 공간</a>
+        <span>›</span>
+        <span class="font-semibold text-slate-800" th:text="${space.name}"></span>
     </div>
 
     <!-- 2패널 레이아웃 -->
@@ -32,20 +23,26 @@
 
         <!-- 왼쪽: 위치 트리 -->
         <div class="w-full lg:w-64 lg:shrink-0 rounded-lg border border-slate-200 bg-white overflow-hidden">
-            <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide bg-slate-50 border-b border-slate-200">
-                위치 구조
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">위치 구조</span>
+                <button th:attr="hx-get=@{/spaces/{id}/shelves/new(id=${space.externalId})}"
+                        hx-target="#modal"
+                        hx-swap="outerHTML"
+                        class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                    + 선반
+                </button>
             </div>
 
-            <ul id="shelf-list" class="py-1" th:fragment="shelf-list">
+            <ul id="shelf-list" th:fragment="shelf-list">
                 <th:block th:replace="~{spaces/fragments/shelf-list-response :: shelf-list-content}"></th:block>
             </ul>
 
             <!-- 공간 직접 재고 진입점 -->
-            <div class="border-t border-slate-100 px-3 py-2">
+            <div class="border-t border-slate-100 px-3">
                 <button th:attr="hx-get=@{/spaces/{id}/stocks(id=${space.externalId})}"
                         hx-target="#stock-panel"
                         hx-swap="outerHTML"
-                        class="w-full text-left text-xs text-slate-500 hover:text-slate-800 transition py-1">
+                        class="w-full text-left text-xs text-slate-500 hover:text-slate-800 transition py-3">
                     📦 공간 직접 재고
                 </button>
             </div>
@@ -82,7 +79,7 @@
             hashInputSelector:  '#quick-image-hash',
             submitSelector:     '#quick-submit-btn',
             labelTextSelector:  '#image-label-text'
-        }, event.detail.target);
+        });
     });
 </script>
 
