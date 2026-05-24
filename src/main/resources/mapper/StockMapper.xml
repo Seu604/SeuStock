@@ -4,6 +4,11 @@
 
 <mapper namespace="com.seu.seustock.mapper.StockMapper">
 
+    <resultMap id="ItemSpaceStockResultMap" type="ItemSpaceStockDTO">
+        <result property="spaceName" column="space_name"/>
+        <result property="count"     column="count"/>
+    </resultMap>
+
     <resultMap id="StockPanelResultMap" type="StockPanelDTO">
         <result property="itemExternalId" column="item_external_id"/>
         <result property="itemName"       column="item_name"/>
@@ -161,6 +166,19 @@
           AND shelf_id IS NULL
           AND status   = 'IN_STOCK'
     </delete>
+
+    <select id="findSpaceStockByItem" resultMap="ItemSpaceStockResultMap">
+        SELECT sp.name   AS space_name,
+               COUNT(*)  AS count
+        FROM stocks s
+        JOIN spaces sp ON s.space_id = sp.id
+        JOIN items  i  ON s.item_id  = i.id
+        WHERE i.external_id = #{itemExternalId}
+          AND i.user_id     = #{userId}
+          AND s.status      = 'IN_STOCK'
+        GROUP BY sp.id, sp.name
+        ORDER BY sp.name
+    </select>
 
     <select id="findPanelByBoxId" parameterType="long" resultMap="StockPanelResultMap">
         SELECT i.external_id AS item_external_id,

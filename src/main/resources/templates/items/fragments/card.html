@@ -8,13 +8,13 @@
      data-item-card
      class="relative rounded-lg border border-slate-200 bg-white p-4 flex flex-col gap-3">
 
-    <button class="absolute top-2 right-8 text-xs text-slate-400 hover:text-blue-600 transition"
+    <button class="absolute top-4 right-10 text-xs text-slate-400 hover:text-blue-600 transition"
             th:attr="hx-get=@{/items/{id}/history(id=${item.externalId})}"
             hx-target="#modal"
             hx-swap="outerHTML"
             aria-label="변경기록">기록</button>
 
-    <button class="absolute top-2 right-2 text-slate-400 hover:text-blue-600 transition"
+    <button class="absolute top-4 right-4 text-slate-400 hover:text-blue-600 transition"
             th:attr="hx-get=@{/items/{id}/edit(id=${item.externalId})},hx-target='#item-' + ${item.externalId}"
             hx-swap="outerHTML"
             aria-label="수정">
@@ -26,12 +26,9 @@
     </button>
 
     <div class="flex items-center gap-3">
-        <img th:if="${item.primaryImageExternalId != null}"
-             th:src="@{/images/{id}(id=${item.primaryImageExternalId})}"
+        <img th:src="${item.primaryImageExternalId != null} ? @{/images/{id}(id=${item.primaryImageExternalId})} : @{/image/item_placeholder_v2.png}"
              alt=""
              class="h-14 w-14 rounded-md object-cover border border-slate-200 shrink-0">
-        <div th:unless="${item.primaryImageExternalId != null}"
-             class="h-14 w-14 rounded-md border border-slate-200 bg-slate-50 shrink-0"></div>
         <div class="min-w-0">
             <p class="text-sm font-semibold text-slate-800 truncate" th:text="${item.name}"></p>
             <p class="text-xs text-slate-400 mt-0.5"
@@ -41,6 +38,21 @@
 
     <p class="text-sm text-slate-500 flex-1 min-h-[1.25rem]"
        th:text="${item.description != null and !item.description.isEmpty()} ? ${item.description} : '—'"></p>
+
+    <div class="flex items-center gap-2 text-xs border-t border-slate-100 pt-4">
+        <span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 font-medium"
+              th:text="'재고 ' + ${item.stockCount} + '개'"></span>
+        <span class="text-slate-300">·</span>
+        <button th:if="${item.spaceCount > 0}"
+                th:attr="hx-get=@{/items/{id}/spaces(id=${item.externalId})}"
+                hx-target="#modal"
+                hx-swap="outerHTML"
+                class="text-slate-500 underline-offset-2 hover:text-blue-600 hover:underline transition"
+                th:text="${item.spaceCount} + '개 공간'"></button>
+        <span th:if="${item.spaceCount == 0}"
+              class="text-slate-500"
+              th:text="${item.spaceCount} + '개 공간'"></span>
+    </div>
 
 </div>
 
@@ -52,8 +64,7 @@
 
     <div>
         <div class="mb-2">
-            <img th:if="${item.primaryImageExternalId != null}"
-                 th:src="@{/images/{id}(id=${item.primaryImageExternalId})}"
+            <img th:src="${item.primaryImageExternalId != null} ? @{/images/{id}(id=${item.primaryImageExternalId})} : @{/image/item_placeholder_v2.png}"
                  data-existing-image
                  alt=""
                  class="w-full h-44 rounded-md object-cover border border-slate-200">

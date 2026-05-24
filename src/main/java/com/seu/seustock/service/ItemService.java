@@ -7,6 +7,7 @@ import com.seu.seustock.mapper.StockTransactionMapper;
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ItemDTO;
+import com.seu.seustock.model.dto.ItemSpaceStockDTO;
 import com.seu.seustock.model.dto.ItemTransactionHistoryDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.ItemForm;
@@ -61,6 +62,13 @@ public class ItemService {
         itemMapper.updateItem(item);
         attachPrimaryImageIfPresent(item.getId(), getUser(username), form);
         return itemMapper.findByExternalId(externalId).orElseThrow();
+    }
+
+    public List<ItemSpaceStockDTO> findSpaceStock(UUID itemExternalId, String username) {
+        UserDTO user = getUser(username);
+        ItemDTO item = getItem(itemExternalId);
+        verifyOwner(item, username);
+        return stockMapper.findSpaceStockByItem(itemExternalId, user.getId());
     }
 
     public List<ItemTransactionHistoryDTO> findTransactionHistory(UUID itemExternalId, String username) {

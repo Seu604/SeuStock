@@ -2,6 +2,7 @@ package com.seu.seustock.mapper;
 
 import com.seu.seustock.model.StockStatus;
 import com.seu.seustock.model.dto.StockDTO;
+import com.seu.seustock.model.dto.ItemSpaceStockDTO;
 import com.seu.seustock.model.dto.StockPanelDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -35,4 +36,7 @@ public interface StockMapper {
     List<StockPanelDTO> findPanelByBoxId(Long boxId);
     List<StockPanelDTO> findPanelByShelfDirectOnly(Long shelfId);
     List<StockPanelDTO> findPanelBySpaceDirectOnly(Long spaceId);
+
+    List<ItemSpaceStockDTO> findSpaceStockByItem(@Param("itemExternalId") UUID itemExternalId,
+                                                 @Param("userId") Long userId);
 }

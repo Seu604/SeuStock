@@ -80,9 +80,18 @@ public class ItemController {
         return "items/fragments/card :: view";
     }
 
+    @GetMapping("/{externalId}/spaces")
+    public String spaces(@PathVariable UUID externalId, HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        model.addAttribute("itemName", itemService.findByExternalId(externalId, username).getName());
+        model.addAttribute("spaceStocks", itemService.findSpaceStock(externalId, username));
+        return "items/fragments/space-stock-modal :: modal";
+    }
+
     @GetMapping("/{externalId}/history")
     public String history(@PathVariable UUID externalId, HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
+        model.addAttribute("itemName", itemService.findByExternalId(externalId, username).getName());
         model.addAttribute("history", itemService.findTransactionHistory(externalId, username));
         return "items/fragments/history-modal :: modal";
     }

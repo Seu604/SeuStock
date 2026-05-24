@@ -11,12 +11,9 @@
      class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition">
 
     <!-- 썸네일 -->
-    <img th:if="${stock.displayImageExternalId != null}"
-         th:src="@{/images/{id}(id=${stock.displayImageExternalId})}"
+    <img th:src="${stock.displayImageExternalId != null} ? @{/images/{id}(id=${stock.displayImageExternalId})} : @{/image/item_placeholder_v2.png}"
          alt=""
          class="h-12 w-12 shrink-0 rounded-md object-cover border border-slate-200">
-    <span th:unless="${stock.displayImageExternalId != null}"
-          class="h-12 w-12 shrink-0 rounded-md border border-slate-200 bg-slate-50 inline-block"></span>
 
     <!-- 품목명 -->
     <div class="flex-1 min-w-0">

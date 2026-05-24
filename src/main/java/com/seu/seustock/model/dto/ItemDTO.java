@@ -19,4 +19,6 @@ public class ItemDTO {
     private boolean active;
     private UUID primaryImageExternalId;
     private LocalDateTime createdAt;
+    private int stockCount;
+    private int spaceCount;
 }

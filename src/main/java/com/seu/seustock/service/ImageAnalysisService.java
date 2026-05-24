@@ -101,21 +101,25 @@ public class ImageAnalysisService {
 
         int w = src.getWidth();
         int h = src.getHeight();
+
+        BufferedImage dst;
         if (w <= MAX_SIDE && h <= MAX_SIDE) {
-            log.debug("[ImageAnalysisService] 리사이즈 생략 ({}x{})", w, h);
-            return new ResizedImage(original, originalMimeType);
+            log.debug("[ImageAnalysisService] 리사이즈 생략, JPEG 변환만 수행 ({}x{})", w, h);
+            dst = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = dst.createGraphics();
+            g.drawImage(src, 0, 0, null);
+            g.dispose();
+        } else {
+            double scale = (double) MAX_SIDE / Math.max(w, h);
+            int nw = (int) Math.round(w * scale);
+            int nh = (int) Math.round(h * scale);
+            log.debug("[ImageAnalysisService] 리사이즈 {}x{} → {}x{}", w, h, nw, nh);
+            dst = new BufferedImage(nw, nh, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = dst.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(src, 0, 0, nw, nh, null);
+            g.dispose();
         }
-
-        double scale = (double) MAX_SIDE / Math.max(w, h);
-        int nw = (int) Math.round(w * scale);
-        int nh = (int) Math.round(h * scale);
-        log.debug("[ImageAnalysisService] 리사이즈 {}x{} → {}x{}", w, h, nw, nh);
-
-        BufferedImage dst = new BufferedImage(nw, nh, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = dst.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g.drawImage(src, 0, 0, nw, nh, null);
-        g.dispose();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(dst, "jpeg", baos);
