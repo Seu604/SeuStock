@@ -2,6 +2,7 @@ package com.seu.seustock.controller;
 
 import com.seu.seustock.configuration.HtmxResponse;
 import com.seu.seustock.model.dto.StockPanelDTO;
+import com.seu.seustock.model.enumeration.TransactionType;
 import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
@@ -234,13 +235,17 @@ public class StockController {
                              @RequestParam(required = false) UUID shelfExternalId,
                              @RequestParam(required = false) UUID boxExternalId,
                              @RequestParam(defaultValue = "0") Integer count,
+                             HttpSession session,
                              Model model) {
+        String username = (String) session.getAttribute("loginUser");
         model.addAttribute("itemName", itemName);
         model.addAttribute("itemExternalId", itemExternalId);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("boxExternalId", boxExternalId);
         model.addAttribute("currentCount", count);
+        model.addAttribute("inMemoSuggestions", stockService.findMemoSuggestions(TransactionType.IN, username));
+        model.addAttribute("outMemoSuggestions", stockService.findMemoSuggestions(TransactionType.OUT, username));
         return "stocks/fragments/action-modal :: modal";
     }
 

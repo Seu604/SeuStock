@@ -54,6 +54,20 @@
         ORDER BY created_at
     </select>
 
+    <select id="findFrequentMemosByUserIdAndType" resultType="string">
+        SELECT TRIM(st.memo) AS memo
+        FROM stock_transactions st
+        JOIN stocks s ON st.stock_id = s.id
+        JOIN items i ON s.item_id = i.id
+        WHERE i.user_id = #{userId}
+          AND st.transaction_type = #{transactionType}
+          AND st.memo IS NOT NULL
+          AND TRIM(st.memo) != ''
+        GROUP BY TRIM(st.memo)
+        ORDER BY COUNT(*) DESC, MAX(st.created_at) DESC, TRIM(st.memo)
+        LIMIT #{limit}
+    </select>
+
     <resultMap id="HistoryResultMap" type="ItemTransactionHistoryDTO">
         <result property="transactionExternalId" column="transaction_external_id"
                 typeHandler="com.seu.seustock.configuration.UUIDTypeHandler"/>

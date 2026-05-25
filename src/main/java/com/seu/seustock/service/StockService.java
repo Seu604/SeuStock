@@ -2,6 +2,7 @@ package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.*;
 import com.seu.seustock.model.enumeration.StockStatus;
+import com.seu.seustock.model.enumeration.TransactionMemoMaster;
 import com.seu.seustock.model.enumeration.TransactionType;
 import com.seu.seustock.model.dto.*;
 import com.seu.seustock.model.form.QuickStockForm;
@@ -31,6 +32,7 @@ public class StockService {
     private final BoxMapper boxMapper;
     private final UserMapper userMapper;
     private final ImageStorageService imageStorageService;
+    private static final int MEMO_SUGGESTION_LIMIT = 4;
 
     private record VerifiedLocation(SpaceDTO space, ShelfDTO shelf, BoxDTO box) {
         Long shelfId() {
@@ -85,6 +87,18 @@ public class StockService {
         UserDTO user = getUser(username);
         return stockMapper.findDetailByExternalId(externalId, user.getId())
                 .orElseThrow(() -> new NoSuchElementException("재고를 찾을 수 없습니다."));
+    }
+
+    public List<String> findMemoSuggestions(TransactionType transactionType, String username) {
+        UserDTO user = getUser(username);
+        List<String> frequentMemos = transactionMapper.findFrequentMemosByUserIdAndType(
+                user.getId(), transactionType, MEMO_SUGGESTION_LIMIT);
+        if (!frequentMemos.isEmpty()) {
+            return frequentMemos;
+        }
+        return TransactionMemoMaster.memosFor(transactionType).stream()
+                .limit(MEMO_SUGGESTION_LIMIT)
+                .toList();
     }
 
     @Transactional

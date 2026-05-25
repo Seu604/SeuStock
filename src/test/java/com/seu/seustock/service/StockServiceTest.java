@@ -214,6 +214,26 @@ class StockServiceTest {
     }
 
     @Test
+    void findMemoSuggestions_returnsFrequentUserMemos() {
+        when(transactionMapper.findFrequentMemosByUserIdAndType(user.getId(), TransactionType.OUT, 4))
+                .thenReturn(List.of("사용 출고", "폐기 출고"));
+
+        List<String> suggestions = stockService.findMemoSuggestions(TransactionType.OUT, USERNAME);
+
+        assertThat(suggestions).containsExactly("사용 출고", "폐기 출고");
+    }
+
+    @Test
+    void findMemoSuggestions_fallsBackToMasterMemosWhenUserHasNoHistory() {
+        when(transactionMapper.findFrequentMemosByUserIdAndType(user.getId(), TransactionType.IN, 4))
+                .thenReturn(List.of());
+
+        List<String> suggestions = stockService.findMemoSuggestions(TransactionType.IN, USERNAME);
+
+        assertThat(suggestions).containsExactly("구매 입고", "반품 입고", "재고 발견", "수량 보정");
+    }
+
+    @Test
     void create_happyPath_spaceOnly() {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));

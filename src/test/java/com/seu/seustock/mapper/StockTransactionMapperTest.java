@@ -52,6 +52,7 @@ class StockTransactionMapperTest {
     private Long spaceId;
     private Long shelfId;
     private Long boxId;
+    private Long userId;
 
     @BeforeEach
     void setUp() {
@@ -59,6 +60,7 @@ class StockTransactionMapperTest {
         user.setUsername("testuser");
         user.setPassword("password");
         userMapper.insertUser(user);
+        userId = user.getId();
 
         ItemDTO item = new ItemDTO();
         item.setUserId(user.getId());
@@ -157,5 +159,19 @@ class StockTransactionMapperTest {
     void findByStockId_noTransactions_returnsEmpty() {
         List<StockTransactionDTO> txList = stockTransactionMapper.findByStockId(stockId);
         assertThat(txList).isEmpty();
+    }
+
+    @Test
+    void findFrequentMemosByUserIdAndType_returnsMostUsedMemos() {
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "구매 입고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "구매 입고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "반품 입고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.OUT, "사용 출고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, " "));
+
+        List<String> memos = stockTransactionMapper.findFrequentMemosByUserIdAndType(
+                userId, TransactionType.IN, 2);
+
+        assertThat(memos).containsExactly("구매 입고", "반품 입고");
     }
 }
