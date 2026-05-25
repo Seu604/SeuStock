@@ -8,9 +8,12 @@ import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
 import com.seu.seustock.model.form.StockMoveForm;
 import com.seu.seustock.model.form.StockUpdateForm;
+import com.seu.seustock.model.dto.SpaceDTO;
+import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ItemService;
 import com.seu.seustock.service.ShelfService;
+import com.seu.seustock.service.SpaceService;
 import com.seu.seustock.service.StockService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -30,6 +33,7 @@ import java.util.UUID;
 public class StockController {
 
     private final StockService stockService;
+    private final SpaceService spaceService;
     private final ShelfService shelfService;
     private final BoxService boxService;
     private final ItemService itemService;
@@ -96,12 +100,29 @@ public class StockController {
 
     /* ── 재고 패널 조회 ── */
 
+    @GetMapping("/spaces/{spaceExternalId}/stocks/all")
+    public String panelBySpaceAll(@PathVariable UUID spaceExternalId,
+                                  @RequestParam(required = false) String keyword,
+                                  @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                                  HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
+        model.addAttribute("stocks", stockService.findPanelBySpaceAll(spaceExternalId, keyword, sortBy, username));
+        model.addAttribute("breadcrumb", space.getName() + " 전체보기");
+        model.addAttribute("spaceExternalId", spaceExternalId);
+        model.addAttribute("isAllView", true);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
+        return "stocks/fragments/panel :: stock-panel";
+    }
+
     @GetMapping("/spaces/{spaceExternalId}/stocks")
     public String panelBySpace(@PathVariable UUID spaceExternalId,
                                HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
+        SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
         model.addAttribute("stocks", stockService.findPanelBySpace(spaceExternalId, username));
-        model.addAttribute("breadcrumb", "공간 직접 재고");
+        model.addAttribute("breadcrumb", space.getName() + "에 대충 던져놓은 물건들");
         model.addAttribute("spaceExternalId", spaceExternalId);
         return "stocks/fragments/panel :: stock-panel";
     }
@@ -111,8 +132,9 @@ public class StockController {
                                @PathVariable UUID shelfExternalId,
                                HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
+        ShelfDTO shelf = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username);
         model.addAttribute("stocks", stockService.findPanelByShelf(spaceExternalId, shelfExternalId, username));
-        model.addAttribute("breadcrumb", shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName() + " (선반 직접 재고)");
+        model.addAttribute("breadcrumb", shelf.getName());
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
         return "stocks/fragments/panel :: stock-panel";
@@ -351,10 +373,11 @@ public class StockController {
         } else if (shelfExternalId != null) {
             String shelfName = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName();
             stocks = stockService.findPanelByShelf(spaceExternalId, shelfExternalId, username);
-            breadcrumb = shelfName + " (선반 직접 재고)";
+            breadcrumb = shelfName;
         } else {
+            SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
             stocks = stockService.findPanelBySpace(spaceExternalId, username);
-            breadcrumb = "공간 직접 재고";
+            breadcrumb = space.getName() + "에 대충 던져놓은 물건들";
         }
         model.addAttribute("stocks", stocks);
         model.addAttribute("breadcrumb", breadcrumb);
@@ -367,8 +390,9 @@ public class StockController {
     private List<MoveLocationOption> buildMoveLocationOptions(StockMoveForm form, String username) {
         List<MoveLocationOption> options = new java.util.ArrayList<>();
         UUID spaceExternalId = form.getSourceSpaceExternalId();
+        String spaceName = spaceService.findByExternalId(spaceExternalId, username).getName();
         options.add(new MoveLocationOption(
-                "공간 직접 재고",
+                spaceName + "에 대충 던져놓은 물건들",
                 spaceExternalId,
                 null,
                 null,
@@ -376,7 +400,7 @@ public class StockController {
 
         for (var shelf : shelfService.findAllBySpaceId(spaceExternalId, username)) {
             options.add(new MoveLocationOption(
-                    shelf.getName() + " (선반 직접 재고)",
+                    shelf.getName(),
                     spaceExternalId,
                     shelf.getExternalId(),
                     null,

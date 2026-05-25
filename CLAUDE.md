@@ -126,7 +126,7 @@ com.seu.seustock
 
 ## Database schema
 
-Source of truth: `docker/postgres/init/init.sql` (used for Docker container initialization). The file `data/init-v1.sql` is a formatting-only copy — keep them in sync on every schema change.
+Source of truth: `src/main/resources/db/migration/` 의 버전 파일들. Flyway가 앱 시작 시 PostgreSQL에 마이그레이션을 적용한다. 스키마 변경 시 `VN__description.sql` 파일을 새로 추가한다 (예: `V2__add_tags.sql`). `docker/postgres/init/init.sql`은 더 이상 사용되지 않는다.
 
 Domain hierarchy (physical storage):
 ```

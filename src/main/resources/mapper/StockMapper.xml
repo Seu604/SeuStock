@@ -365,4 +365,59 @@
         GROUP BY i.id, i.external_id, i.name
     </select>
 
+    <select id="findPanelBySpaceAllWithOptions" resultMap="StockPanelResultMap">
+        SELECT i.external_id AS item_external_id,
+               i.name AS item_name,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS display_image_external_id,
+               COUNT(*) AS count
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.space_id = #{spaceId}
+          AND s.status = 'IN_STOCK'
+          <if test="keyword != null and keyword != ''">
+              AND i.name LIKE CONCAT('%', #{keyword}, '%')
+          </if>
+        GROUP BY i.id, i.external_id, i.name
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'oldest'">
+                (SELECT MIN(st.created_at)
+                 FROM stock_transactions st
+                 JOIN stocks sk ON sk.id = st.stock_id
+                 WHERE sk.item_id = i.id AND sk.space_id = #{spaceId}) ASC NULLS LAST,
+                i.name ASC
+            </when>
+            <when test="sortBy == 'inFreq'">
+                (SELECT COUNT(*)
+                 FROM stock_transactions st
+                 JOIN stocks sk ON sk.id = st.stock_id
+                 WHERE sk.item_id = i.id AND sk.space_id = #{spaceId}
+                   AND st.transaction_type = 'IN') DESC,
+                i.name ASC
+            </when>
+            <when test="sortBy == 'outFreq'">
+                (SELECT COUNT(*)
+                 FROM stock_transactions st
+                 JOIN stocks sk ON sk.id = st.stock_id
+                 WHERE sk.item_id = i.id AND sk.space_id = #{spaceId}
+                   AND st.transaction_type = 'OUT') DESC,
+                i.name ASC
+            </when>
+            <otherwise>
+                (SELECT MAX(st.created_at)
+                 FROM stock_transactions st
+                 JOIN stocks sk ON sk.id = st.stock_id
+                 WHERE sk.item_id = i.id AND sk.space_id = #{spaceId}) DESC NULLS LAST,
+                i.name ASC
+            </otherwise>
+        </choose>
+    </select>
+
 </mapper>

@@ -45,6 +45,9 @@ public interface StockMapper {
     List<StockPanelDTO> findPanelByBoxId(Long boxId);
     List<StockPanelDTO> findPanelByShelfDirectOnly(Long shelfId);
     List<StockPanelDTO> findPanelBySpaceDirectOnly(Long spaceId);
+    List<StockPanelDTO> findPanelBySpaceAllWithOptions(@Param("spaceId") Long spaceId,
+                                                       @Param("keyword") String keyword,
+                                                       @Param("sortBy") String sortBy);
 
     List<ItemSpaceStockDTO> findSpaceStockByItem(@Param("itemExternalId") UUID itemExternalId,
                                                  @Param("userId") Long userId);

@@ -52,6 +52,13 @@ public class StockService {
         return stockMapper.findPanelBySpaceDirectOnly(space.getId());
     }
 
+    public List<StockPanelDTO> findPanelBySpaceAll(UUID spaceExternalId, String keyword, String sortBy, String username) {
+        UserDTO user = getUser(username);
+        SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
+        String effectiveSort = (sortBy == null || sortBy.isBlank()) ? "newest" : sortBy;
+        return stockMapper.findPanelBySpaceAllWithOptions(space.getId(), keyword, effectiveSort);
+    }
+
     public List<StockPanelDTO> findPanelByShelf(UUID spaceExternalId, UUID shelfExternalId, String username) {
         UserDTO user = getUser(username);
         SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
