@@ -162,11 +162,40 @@ class StockTransactionMapperTest {
     }
 
     @Test
+    void insertTransactions_batchInsert() {
+        StockDTO stock2 = new StockDTO();
+        stock2.setItemId(stockMapper.findById(stockId).orElseThrow().getItemId());
+        stock2.setSpaceId(spaceId);
+        stockMapper.insertStock(stock2);
+
+        List<StockTransactionDTO> txs = List.of(
+                buildTransaction(TransactionType.IN, "일괄 입고 1"),
+                buildTransaction(TransactionType.IN, "일괄 입고 2")
+        );
+        txs.get(1).setStockId(stock2.getId());
+        stockTransactionMapper.insertTransactions(txs);
+
+        assertThat(stockTransactionMapper.findByStockId(stockId)).hasSize(1);
+        assertThat(stockTransactionMapper.findByStockId(stock2.getId())).hasSize(1);
+    }
+
+    @Test
+    void insertTransactions_batchInsert_singleTransaction() {
+        List<StockTransactionDTO> txs = List.of(buildTransaction(TransactionType.OUT, "단건 배치"));
+        stockTransactionMapper.insertTransactions(txs);
+
+        assertThat(stockTransactionMapper.findByStockId(stockId)).hasSize(1);
+        assertThat(stockTransactionMapper.findByStockId(stockId).get(0).getMemo()).isEqualTo("단건 배치");
+    }
+
+    @Test
     void findFrequentMemosByUserIdAndType_returnsMostUsedMemos() {
         stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "구매 입고"));
         stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "구매 입고"));
         stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "반품 입고"));
         stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.OUT, "사용 출고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "초기 등록"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "빠른 등록"));
         stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, " "));
 
         List<String> memos = stockTransactionMapper.findFrequentMemosByUserIdAndType(

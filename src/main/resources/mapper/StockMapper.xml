@@ -57,6 +57,16 @@
         VALUES (#{itemId}, #{spaceId}, #{shelfId}, #{boxId}, #{serialNumber}, #{lotNumber}, #{expirationDate}, #{memo}, 'IN_STOCK')
     </insert>
 
+    <insert id="insertStocks" parameterType="list"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, serial_number, lot_number, expiration_date, memo, status)
+        VALUES
+        <foreach collection="list" item="s" separator=",">
+            (#{s.itemId}, #{s.spaceId}, #{s.shelfId}, #{s.boxId},
+             #{s.serialNumber}, #{s.lotNumber}, #{s.expirationDate}, #{s.memo}, 'IN_STOCK')
+        </foreach>
+    </insert>
+
     <select id="findById" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
                serial_number, lot_number, expiration_date, memo, status, created_at

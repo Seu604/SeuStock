@@ -14,10 +14,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -45,12 +47,14 @@ public class StockService {
     }
 
     public List<StockPanelDTO> findPanelBySpace(UUID spaceExternalId, String username) {
-        SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
+        UserDTO user = getUser(username);
+        SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
         return stockMapper.findPanelBySpaceDirectOnly(space.getId());
     }
 
     public List<StockPanelDTO> findPanelByShelf(UUID spaceExternalId, UUID shelfExternalId, String username) {
-        SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
+        UserDTO user = getUser(username);
+        SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)
                 .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
         if (!shelf.getSpaceId().equals(space.getId())) {
@@ -60,7 +64,8 @@ public class StockService {
     }
 
     public List<StockPanelDTO> findPanelByBox(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
-        SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
+        UserDTO user = getUser(username);
+        SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)
                 .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
         if (!shelf.getSpaceId().equals(space.getId())) {
@@ -93,10 +98,8 @@ public class StockService {
         UserDTO user = getUser(username);
         List<String> frequentMemos = transactionMapper.findFrequentMemosByUserIdAndType(
                 user.getId(), transactionType, MEMO_SUGGESTION_LIMIT);
-        if (!frequentMemos.isEmpty()) {
-            return frequentMemos;
-        }
-        return TransactionMemoMaster.memosFor(transactionType).stream()
+        return Stream.concat(frequentMemos.stream(), TransactionMemoMaster.memosFor(transactionType).stream())
+                .distinct()
                 .limit(MEMO_SUGGESTION_LIMIT)
                 .toList();
     }
@@ -115,13 +118,15 @@ public class StockService {
 
     @Transactional
     public void create(StockForm form, String username) {
-        ItemDTO item = getVerifiedItem(form.getItemExternalId(), username);
+        UserDTO user = getUser(username);
+        ItemDTO item = getVerifiedItem(form.getItemExternalId(), user);
         VerifiedLocation location = resolveVerifiedLocation(
                 form.getSpaceExternalId(),
                 form.getShelfExternalId(),
                 form.getBoxExternalId(),
-                username);
+                user);
 
+        List<StockDTO> units = new ArrayList<>(form.getCount());
         for (int i = 0; i < form.getCount(); i++) {
             StockDTO unit = new StockDTO();
             unit.setItemId(item.getId());
@@ -131,14 +136,20 @@ public class StockService {
             unit.setSerialNumber(form.getCount() == 1 ? form.getSerialNumber() : null);
             unit.setLotNumber(form.getLotNumber());
             unit.setExpirationDate(form.getExpirationDate());
-            stockMapper.insertStock(unit);
+            units.add(unit);
+        }
+        stockMapper.insertStocks(units);
 
+        String memo = form.getMemo() != null ? form.getMemo() : "초기 등록";
+        List<StockTransactionDTO> txs = new ArrayList<>(units.size());
+        for (StockDTO unit : units) {
             StockTransactionDTO tx = new StockTransactionDTO();
             tx.setStockId(unit.getId());
             tx.setTransactionType(TransactionType.IN);
-            tx.setMemo(form.getMemo() != null ? form.getMemo() : "초기 등록");
-            transactionMapper.insertTransaction(tx);
+            tx.setMemo(memo);
+            txs.add(tx);
         }
+        transactionMapper.insertTransactions(txs);
     }
 
     @Transactional
@@ -153,57 +164,72 @@ public class StockService {
         attachPrimaryImageIfPresent(item.getId(), user, form);
 
         VerifiedLocation location = resolveVerifiedLocation(
-                form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username);
+                form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), user);
 
+        List<StockDTO> units = new ArrayList<>(form.getCount());
         for (int i = 0; i < form.getCount(); i++) {
             StockDTO unit = new StockDTO();
             unit.setItemId(item.getId());
             unit.setSpaceId(location.space().getId());
             unit.setShelfId(location.shelfId());
             unit.setBoxId(location.boxId());
-            stockMapper.insertStock(unit);
+            units.add(unit);
+        }
+        stockMapper.insertStocks(units);
 
+        String memo = form.getMemo() != null ? form.getMemo() : "빠른 등록";
+        List<StockTransactionDTO> txs = new ArrayList<>(units.size());
+        for (StockDTO unit : units) {
             StockTransactionDTO tx = new StockTransactionDTO();
             tx.setStockId(unit.getId());
             tx.setTransactionType(TransactionType.IN);
-            tx.setMemo(form.getMemo() != null ? form.getMemo() : "빠른 등록");
-            transactionMapper.insertTransaction(tx);
+            tx.setMemo(memo);
+            txs.add(tx);
         }
+        transactionMapper.insertTransactions(txs);
     }
 
     @Transactional
     public void addUnits(StockInOutForm form, String username) {
-        ItemDTO item = getVerifiedItem(form.getItemExternalId(), username);
+        UserDTO user = getUser(username);
+        ItemDTO item = getVerifiedItem(form.getItemExternalId(), user);
         VerifiedLocation location = resolveVerifiedLocation(
                 form.getSpaceExternalId(),
                 form.getShelfExternalId(),
                 form.getBoxExternalId(),
-                username);
+                user);
 
+        List<StockDTO> units = new ArrayList<>(form.getCount());
         for (int i = 0; i < form.getCount(); i++) {
             StockDTO unit = new StockDTO();
             unit.setItemId(item.getId());
             unit.setSpaceId(location.space().getId());
             unit.setShelfId(location.shelfId());
             unit.setBoxId(location.boxId());
-            stockMapper.insertStock(unit);
+            units.add(unit);
+        }
+        stockMapper.insertStocks(units);
 
+        List<StockTransactionDTO> txs = new ArrayList<>(units.size());
+        for (StockDTO unit : units) {
             StockTransactionDTO tx = new StockTransactionDTO();
             tx.setStockId(unit.getId());
             tx.setTransactionType(TransactionType.IN);
             tx.setMemo(form.getMemo());
-            transactionMapper.insertTransaction(tx);
+            txs.add(tx);
         }
+        transactionMapper.insertTransactions(txs);
     }
 
     @Transactional
     public void dispatchUnits(StockInOutForm form, String username) {
-        ItemDTO item = getVerifiedItem(form.getItemExternalId(), username);
+        UserDTO user = getUser(username);
+        ItemDTO item = getVerifiedItem(form.getItemExternalId(), user);
         VerifiedLocation location = resolveVerifiedLocation(
                 form.getSpaceExternalId(),
                 form.getShelfExternalId(),
                 form.getBoxExternalId(),
-                username);
+                user);
 
         List<StockDTO> units;
         if (location.box() != null) {
@@ -234,23 +260,24 @@ public class StockService {
 
     @Transactional
     public void moveUnits(StockMoveForm form, String username) {
+        UserDTO user = getUser(username);
         VerifiedLocation source = resolveVerifiedLocation(
                 form.getSourceSpaceExternalId(),
                 form.getSourceShelfExternalId(),
                 form.getSourceBoxExternalId(),
-                username);
+                user);
         VerifiedLocation target = resolveVerifiedLocation(
                 form.getTargetSpaceExternalId(),
                 form.getTargetShelfExternalId(),
                 form.getTargetBoxExternalId(),
-                username);
+                user);
 
         if (isSameLocation(source, target)) {
             throw new IllegalArgumentException("같은 위치로는 이동할 수 없습니다.");
         }
 
         for (StockMoveForm.Item moveItem : form.getItems()) {
-            ItemDTO item = getVerifiedItem(moveItem.getItemExternalId(), username);
+            ItemDTO item = getVerifiedItem(moveItem.getItemExternalId(), user);
             List<StockDTO> candidates = findInStockUnits(item.getId(), source);
             if (candidates.size() < moveItem.getCount()) {
                 throw new IllegalArgumentException(
@@ -283,8 +310,9 @@ public class StockService {
 
     @Transactional
     public void deleteUnits(UUID itemExternalId, UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
-        ItemDTO item = getVerifiedItem(itemExternalId, username);
-        VerifiedLocation location = resolveVerifiedLocation(spaceExternalId, shelfExternalId, boxExternalId, username);
+        UserDTO user = getUser(username);
+        ItemDTO item = getVerifiedItem(itemExternalId, user);
+        VerifiedLocation location = resolveVerifiedLocation(spaceExternalId, shelfExternalId, boxExternalId, user);
 
         if (location.box() != null) {
             stockMapper.deleteInStockByItemAndBox(item.getId(), location.box().getId());
@@ -304,18 +332,17 @@ public class StockService {
         }
     }
 
-    private ItemDTO getVerifiedItem(UUID itemExternalId, String username) {
+    private ItemDTO getVerifiedItem(UUID itemExternalId, UserDTO user) {
         ItemDTO item = itemMapper.findByExternalId(itemExternalId)
                 .orElseThrow(() -> new NoSuchElementException("품목을 찾을 수 없습니다."));
-        verifyItemOwner(item, username);
+        verifyItemOwner(item, user);
         if (!item.isActive()) {
             throw new IllegalStateException("비활성화된 품목은 재고 작업을 할 수 없습니다.");
         }
         return item;
     }
 
-    private void verifyItemOwner(ItemDTO item, String username) {
-        UserDTO user = getUser(username);
+    private void verifyItemOwner(ItemDTO item, UserDTO user) {
         if (!item.getUserId().equals(user.getId())) {
             throw new SecurityException("접근 권한이 없습니다.");
         }
@@ -324,8 +351,8 @@ public class StockService {
     private VerifiedLocation resolveVerifiedLocation(UUID spaceExternalId,
                                                      UUID shelfExternalId,
                                                      UUID boxExternalId,
-                                                     String username) {
-        SpaceDTO space = getVerifiedSpace(spaceExternalId, username);
+                                                     UserDTO user) {
+        SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
         ShelfDTO shelf = null;
         BoxDTO box = null;
 
@@ -368,10 +395,9 @@ public class StockService {
                 && Objects.equals(source.boxId(), target.boxId());
     }
 
-    private SpaceDTO getVerifiedSpace(UUID spaceExternalId, String username) {
+    private SpaceDTO getVerifiedSpace(UUID spaceExternalId, UserDTO user) {
         SpaceDTO space = spaceMapper.findByExternalId(spaceExternalId)
                 .orElseThrow(() -> new NoSuchElementException("공간을 찾을 수 없습니다."));
-        UserDTO user = getUser(username);
         if (!space.getUserId().equals(user.getId())) {
             throw new SecurityException("접근 권한이 없습니다.");
         }

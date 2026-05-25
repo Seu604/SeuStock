@@ -150,20 +150,23 @@ class StockServiceTest {
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
         doAnswer(invocation -> {
-            StockDTO stock = invocation.getArgument(0);
-            stock.setId(500L);
+            List<StockDTO> stocks = invocation.getArgument(0);
+            stocks.forEach(s -> s.setId(500L));
             return null;
-        }).when(stockMapper).insertStock(any());
+        }).when(stockMapper).insertStocks(anyList());
 
         stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, BOX_EXTERNAL_ID), USERNAME);
 
-        ArgumentCaptor<StockDTO> stockCaptor = ArgumentCaptor.forClass(StockDTO.class);
-        verify(stockMapper).insertStock(stockCaptor.capture());
-        assertThat(stockCaptor.getValue().getItemId()).isEqualTo(item.getId());
-        assertThat(stockCaptor.getValue().getSpaceId()).isEqualTo(space.getId());
-        assertThat(stockCaptor.getValue().getShelfId()).isEqualTo(shelf.getId());
-        assertThat(stockCaptor.getValue().getBoxId()).isEqualTo(box.getId());
-        verify(transactionMapper).insertTransaction(any());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> stocksCaptor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(stocksCaptor.capture());
+        assertThat(stocksCaptor.getValue()).hasSize(1);
+        StockDTO captured = stocksCaptor.getValue().get(0);
+        assertThat(captured.getItemId()).isEqualTo(item.getId());
+        assertThat(captured.getSpaceId()).isEqualTo(space.getId());
+        assertThat(captured.getShelfId()).isEqualTo(shelf.getId());
+        assertThat(captured.getBoxId()).isEqualTo(box.getId());
+        verify(transactionMapper).insertTransactions(anyList());
     }
 
     @Test
@@ -220,7 +223,7 @@ class StockServiceTest {
 
         List<String> suggestions = stockService.findMemoSuggestions(TransactionType.OUT, USERNAME);
 
-        assertThat(suggestions).containsExactly("사용 출고", "폐기 출고");
+        assertThat(suggestions).containsExactly("사용 출고", "폐기 출고", "판매 출고", "분실 처리");
     }
 
     @Test
@@ -237,28 +240,38 @@ class StockServiceTest {
     void create_happyPath_spaceOnly() {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        doAnswer(invocation -> { ((StockDTO) invocation.getArgument(0)).setId(501L); return null; })
-                .when(stockMapper).insertStock(any());
+        doAnswer(invocation -> {
+            List<StockDTO> stocks = invocation.getArgument(0);
+            stocks.forEach(s -> s.setId(501L));
+            return null;
+        }).when(stockMapper).insertStocks(anyList());
 
         stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME);
 
-        verify(stockMapper).insertStock(any());
-        verify(transactionMapper).insertTransaction(any());
+        verify(stockMapper).insertStocks(anyList());
+        verify(transactionMapper).insertTransactions(anyList());
     }
 
     @Test
     void addUnits_insertsStockAndTransactionForEachUnit() {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        doAnswer(invocation -> { ((StockDTO) invocation.getArgument(0)).setId(501L); return null; })
-                .when(stockMapper).insertStock(any());
+        doAnswer(invocation -> {
+            List<StockDTO> stocks = invocation.getArgument(0);
+            long id = 500L;
+            for (StockDTO s : stocks) { s.setId(++id); }
+            return null;
+        }).when(stockMapper).insertStocks(anyList());
 
         StockInOutForm form = stockInOutForm(SPACE_EXTERNAL_ID, null, null);
         form.setCount(3);
         stockService.addUnits(form, USERNAME);
 
-        verify(stockMapper, times(3)).insertStock(any());
-        verify(transactionMapper, times(3)).insertTransaction(any());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> stocksCaptor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(stocksCaptor.capture());
+        assertThat(stocksCaptor.getValue()).hasSize(3);
+        verify(transactionMapper).insertTransactions(anyList());
     }
 
     @Test

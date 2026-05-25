@@ -492,6 +492,26 @@ class StockMapperTest {
     }
 
     @Test
+    void insertStocks_batchInsert() {
+        List<StockDTO> stocks = List.of(buildStock(), buildStock(), buildStockOnShelf());
+        stockMapper.insertStocks(stocks);
+
+        assertThat(stocks).allSatisfy(s -> assertThat(s.getId()).isNotNull());
+        assertThat(stockMapper.findByItemId(itemId)).hasSize(3);
+        assertThat(stockMapper.findBySpaceId(spaceId)).hasSize(3);
+    }
+
+    @Test
+    void insertStocks_batchInsert_singleUnit() {
+        List<StockDTO> stocks = List.of(buildStockOnBox());
+        stockMapper.insertStocks(stocks);
+
+        assertThat(stocks.get(0).getId()).isNotNull();
+        assertThat(stockMapper.findByItemId(itemId)).hasSize(1);
+        assertThat(stockMapper.findByBoxId(boxId)).hasSize(1);
+    }
+
+    @Test
     void updateDetails_updatesOnlyOwnedInStockUnit() {
         StockDTO stock = buildStock();
         stockMapper.insertStock(stock);

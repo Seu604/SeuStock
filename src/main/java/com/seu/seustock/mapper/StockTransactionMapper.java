@@ -13,6 +13,7 @@ import java.util.UUID;
 @Mapper
 public interface StockTransactionMapper {
     void insertTransaction(StockTransactionDTO transaction);
+    void insertTransactions(List<StockTransactionDTO> transactions);
     Optional<StockTransactionDTO> findById(Long id);
     List<StockTransactionDTO> findByStockId(Long stockId);
     List<String> findFrequentMemosByUserIdAndType(@Param("userId") Long userId,

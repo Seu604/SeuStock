@@ -16,6 +16,7 @@ import java.util.UUID;
 @Mapper
 public interface StockMapper {
     void insertStock(StockDTO stock);
+    void insertStocks(List<StockDTO> stocks);
     Optional<StockDTO> findById(Long id);
     Optional<StockDTO> findByExternalId(UUID externalId);
     List<StockDTO> findByItemId(Long itemId);

@@ -35,6 +35,22 @@
         )
     </insert>
 
+    <insert id="insertTransactions" parameterType="list">
+        INSERT INTO stock_transactions (
+            stock_id, transaction_type,
+            from_space_id, from_shelf_id, from_box_id,
+            to_space_id, to_shelf_id, to_box_id,
+            memo
+        )
+        VALUES
+        <foreach collection="list" item="t" separator=",">
+            (#{t.stockId}, #{t.transactionType},
+             #{t.fromSpaceId}, #{t.fromShelfId}, #{t.fromBoxId},
+             #{t.toSpaceId}, #{t.toShelfId}, #{t.toBoxId},
+             #{t.memo})
+        </foreach>
+    </insert>
+
     <select id="findById" parameterType="long" resultMap="StockTransactionResultMap">
         SELECT id, external_id, stock_id, transaction_type,
                from_space_id, from_shelf_id, from_box_id,
@@ -63,6 +79,7 @@
           AND st.transaction_type = #{transactionType}
           AND st.memo IS NOT NULL
           AND TRIM(st.memo) != ''
+          AND TRIM(st.memo) NOT IN ('초기 등록', '빠른 등록')
         GROUP BY TRIM(st.memo)
         ORDER BY COUNT(*) DESC, MAX(st.created_at) DESC, TRIM(st.memo)
         LIMIT #{limit}
