@@ -304,6 +304,7 @@ public class StockService {
     private void normalize(StockUpdateForm form) {
         form.setSerialNumber(blankToNull(form.getSerialNumber()));
         form.setLotNumber(blankToNull(form.getLotNumber()));
+        form.setMemo(blankToNull(form.getMemo()));
     }
 
     private String blankToNull(String value) {

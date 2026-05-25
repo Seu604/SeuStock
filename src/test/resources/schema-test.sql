@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS stocks (
     serial_number   VARCHAR(255),
     lot_number      VARCHAR(255),
     expiration_date DATE,
+    memo            TEXT,
     status          VARCHAR(20) NOT NULL DEFAULT 'IN_STOCK',
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (item_id)  REFERENCES items(id),

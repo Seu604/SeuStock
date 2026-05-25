@@ -122,6 +122,7 @@ class StockMapperTest {
     void insertStock_thenFindById() {
         StockDTO stock = buildStock();
         stock.setSerialNumber("SN-001");
+        stock.setMemo("보관함 상단에 라벨 부착");
         stockMapper.insertStock(stock);
 
         Optional<StockDTO> found = stockMapper.findById(stock.getId());
@@ -133,6 +134,7 @@ class StockMapperTest {
         assertThat(found.get().getSpaceId()).isEqualTo(spaceId);
         assertThat(found.get().getStatus()).isEqualTo(StockStatus.IN_STOCK);
         assertThat(found.get().getSerialNumber()).isEqualTo("SN-001");
+        assertThat(found.get().getMemo()).isEqualTo("보관함 상단에 라벨 부착");
     }
 
     @Test
@@ -384,6 +386,7 @@ class StockMapperTest {
     void searchDetails_returnsUserOwnedInStockUnits() {
         StockDTO stock = buildStockOnBox();
         stock.setSerialNumber("SN-001");
+        stock.setMemo("충전기와 함께 보관");
         stockMapper.insertStock(stock);
         StockDTO dispatched = buildStockOnBox();
         stockMapper.insertStock(dispatched);
@@ -398,6 +401,7 @@ class StockMapperTest {
         assertThat(details.get(0).getShelfName()).isEqualTo("A선반");
         assertThat(details.get(0).getBoxName()).isEqualTo("1번박스");
         assertThat(details.get(0).getSerialNumber()).isEqualTo("SN-001");
+        assertThat(details.get(0).getMemo()).isEqualTo("충전기와 함께 보관");
     }
 
     @Test
@@ -427,6 +431,7 @@ class StockMapperTest {
         StockUpdateForm form = new StockUpdateForm();
         form.setSerialNumber("SN-UPDATED");
         form.setLotNumber("LOT-A");
+        form.setMemo("상태 확인 완료");
 
         int updated = stockMapper.updateDetails(externalId, userId, form);
 
@@ -434,5 +439,6 @@ class StockMapperTest {
         StockDTO found = stockMapper.findById(stock.getId()).orElseThrow();
         assertThat(found.getSerialNumber()).isEqualTo("SN-UPDATED");
         assertThat(found.getLotNumber()).isEqualTo("LOT-A");
+        assertThat(found.getMemo()).isEqualTo("상태 확인 완료");
     }
 }

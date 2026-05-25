@@ -22,6 +22,7 @@ public class StockDTO {
     private String serialNumber;
     private String lotNumber;
     private LocalDate expirationDate;
+    private String memo;
     private StockStatus status;
     private LocalDateTime createdAt;
 }

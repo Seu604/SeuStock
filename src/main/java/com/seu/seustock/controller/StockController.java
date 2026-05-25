@@ -58,6 +58,7 @@ public class StockController {
         form.setSerialNumber(stock.getSerialNumber());
         form.setLotNumber(stock.getLotNumber());
         form.setExpirationDate(stock.getExpirationDate());
+        form.setMemo(stock.getMemo());
         model.addAttribute("stock", stock);
         model.addAttribute("form", form);
         return "stocks/fragments/detail-row :: edit";

@@ -269,9 +269,11 @@ class StockServiceTest {
         StockUpdateForm form = new StockUpdateForm();
         form.setSerialNumber(" SN-1 ");
         form.setLotNumber(" ");
+        form.setMemo("  별도 보관  ");
         StockDetailDTO updated = new StockDetailDTO();
         updated.setExternalId(STOCK_EXTERNAL_ID);
         updated.setSerialNumber("SN-1");
+        updated.setMemo("별도 보관");
 
         when(stockMapper.updateDetails(eq(STOCK_EXTERNAL_ID), eq(user.getId()), same(form))).thenReturn(1);
         when(stockMapper.findDetailByExternalId(STOCK_EXTERNAL_ID, user.getId())).thenReturn(Optional.of(updated));
@@ -279,8 +281,10 @@ class StockServiceTest {
         StockDetailDTO result = stockService.updateDetails(STOCK_EXTERNAL_ID, form, USERNAME);
 
         assertThat(result.getSerialNumber()).isEqualTo("SN-1");
+        assertThat(result.getMemo()).isEqualTo("별도 보관");
         assertThat(form.getSerialNumber()).isEqualTo("SN-1");
         assertThat(form.getLotNumber()).isNull();
+        assertThat(form.getMemo()).isEqualTo("별도 보관");
     }
 
     @Test
