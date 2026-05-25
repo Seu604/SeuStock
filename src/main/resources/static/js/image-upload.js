@@ -1,27 +1,75 @@
-function toWebP(file, quality) {
+var ANALYSIS_IMAGE_MAX_SIDE = 1024;
+var ANALYSIS_IMAGE_WEBP_THRESHOLD_BYTES = 1024 * 1024;
+var ANALYSIS_IMAGE_QUALITY = 0.85;
+
+function canEncodeWebP() {
+    try {
+        var canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+    } catch (e) {
+        return false;
+    }
+}
+
+function createResizedImageFile(file, options) {
     return new Promise(function (resolve) {
-        if (file.type === 'image/webp' || file.type === 'image/gif') {
-            resolve(null);
+        if (!file || file.type === 'image/gif') {
+            resolve(file);
             return;
         }
+
+        var maxSide = options.maxSide || ANALYSIS_IMAGE_MAX_SIDE;
+        var quality = options.quality || ANALYSIS_IMAGE_QUALITY;
+        var targetMimeType = options.targetMimeType || file.type || 'image/jpeg';
         var url = URL.createObjectURL(file);
         var img = new Image();
         img.onload = function () {
             URL.revokeObjectURL(url);
             try {
+                var width = img.naturalWidth;
+                var height = img.naturalHeight;
+                var scale = Math.min(1, maxSide / Math.max(width, height));
+                var targetWidth = Math.max(1, Math.round(width * scale));
+                var targetHeight = Math.max(1, Math.round(height * scale));
                 var canvas = document.createElement('canvas');
-                canvas.width  = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                canvas.getContext('2d').drawImage(img, 0, 0);
+                canvas.width  = targetWidth;
+                canvas.height = targetHeight;
+                canvas.getContext('2d').drawImage(img, 0, 0, targetWidth, targetHeight);
                 canvas.toBlob(function (blob) {
-                    resolve(blob ? new File([blob], 'image.webp', { type: 'image/webp' }) : null);
-                }, 'image/webp', quality);
+                    if (!blob) {
+                        resolve(file);
+                        return;
+                    }
+                    var extension = targetMimeType === 'image/webp' ? '.webp' : '.jpg';
+                    var filename = (file.name || 'image').replace(/\.[^.]*$/, '') + '-analysis' + extension;
+                    resolve(new File([blob], filename, { type: targetMimeType }));
+                }, targetMimeType, quality);
             } catch (e) {
-                resolve(null);
+                resolve(file);
             }
         };
-        img.onerror = function () { URL.revokeObjectURL(url); resolve(null); };
+        img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
         img.src = url;
+    });
+}
+
+function prepareAnalysisImage(file) {
+    if (!file || !file.type || file.type.indexOf('image/') !== 0) {
+        return Promise.resolve(file);
+    }
+
+    var shouldUseWebP = file.size > ANALYSIS_IMAGE_WEBP_THRESHOLD_BYTES
+        && file.type !== 'image/webp'
+        && file.type !== 'image/gif'
+        && canEncodeWebP();
+
+    var targetMimeType = shouldUseWebP ? 'image/webp' : 'image/jpeg';
+    return createResizedImageFile(file, {
+        maxSide: ANALYSIS_IMAGE_MAX_SIDE,
+        quality: ANALYSIS_IMAGE_QUALITY,
+        targetMimeType: targetMimeType
     });
 }
 
@@ -61,22 +109,8 @@ function initImageUpload(config, root) {
         if (labelText)   labelText.textContent = file ? file.name : '사진을 선택하세요';
         if (!file) return;
 
-        var converted = await toWebP(file, 0.85);
-        var effectiveFile = file;
-
-        if (converted) {
-            try {
-                var dt = new DataTransfer();
-                dt.items.add(converted);
-                fileInput.files = dt.files;
-                effectiveFile = converted;
-            } catch (e) {
-                // DataTransfer 미지원 환경 — 원본 유지
-            }
-        }
-
         if (previewImg) {
-            var objUrl = URL.createObjectURL(effectiveFile);
+            var objUrl = URL.createObjectURL(file);
             previewImg.onload = function () { URL.revokeObjectURL(objUrl); };
             previewImg.src = objUrl;
             previewImg.classList.remove('hidden');
@@ -84,7 +118,7 @@ function initImageUpload(config, root) {
 
         if (hashInput && window.crypto && crypto.subtle) {
             try {
-                var buf    = await effectiveFile.arrayBuffer();
+                var buf    = await file.arrayBuffer();
                 var digest = await crypto.subtle.digest('SHA-256', buf);
                 hashInput.value = Array.from(new Uint8Array(digest))
                     .map(function (b) { return b.toString(16).padStart(2, '0'); })
@@ -95,7 +129,7 @@ function initImageUpload(config, root) {
         }
 
         if (typeof config.onImageReady === 'function') {
-            config.onImageReady(effectiveFile);
+            config.onImageReady(file);
         }
     });
 
@@ -167,8 +201,9 @@ function createImageAnalysisHandler(config, root) {
         }, 1000) : null;
 
         try {
+            var analysisFile = await prepareAnalysisImage(file);
             var fd = new FormData();
-            fd.append('imageFile', file);
+            fd.append('imageFile', analysisFile);
             fd.append('retryAttempt', String(attempt));
             if (attempt > 0) {
                 fd.append('previousName', nameInput ? nameInput.value : '');
