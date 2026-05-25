@@ -1,6 +1,6 @@
 package com.seu.seustock.model.dto;
 
-import com.seu.seustock.model.TransactionType;
+import com.seu.seustock.model.enumeration.TransactionType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -16,6 +16,12 @@ public class StockTransactionDTO {
     private UUID externalId;
     private Long stockId;
     private TransactionType transactionType;
+    private Long fromSpaceId;
+    private Long fromShelfId;
+    private Long fromBoxId;
+    private Long toSpaceId;
+    private Long toShelfId;
+    private Long toBoxId;
     private String memo;
     private LocalDateTime createdAt;
 }

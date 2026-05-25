@@ -1,12 +1,13 @@
 package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.*;
-import com.seu.seustock.model.StockStatus;
-import com.seu.seustock.model.TransactionType;
+import com.seu.seustock.model.enumeration.StockStatus;
+import com.seu.seustock.model.enumeration.TransactionType;
 import com.seu.seustock.model.dto.StockTransactionDTO;
 import com.seu.seustock.model.dto.*;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
+import com.seu.seustock.model.form.StockMoveForm;
 import com.seu.seustock.model.form.StockUpdateForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -149,20 +150,23 @@ class StockServiceTest {
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
         doAnswer(invocation -> {
-            StockDTO stock = invocation.getArgument(0);
-            stock.setId(500L);
+            List<StockDTO> stocks = invocation.getArgument(0);
+            stocks.forEach(s -> s.setId(500L));
             return null;
-        }).when(stockMapper).insertStock(any());
+        }).when(stockMapper).insertStocks(anyList());
 
         stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, BOX_EXTERNAL_ID), USERNAME);
 
-        ArgumentCaptor<StockDTO> stockCaptor = ArgumentCaptor.forClass(StockDTO.class);
-        verify(stockMapper).insertStock(stockCaptor.capture());
-        assertThat(stockCaptor.getValue().getItemId()).isEqualTo(item.getId());
-        assertThat(stockCaptor.getValue().getSpaceId()).isEqualTo(space.getId());
-        assertThat(stockCaptor.getValue().getShelfId()).isEqualTo(shelf.getId());
-        assertThat(stockCaptor.getValue().getBoxId()).isEqualTo(box.getId());
-        verify(transactionMapper).insertTransaction(any());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> stocksCaptor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(stocksCaptor.capture());
+        assertThat(stocksCaptor.getValue()).hasSize(1);
+        StockDTO captured = stocksCaptor.getValue().get(0);
+        assertThat(captured.getItemId()).isEqualTo(item.getId());
+        assertThat(captured.getSpaceId()).isEqualTo(space.getId());
+        assertThat(captured.getShelfId()).isEqualTo(shelf.getId());
+        assertThat(captured.getBoxId()).isEqualTo(box.getId());
+        verify(transactionMapper).insertTransactions(anyList());
     }
 
     @Test
@@ -195,31 +199,79 @@ class StockServiceTest {
     }
 
     @Test
+    void deleteUnit_deletesOwnedInStockUnit() {
+        when(stockMapper.deleteInStockByExternalIdAndUserId(STOCK_EXTERNAL_ID, user.getId())).thenReturn(1);
+
+        stockService.deleteUnit(STOCK_EXTERNAL_ID, USERNAME);
+
+        verify(stockMapper).deleteInStockByExternalIdAndUserId(STOCK_EXTERNAL_ID, user.getId());
+    }
+
+    @Test
+    void deleteUnit_rejectsMissingUnauthorizedOrNonInStockUnit() {
+        when(stockMapper.deleteInStockByExternalIdAndUserId(STOCK_EXTERNAL_ID, user.getId())).thenReturn(0);
+
+        assertThatThrownBy(() -> stockService.deleteUnit(STOCK_EXTERNAL_ID, USERNAME))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("삭제 가능한 재고");
+    }
+
+    @Test
+    void findMemoSuggestions_returnsFrequentUserMemos() {
+        when(transactionMapper.findFrequentMemosByUserIdAndType(user.getId(), TransactionType.OUT, 4))
+                .thenReturn(List.of("사용 출고", "폐기 출고"));
+
+        List<String> suggestions = stockService.findMemoSuggestions(TransactionType.OUT, USERNAME);
+
+        assertThat(suggestions).containsExactly("사용 출고", "폐기 출고", "판매 출고", "분실 처리");
+    }
+
+    @Test
+    void findMemoSuggestions_fallsBackToMasterMemosWhenUserHasNoHistory() {
+        when(transactionMapper.findFrequentMemosByUserIdAndType(user.getId(), TransactionType.IN, 4))
+                .thenReturn(List.of());
+
+        List<String> suggestions = stockService.findMemoSuggestions(TransactionType.IN, USERNAME);
+
+        assertThat(suggestions).containsExactly("구매 입고", "반품 입고", "재고 발견", "수량 보정");
+    }
+
+    @Test
     void create_happyPath_spaceOnly() {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        doAnswer(invocation -> { ((StockDTO) invocation.getArgument(0)).setId(501L); return null; })
-                .when(stockMapper).insertStock(any());
+        doAnswer(invocation -> {
+            List<StockDTO> stocks = invocation.getArgument(0);
+            stocks.forEach(s -> s.setId(501L));
+            return null;
+        }).when(stockMapper).insertStocks(anyList());
 
         stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME);
 
-        verify(stockMapper).insertStock(any());
-        verify(transactionMapper).insertTransaction(any());
+        verify(stockMapper).insertStocks(anyList());
+        verify(transactionMapper).insertTransactions(anyList());
     }
 
     @Test
     void addUnits_insertsStockAndTransactionForEachUnit() {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        doAnswer(invocation -> { ((StockDTO) invocation.getArgument(0)).setId(501L); return null; })
-                .when(stockMapper).insertStock(any());
+        doAnswer(invocation -> {
+            List<StockDTO> stocks = invocation.getArgument(0);
+            long id = 500L;
+            for (StockDTO s : stocks) { s.setId(++id); }
+            return null;
+        }).when(stockMapper).insertStocks(anyList());
 
         StockInOutForm form = stockInOutForm(SPACE_EXTERNAL_ID, null, null);
         form.setCount(3);
         stockService.addUnits(form, USERNAME);
 
-        verify(stockMapper, times(3)).insertStock(any());
-        verify(transactionMapper, times(3)).insertTransaction(any());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<StockDTO>> stocksCaptor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(stocksCaptor.capture());
+        assertThat(stocksCaptor.getValue()).hasSize(3);
+        verify(transactionMapper).insertTransactions(anyList());
     }
 
     @Test
@@ -265,13 +317,75 @@ class StockServiceTest {
     }
 
     @Test
+    void moveUnits_updatesLocationAndRecordsMoveTransaction() {
+        StockDTO unit1 = stock(701L);
+        StockDTO unit2 = stock(702L);
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
+        when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of(unit1, unit2));
+        when(stockMapper.updateLocationIfInStock(List.of(unit1.getId(), unit2.getId()), space.getId(), shelf.getId(), box.getId()))
+                .thenReturn(2);
+
+        stockService.moveUnits(stockMoveForm(SPACE_EXTERNAL_ID, null, null, SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, BOX_EXTERNAL_ID, 2), USERNAME);
+
+        verify(stockMapper).updateLocationIfInStock(List.of(unit1.getId(), unit2.getId()), space.getId(), shelf.getId(), box.getId());
+        ArgumentCaptor<StockTransactionDTO> txCaptor = ArgumentCaptor.forClass(StockTransactionDTO.class);
+        verify(transactionMapper, times(2)).insertTransaction(txCaptor.capture());
+        assertThat(txCaptor.getAllValues())
+                .extracting(StockTransactionDTO::getTransactionType)
+                .containsOnly(TransactionType.MOVE);
+        assertThat(txCaptor.getAllValues())
+                .allSatisfy(tx -> {
+                    assertThat(tx.getFromSpaceId()).isEqualTo(space.getId());
+                    assertThat(tx.getFromShelfId()).isNull();
+                    assertThat(tx.getFromBoxId()).isNull();
+                    assertThat(tx.getToSpaceId()).isEqualTo(space.getId());
+                    assertThat(tx.getToShelfId()).isEqualTo(shelf.getId());
+                    assertThat(tx.getToBoxId()).isEqualTo(box.getId());
+                });
+    }
+
+    @Test
+    void moveUnits_rejectsSameLocation() {
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+
+        assertThatThrownBy(() -> stockService.moveUnits(
+                stockMoveForm(SPACE_EXTERNAL_ID, null, null, SPACE_EXTERNAL_ID, null, null, 1), USERNAME))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("같은 위치");
+
+        verify(stockMapper, never()).updateLocationIfInStock(any(), any(), any(), any());
+    }
+
+    @Test
+    void moveUnits_rejectsInsufficientStock() {
+        StockDTO unit = stock(701L);
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of(unit));
+
+        assertThatThrownBy(() -> stockService.moveUnits(
+                stockMoveForm(SPACE_EXTERNAL_ID, null, null, SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, null, 2), USERNAME))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("재고가 부족");
+
+        verify(stockMapper, never()).updateLocationIfInStock(any(), any(), any(), any());
+        verify(transactionMapper, never()).insertTransaction(any());
+    }
+
+    @Test
     void updateDetails_trimsBlankValuesAndReturnsUpdatedStock() {
         StockUpdateForm form = new StockUpdateForm();
         form.setSerialNumber(" SN-1 ");
         form.setLotNumber(" ");
+        form.setMemo("  별도 보관  ");
         StockDetailDTO updated = new StockDetailDTO();
         updated.setExternalId(STOCK_EXTERNAL_ID);
         updated.setSerialNumber("SN-1");
+        updated.setMemo("별도 보관");
 
         when(stockMapper.updateDetails(eq(STOCK_EXTERNAL_ID), eq(user.getId()), same(form))).thenReturn(1);
         when(stockMapper.findDetailByExternalId(STOCK_EXTERNAL_ID, user.getId())).thenReturn(Optional.of(updated));
@@ -279,8 +393,10 @@ class StockServiceTest {
         StockDetailDTO result = stockService.updateDetails(STOCK_EXTERNAL_ID, form, USERNAME);
 
         assertThat(result.getSerialNumber()).isEqualTo("SN-1");
+        assertThat(result.getMemo()).isEqualTo("별도 보관");
         assertThat(form.getSerialNumber()).isEqualTo("SN-1");
         assertThat(form.getLotNumber()).isNull();
+        assertThat(form.getMemo()).isEqualTo("별도 보관");
     }
 
     @Test
@@ -311,6 +427,33 @@ class StockServiceTest {
         form.setBoxExternalId(boxExternalId);
         form.setCount(1);
         return form;
+    }
+
+    private StockMoveForm stockMoveForm(UUID sourceSpaceExternalId,
+                                        UUID sourceShelfExternalId,
+                                        UUID sourceBoxExternalId,
+                                        UUID targetSpaceExternalId,
+                                        UUID targetShelfExternalId,
+                                        UUID targetBoxExternalId,
+                                        int count) {
+        StockMoveForm form = new StockMoveForm();
+        form.setSourceSpaceExternalId(sourceSpaceExternalId);
+        form.setSourceShelfExternalId(sourceShelfExternalId);
+        form.setSourceBoxExternalId(sourceBoxExternalId);
+        form.setTargetSpaceExternalId(targetSpaceExternalId);
+        form.setTargetShelfExternalId(targetShelfExternalId);
+        form.setTargetBoxExternalId(targetBoxExternalId);
+        StockMoveForm.Item moveItem = new StockMoveForm.Item();
+        moveItem.setItemExternalId(ITEM_EXTERNAL_ID);
+        moveItem.setCount(count);
+        form.setItems(List.of(moveItem));
+        return form;
+    }
+
+    private StockDTO stock(Long id) {
+        StockDTO stock = new StockDTO();
+        stock.setId(id);
+        return stock;
     }
 
     private UserDTO user(Long id) {

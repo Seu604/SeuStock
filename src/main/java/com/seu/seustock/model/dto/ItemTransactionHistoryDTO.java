@@ -1,7 +1,7 @@
 package com.seu.seustock.model.dto;
 
-import com.seu.seustock.model.StockStatus;
-import com.seu.seustock.model.TransactionType;
+import com.seu.seustock.model.enumeration.StockStatus;
+import com.seu.seustock.model.enumeration.TransactionType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -24,4 +24,11 @@ public class ItemTransactionHistoryDTO {
     private String spaceName;
     private String shelfName;
     private String boxName;
+
+    private String fromSpaceName;
+    private String fromShelfName;
+    private String fromBoxName;
+    private String toSpaceName;
+    private String toShelfName;
+    private String toBoxName;
 }

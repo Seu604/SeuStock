@@ -35,13 +35,16 @@ Spring Boot 4.0.6 / Java 25 / Gradle (Kotlin DSL) web app for personal inventory
 
 ```
 com.seu.seustock
-├── configuration/   UUIDTypeHandler, LoginCheckInterceptor, WebMvcConfig, AppConfig, GlobalExceptionHandler
+├── configuration/   UUIDTypeHandler, LoginCheckInterceptor, WebMvcConfig, AppConfig, GlobalExceptionHandler, HtmxResponse
 ├── controller/      @Controller classes returning Thymeleaf view names
 ├── mapper/          @Mapper interfaces (MyBatis)
 ├── model/
 │   ├── dto/         Query result objects (Lombok @Getter/@Setter/@ToString)
+│   ├── enumeration/ StockStatus, TransactionType, TransactionMemoMaster
 │   └── form/        Input form objects (Bean Validation annotations)
-└── service/         Business logic between Controller and Mapper
+└── service/
+    ├── ai/          ImageAnalysisService (interface), GemmaVisionClient, ImageResizeService, YoloDetectionClient, YoloGemmaImageAnalysisService
+    └── (root)       Business logic between Controller and Mapper
 ```
 
 ## Key conventions
@@ -60,6 +63,7 @@ com.seu.seustock
 **Enums**
 - `StockStatus`: `IN_STOCK`, `DISPATCHED`, `LOST`, `DAMAGED`, `DISPOSED` — each carries a Korean `label` field.
 - `TransactionType`: `IN`, `OUT`, `MOVE`, `ADJUST` — each carries a Korean `label` field.
+- `TransactionMemoMaster`: predefined memo strings keyed by `TransactionType` (e.g., `PURCHASE_IN → "구매 입고"`). `memosFor(type)` returns the list. Memo suggestions blend user-frequent memos with these defaults via `Stream.concat().distinct().limit(...)`.
 - MyBatis maps these via the default `EnumTypeHandler` (stores the enum name as a string). Always use enum constants; never pass raw strings to mapper parameters or compare against them.
 
 **Stock location validation**
@@ -78,6 +82,7 @@ com.seu.seustock
 - Single-result `SELECT` methods return `Optional<T>`. MyBatis wraps null results automatically — no XML change needed.
 - List-result methods return `List<T>`. Never use `Optional<List<T>>`.
 - `java.util.UUID` has no built-in TypeHandler in MyBatis 3.5.x. `UUIDTypeHandler` in `configuration/` is registered via `mybatis.type-handlers-package=com.seu.seustock.configuration`. All XML `<resultMap>` entries for `external_id` rely on this handler.
+- Batch inserts use `<foreach>` in the XML with a `List<T>` parameter (e.g., `StockMapper.insertStocks`, `StockTransactionMapper.insertTransactions`). Prefer batch inserts when creating multiple rows in one service call (e.g., `StockService.create()` with `count > 1`).
 
 **Authentication**
 - Session-based, not Spring Security. `LoginCheckInterceptor` guards `/spaces/**`, `/stocks/**`, `/shelves/**`, `/boxes/**`, `/items/**`, `/images/**` by checking `session.getAttribute("loginUser")` (a username string). All controllers read ownership from this attribute.
@@ -85,6 +90,9 @@ com.seu.seustock
 
 **Service ownership pattern**
 - Every service method that touches user-owned data follows the same sequence: resolve entity by external UUID → fetch owning user record → compare `userId` against the session username → throw `SecurityException` if mismatch. When adding new service methods, mirror this pattern rather than skipping the ownership check.
+
+**HTMX responses**
+- `HtmxResponse` (in `configuration/`) is a utility for emitting `HX-Trigger` toast notification headers. Use `HtmxResponse.success(response, message)` / `HtmxResponse.error(response, message)` from controller methods rather than building the header string manually. Non-ASCII characters (Korean) are Unicode-escaped to remain JSON-safe inside the header value.
 
 **Exception handling**
 - `GlobalExceptionHandler` (`@ControllerAdvice`) maps exceptions to error views:
@@ -102,15 +110,23 @@ com.seu.seustock
 - `static/js/image-upload.js` provides the client-side image hash computation and preview initialization (`initImageUpload({...}, scopeEl)`). Include it in any template that supports image upload and call `initImageUpload` scoped to the relevant container element. The optional `onImageReady(file)` callback fires after the preview is initialized and the hash is computed — use it for async operations like AI analysis.
 
 **Image analysis (AI)**
-- `ImageAnalysisService` sends uploaded images to a local Ollama instance via Spring AI (`spring-ai-starter-model-ollama`) and returns an `ImageAnalysisDTO` with `name` and `description` fields populated in Korean.
+- `ImageAnalysisService` (interface in `service/ai/`) is the entry point for image analysis. `YoloGemmaImageAnalysisService` is the active implementation: it first runs `YoloDetectionClient` to detect objects (optional pre-processing), then calls `GemmaVisionClient` which sends the image and YOLO hints to a local Ollama instance via Spring AI (`spring-ai-starter-model-ollama`). Returns `ImageAnalysisDTO` with `name` and `description` in Korean.
 - Endpoint: `POST /images/analyze` (multipart). Requires Ollama running locally; not guarded by authentication (analysis is stateless).
-- Images larger than 1024px on either side are automatically resized to JPEG before the Ollama call. The model is configured via `spring.ai.ollama.chat.model` (default `gemma4:e2b`).
+- Images larger than 1024px on either side are automatically resized to JPEG by `ImageResizeService` before the Ollama call. The model is configured via `spring.ai.ollama.chat.model` (default `gemma4:e2b`).
+- Retry behavior: `GemmaVisionClient` increases `temperature` across attempts (0.1 → 0.35 → 0.55 → 0.7) and randomizes the seed on retries so each attempt yields different output.
 - The modal templates (`items/fragments/modal.html`, `stocks/fragments/quick-modal.html`) call this endpoint on image selection and prefill the name/description fields. An abort controller on the modal element cancels in-flight requests when a new image is chosen before the prior response arrives.
 - Ollama is **not** required for tests — `application-test.properties` omits the AI configuration entirely.
 
+**QR codes**
+- `QrCodeService` (ZXing) generates PNG QR code images. `QrController` exposes:
+  - `GET /api/qr/modal` — returns a Thymeleaf fragment (`fragments/qr-modal :: modal`) with a QR code for any entity.
+  - `GET /api/qr/generate?content=...` — returns the raw PNG bytes for the encoded URL.
+  - `GET /qr/boxes/{externalId}` and `GET /qr/shelves/{externalId}` — scan-redirect endpoints that resolve the entity, verify ownership, and redirect to the correct stocks view. Unauthenticated scans are redirected to `/login?redirect=...`.
+- `app.qr-base-url` (defaults to `${app.base-url}`) controls the hostname embedded in generated QR codes.
+
 ## Database schema
 
-Source of truth: `docker/postgres/init/init.sql` (used for Docker container initialization). The file `data/init-v1.sql` is a formatting-only copy — keep them in sync on every schema change.
+Source of truth: `src/main/resources/db/migration/` 의 버전 파일들. Flyway가 앱 시작 시 PostgreSQL에 마이그레이션을 적용한다. 스키마 변경 시 `VN__description.sql` 파일을 새로 추가한다 (예: `V2__add_tags.sql`). `docker/postgres/init/init.sql`은 더 이상 사용되지 않는다.
 
 Domain hierarchy (physical storage):
 ```

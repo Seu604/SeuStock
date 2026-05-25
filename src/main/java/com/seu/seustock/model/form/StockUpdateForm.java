@@ -17,4 +17,6 @@ public class StockUpdateForm {
     private String lotNumber;
 
     private LocalDate expirationDate;
+
+    private String memo;
 }

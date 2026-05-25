@@ -115,6 +115,10 @@ public class ItemService {
             return;
         }
         itemImageMapper.unsetPrimaryByItemId(itemId);
+        if (itemImageMapper.countByItemIdAndImageId(itemId, image.getId()) > 0) {
+            itemImageMapper.updateItemImage(itemId, image.getId(), 0, true);
+            return;
+        }
         itemImageMapper.insertItemImage(itemId, image.getId(), 0, true);
     }
 }

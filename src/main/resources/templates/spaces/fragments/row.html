@@ -4,7 +4,7 @@
 
 <!-- 읽기 모드 카드 -->
 <div th:fragment="view" th:id="'space-' + ${space.externalId}"
-     class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_8rem] md:items-center">
+     class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_14rem] md:items-center">
     <div class="min-w-0">
         <a th:href="@{/spaces/{id}(id=${space.externalId})}"
            class="block truncate text-sm font-medium text-blue-600 hover:underline"
@@ -18,16 +18,12 @@
         <button class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 th:attr="hx-get=@{/spaces/{id}/edit(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
                 hx-swap="outerHTML">수정</button>
-        <button class="rounded-md border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition"
-                th:attr="hx-delete=@{/spaces/{id}(id=${space.externalId})},hx-confirm=|'${space.name}' 공간을 삭제하시겠습니까?|"
-                hx-target="#space-list"
-                hx-swap="outerHTML">삭제</button>
     </div>
 </div>
 
 <!-- 수정 모드 카드 -->
 <div th:fragment="edit" th:id="'space-' + ${space.externalId}"
-     class="grid gap-3 border-l-4 border-blue-500 bg-blue-50/40 px-4 py-4 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_8rem] md:items-center">
+     class="grid gap-3 border-l-4 border-blue-500 bg-blue-50/40 px-4 py-4 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_14rem] md:items-center">
     <input type="text" name="name" th:value="${space.name}"
            class="flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm
                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -38,6 +34,10 @@
                 th:attr="hx-put=@{/spaces/{id}(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
                 hx-swap="outerHTML"
                 hx-include="closest div[id]">저장</button>
+        <button class="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition"
+                th:attr="hx-delete=@{/spaces/{id}(id=${space.externalId})},hx-confirm=|'${space.name}' 공간을 삭제하시겠습니까?|"
+                hx-target="#space-list"
+                hx-swap="outerHTML">삭제</button>
         <button class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 th:attr="hx-get=@{/spaces/{id}/cancel(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
                 hx-swap="outerHTML">취소</button>

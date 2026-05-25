@@ -27,6 +27,7 @@
         <result property="serialNumber"   column="serial_number"/>
         <result property="lotNumber"      column="lot_number"/>
         <result property="expirationDate" column="expiration_date"/>
+        <result property="memo"           column="memo"/>
         <result property="status"         column="status"/>
         <result property="createdAt"      column="created_at"/>
     </resultMap>
@@ -45,40 +46,51 @@
         <result property="serialNumber"            column="serial_number"/>
         <result property="lotNumber"               column="lot_number"/>
         <result property="expirationDate"          column="expiration_date"/>
+        <result property="memo"                    column="memo"/>
         <result property="status"                  column="status"/>
         <result property="createdAt"               column="created_at"/>
     </resultMap>
 
     <insert id="insertStock" parameterType="StockDTO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, serial_number, lot_number, expiration_date, status)
-        VALUES (#{itemId}, #{spaceId}, #{shelfId}, #{boxId}, #{serialNumber}, #{lotNumber}, #{expirationDate}, 'IN_STOCK')
+        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, serial_number, lot_number, expiration_date, memo, status)
+        VALUES (#{itemId}, #{spaceId}, #{shelfId}, #{boxId}, #{serialNumber}, #{lotNumber}, #{expirationDate}, #{memo}, 'IN_STOCK')
+    </insert>
+
+    <insert id="insertStocks" parameterType="list"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO stocks (item_id, space_id, shelf_id, box_id, serial_number, lot_number, expiration_date, memo, status)
+        VALUES
+        <foreach collection="list" item="s" separator=",">
+            (#{s.itemId}, #{s.spaceId}, #{s.shelfId}, #{s.boxId},
+             #{s.serialNumber}, #{s.lotNumber}, #{s.expirationDate}, #{s.memo}, 'IN_STOCK')
+        </foreach>
     </insert>
 
     <select id="findById" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE id = #{id}
     </select>
 
     <select id="findByExternalId" parameterType="java.util.UUID" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE external_id = #{externalId}
     </select>
 
     <select id="findByBoxId" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE box_id = #{boxId}
     </select>
 
     <select id="findByShelfIdDirectOnly" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE shelf_id = #{shelfId}
           AND box_id IS NULL
@@ -86,7 +98,7 @@
 
     <select id="findBySpaceIdDirectOnly" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE space_id = #{spaceId}
           AND shelf_id IS NULL
@@ -94,7 +106,7 @@
 
     <select id="findByItemId" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE item_id = #{itemId}
     </select>
@@ -114,14 +126,14 @@
 
     <select id="findBySpaceId" parameterType="long" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE space_id = #{spaceId}
     </select>
 
     <select id="findInStockByItemAndBox" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE item_id = #{itemId}
           AND box_id  = #{boxId}
@@ -131,7 +143,7 @@
 
     <select id="findInStockByItemAndShelf" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE item_id  = #{itemId}
           AND shelf_id = #{shelfId}
@@ -142,7 +154,7 @@
 
     <select id="findInStockByItemAndSpace" resultMap="StockResultMap">
         SELECT id, external_id, item_id, space_id, shelf_id, box_id,
-               serial_number, lot_number, expiration_date, status, created_at
+               serial_number, lot_number, expiration_date, memo, status, created_at
         FROM stocks
         WHERE item_id  = #{itemId}
           AND space_id = #{spaceId}
@@ -158,9 +170,32 @@
           AND status = 'IN_STOCK'
     </update>
 
+    <update id="updateLocationIfInStock">
+        UPDATE stocks
+        SET space_id = #{spaceId},
+            shelf_id = #{shelfId},
+            box_id   = #{boxId}
+        WHERE status = 'IN_STOCK'
+          AND id IN
+          <foreach collection="ids" item="id" open="(" separator="," close=")">
+              #{id}
+          </foreach>
+    </update>
+
     <delete id="deleteById" parameterType="long">
         DELETE FROM stocks
         WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteInStockByExternalIdAndUserId">
+        DELETE FROM stocks
+        WHERE external_id = #{externalId}
+          AND status = 'IN_STOCK'
+          AND item_id IN (
+              SELECT id
+              FROM items
+              WHERE user_id = #{userId}
+          )
     </delete>
 
     <delete id="deleteInStockByItemAndBox">
@@ -221,6 +256,7 @@
                s.serial_number,
                s.lot_number,
                s.expiration_date,
+               s.memo,
                s.status,
                s.created_at
         FROM stocks s
@@ -259,7 +295,8 @@
         UPDATE stocks
         SET serial_number = #{form.serialNumber},
             lot_number = #{form.lotNumber},
-            expiration_date = #{form.expirationDate}
+            expiration_date = #{form.expirationDate},
+            memo = #{form.memo}
         WHERE external_id = #{externalId}
           AND status = 'IN_STOCK'
           AND item_id IN (
@@ -326,6 +363,61 @@
           AND s.shelf_id IS NULL
           AND s.status = 'IN_STOCK'
         GROUP BY i.id, i.external_id, i.name
+    </select>
+
+    <select id="findPanelBySpaceAllWithOptions" resultMap="StockPanelResultMap">
+        SELECT i.external_id AS item_external_id,
+               i.name AS item_name,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS display_image_external_id,
+               COUNT(*) AS count
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.space_id = #{spaceId}
+          AND s.status = 'IN_STOCK'
+          <if test="keyword != null and keyword != ''">
+              AND i.name LIKE CONCAT('%', #{keyword}, '%')
+          </if>
+        GROUP BY i.id, i.external_id, i.name
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'oldest'">
+                (SELECT MIN(st.created_at)
+                 FROM stock_transactions st
+                 JOIN stocks sk ON sk.id = st.stock_id
+                 WHERE sk.item_id = i.id AND sk.space_id = #{spaceId}) ASC NULLS LAST,
+                i.name ASC
+            </when>
+            <when test="sortBy == 'inFreq'">
+                (SELECT COUNT(*)
+                 FROM stock_transactions st
+                 JOIN stocks sk ON sk.id = st.stock_id
+                 WHERE sk.item_id = i.id AND sk.space_id = #{spaceId}
+                   AND st.transaction_type = 'IN') DESC,
+                i.name ASC
+            </when>
+            <when test="sortBy == 'outFreq'">
+                (SELECT COUNT(*)
+                 FROM stock_transactions st
+                 JOIN stocks sk ON sk.id = st.stock_id
+                 WHERE sk.item_id = i.id AND sk.space_id = #{spaceId}
+                   AND st.transaction_type = 'OUT') DESC,
+                i.name ASC
+            </when>
+            <otherwise>
+                (SELECT MAX(st.created_at)
+                 FROM stock_transactions st
+                 JOIN stocks sk ON sk.id = st.stock_id
+                 WHERE sk.item_id = i.id AND sk.space_id = #{spaceId}) DESC NULLS LAST,
+                i.name ASC
+            </otherwise>
+        </choose>
     </select>
 
 </mapper>

@@ -1,6 +1,6 @@
 package com.seu.seustock.model.dto;
 
-import com.seu.seustock.model.StockStatus;
+import com.seu.seustock.model.enumeration.StockStatus;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -26,6 +26,7 @@ public class StockDetailDTO {
     private String serialNumber;
     private String lotNumber;
     private LocalDate expirationDate;
+    private String memo;
     private StockStatus status;
     private LocalDateTime createdAt;
 }

@@ -1,7 +1,9 @@
 package com.seu.seustock.mapper;
 
-import com.seu.seustock.model.TransactionType;
+import com.seu.seustock.model.enumeration.TransactionType;
+import com.seu.seustock.model.dto.BoxDTO;
 import com.seu.seustock.model.dto.ItemDTO;
+import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.StockTransactionDTO;
@@ -38,9 +40,19 @@ class StockTransactionMapperTest {
     private SpaceMapper spaceMapper;
 
     @Autowired
+    private ShelfMapper shelfMapper;
+
+    @Autowired
+    private BoxMapper boxMapper;
+
+    @Autowired
     private UserMapper userMapper;
 
     private Long stockId;
+    private Long spaceId;
+    private Long shelfId;
+    private Long boxId;
+    private Long userId;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +60,7 @@ class StockTransactionMapperTest {
         user.setUsername("testuser");
         user.setPassword("password");
         userMapper.insertUser(user);
+        userId = user.getId();
 
         ItemDTO item = new ItemDTO();
         item.setUserId(user.getId());
@@ -58,10 +71,23 @@ class StockTransactionMapperTest {
         space.setUserId(user.getId());
         space.setName("창고");
         spaceMapper.insertSpace(space);
+        spaceId = space.getId();
+
+        ShelfDTO shelf = new ShelfDTO();
+        shelf.setSpaceId(spaceId);
+        shelf.setName("A선반");
+        shelfMapper.insertShelf(shelf);
+        shelfId = shelf.getId();
+
+        BoxDTO box = new BoxDTO();
+        box.setShelfId(shelfId);
+        box.setName("1번박스");
+        boxMapper.insertBox(box);
+        boxId = box.getId();
 
         StockDTO stock = new StockDTO();
         stock.setItemId(item.getId());
-        stock.setSpaceId(space.getId());
+        stock.setSpaceId(spaceId);
         stockMapper.insertStock(stock);
         stockId = stock.getId();
     }
@@ -87,6 +113,28 @@ class StockTransactionMapperTest {
         assertThat(found.get().getStockId()).isEqualTo(stockId);
         assertThat(found.get().getTransactionType()).isEqualTo(TransactionType.IN);
         assertThat(found.get().getMemo()).isEqualTo("입고");
+        assertThat(found.get().getFromSpaceId()).isNull();
+        assertThat(found.get().getToSpaceId()).isNull();
+    }
+
+    @Test
+    void insertMoveTransaction_persistsLocationSnapshot() {
+        StockTransactionDTO tx = buildTransaction(TransactionType.MOVE, "정리");
+        tx.setFromSpaceId(spaceId);
+        tx.setToSpaceId(spaceId);
+        tx.setToShelfId(shelfId);
+        tx.setToBoxId(boxId);
+
+        stockTransactionMapper.insertTransaction(tx);
+
+        StockTransactionDTO found = stockTransactionMapper.findById(tx.getId()).orElseThrow();
+        assertThat(found.getTransactionType()).isEqualTo(TransactionType.MOVE);
+        assertThat(found.getFromSpaceId()).isEqualTo(spaceId);
+        assertThat(found.getFromShelfId()).isNull();
+        assertThat(found.getFromBoxId()).isNull();
+        assertThat(found.getToSpaceId()).isEqualTo(spaceId);
+        assertThat(found.getToShelfId()).isEqualTo(shelfId);
+        assertThat(found.getToBoxId()).isEqualTo(boxId);
     }
 
     @Test
@@ -111,5 +159,48 @@ class StockTransactionMapperTest {
     void findByStockId_noTransactions_returnsEmpty() {
         List<StockTransactionDTO> txList = stockTransactionMapper.findByStockId(stockId);
         assertThat(txList).isEmpty();
+    }
+
+    @Test
+    void insertTransactions_batchInsert() {
+        StockDTO stock2 = new StockDTO();
+        stock2.setItemId(stockMapper.findById(stockId).orElseThrow().getItemId());
+        stock2.setSpaceId(spaceId);
+        stockMapper.insertStock(stock2);
+
+        List<StockTransactionDTO> txs = List.of(
+                buildTransaction(TransactionType.IN, "일괄 입고 1"),
+                buildTransaction(TransactionType.IN, "일괄 입고 2")
+        );
+        txs.get(1).setStockId(stock2.getId());
+        stockTransactionMapper.insertTransactions(txs);
+
+        assertThat(stockTransactionMapper.findByStockId(stockId)).hasSize(1);
+        assertThat(stockTransactionMapper.findByStockId(stock2.getId())).hasSize(1);
+    }
+
+    @Test
+    void insertTransactions_batchInsert_singleTransaction() {
+        List<StockTransactionDTO> txs = List.of(buildTransaction(TransactionType.OUT, "단건 배치"));
+        stockTransactionMapper.insertTransactions(txs);
+
+        assertThat(stockTransactionMapper.findByStockId(stockId)).hasSize(1);
+        assertThat(stockTransactionMapper.findByStockId(stockId).get(0).getMemo()).isEqualTo("단건 배치");
+    }
+
+    @Test
+    void findFrequentMemosByUserIdAndType_returnsMostUsedMemos() {
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "구매 입고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "구매 입고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "반품 입고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.OUT, "사용 출고"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "초기 등록"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, "빠른 등록"));
+        stockTransactionMapper.insertTransaction(buildTransaction(TransactionType.IN, " "));
+
+        List<String> memos = stockTransactionMapper.findFrequentMemosByUserIdAndType(
+                userId, TransactionType.IN, 2);
+
+        assertThat(memos).containsExactly("구매 입고", "반품 입고");
     }
 }

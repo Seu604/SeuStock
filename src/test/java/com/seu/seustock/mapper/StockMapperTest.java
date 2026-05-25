@@ -1,6 +1,6 @@
 package com.seu.seustock.mapper;
 
-import com.seu.seustock.model.StockStatus;
+import com.seu.seustock.model.enumeration.StockStatus;
 import com.seu.seustock.model.dto.BoxDTO;
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ItemDTO;
@@ -122,6 +122,7 @@ class StockMapperTest {
     void insertStock_thenFindById() {
         StockDTO stock = buildStock();
         stock.setSerialNumber("SN-001");
+        stock.setMemo("보관함 상단에 라벨 부착");
         stockMapper.insertStock(stock);
 
         Optional<StockDTO> found = stockMapper.findById(stock.getId());
@@ -133,6 +134,7 @@ class StockMapperTest {
         assertThat(found.get().getSpaceId()).isEqualTo(spaceId);
         assertThat(found.get().getStatus()).isEqualTo(StockStatus.IN_STOCK);
         assertThat(found.get().getSerialNumber()).isEqualTo("SN-001");
+        assertThat(found.get().getMemo()).isEqualTo("보관함 상단에 라벨 부착");
     }
 
     @Test
@@ -218,6 +220,26 @@ class StockMapperTest {
     }
 
     @Test
+    void updateLocationIfInStock_movesOnlyInStockUnits() {
+        StockDTO inStock = buildStock();
+        stockMapper.insertStock(inStock);
+        StockDTO dispatched = buildStock();
+        stockMapper.insertStock(dispatched);
+        stockMapper.updateStatusIfInStock(dispatched.getId(), StockStatus.DISPATCHED);
+
+        int updated = stockMapper.updateLocationIfInStock(
+                List.of(inStock.getId(), dispatched.getId()), spaceId, shelfId, boxId);
+
+        StockDTO moved = stockMapper.findById(inStock.getId()).orElseThrow();
+        StockDTO unchanged = stockMapper.findById(dispatched.getId()).orElseThrow();
+        assertThat(updated).isEqualTo(1);
+        assertThat(moved.getShelfId()).isEqualTo(shelfId);
+        assertThat(moved.getBoxId()).isEqualTo(boxId);
+        assertThat(unchanged.getShelfId()).isNull();
+        assertThat(unchanged.getBoxId()).isNull();
+    }
+
+    @Test
     void deleteById() {
         StockDTO stock = buildStock();
         stockMapper.insertStock(stock);
@@ -225,6 +247,54 @@ class StockMapperTest {
         stockMapper.deleteById(stock.getId());
 
         assertThat(stockMapper.findById(stock.getId())).isEmpty();
+    }
+
+    @Test
+    void deleteInStockByExternalIdAndUserId_deletesOwnedInStockUnit() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int deleted = stockMapper.deleteInStockByExternalIdAndUserId(externalId, userId);
+
+        assertThat(deleted).isEqualTo(1);
+        assertThat(stockMapper.findById(stock.getId())).isEmpty();
+    }
+
+    @Test
+    void deleteInStockByExternalIdAndUserId_rejectsOtherUserUnit() {
+        UserDTO otherUser = new UserDTO();
+        otherUser.setUsername("otheruser");
+        otherUser.setPassword("password");
+        userMapper.insertUser(otherUser);
+
+        ItemDTO otherItem = new ItemDTO();
+        otherItem.setUserId(otherUser.getId());
+        otherItem.setName("다른 사용자 품목");
+        itemMapper.insertItem(otherItem);
+
+        StockDTO stock = buildStock();
+        stock.setItemId(otherItem.getId());
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int deleted = stockMapper.deleteInStockByExternalIdAndUserId(externalId, userId);
+
+        assertThat(deleted).isZero();
+        assertThat(stockMapper.findById(stock.getId())).isPresent();
+    }
+
+    @Test
+    void deleteInStockByExternalIdAndUserId_rejectsDispatchedUnit() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        stockMapper.updateStatusIfInStock(stock.getId(), StockStatus.DISPATCHED);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int deleted = stockMapper.deleteInStockByExternalIdAndUserId(externalId, userId);
+
+        assertThat(deleted).isZero();
+        assertThat(stockMapper.findById(stock.getId())).isPresent();
     }
 
     @Test
@@ -384,6 +454,7 @@ class StockMapperTest {
     void searchDetails_returnsUserOwnedInStockUnits() {
         StockDTO stock = buildStockOnBox();
         stock.setSerialNumber("SN-001");
+        stock.setMemo("충전기와 함께 보관");
         stockMapper.insertStock(stock);
         StockDTO dispatched = buildStockOnBox();
         stockMapper.insertStock(dispatched);
@@ -398,6 +469,7 @@ class StockMapperTest {
         assertThat(details.get(0).getShelfName()).isEqualTo("A선반");
         assertThat(details.get(0).getBoxName()).isEqualTo("1번박스");
         assertThat(details.get(0).getSerialNumber()).isEqualTo("SN-001");
+        assertThat(details.get(0).getMemo()).isEqualTo("충전기와 함께 보관");
     }
 
     @Test
@@ -420,6 +492,26 @@ class StockMapperTest {
     }
 
     @Test
+    void insertStocks_batchInsert() {
+        List<StockDTO> stocks = List.of(buildStock(), buildStock(), buildStockOnShelf());
+        stockMapper.insertStocks(stocks);
+
+        assertThat(stocks).allSatisfy(s -> assertThat(s.getId()).isNotNull());
+        assertThat(stockMapper.findByItemId(itemId)).hasSize(3);
+        assertThat(stockMapper.findBySpaceId(spaceId)).hasSize(3);
+    }
+
+    @Test
+    void insertStocks_batchInsert_singleUnit() {
+        List<StockDTO> stocks = List.of(buildStockOnBox());
+        stockMapper.insertStocks(stocks);
+
+        assertThat(stocks.get(0).getId()).isNotNull();
+        assertThat(stockMapper.findByItemId(itemId)).hasSize(1);
+        assertThat(stockMapper.findByBoxId(boxId)).hasSize(1);
+    }
+
+    @Test
     void updateDetails_updatesOnlyOwnedInStockUnit() {
         StockDTO stock = buildStock();
         stockMapper.insertStock(stock);
@@ -427,6 +519,7 @@ class StockMapperTest {
         StockUpdateForm form = new StockUpdateForm();
         form.setSerialNumber("SN-UPDATED");
         form.setLotNumber("LOT-A");
+        form.setMemo("상태 확인 완료");
 
         int updated = stockMapper.updateDetails(externalId, userId, form);
 
@@ -434,5 +527,6 @@ class StockMapperTest {
         StockDTO found = stockMapper.findById(stock.getId()).orElseThrow();
         assertThat(found.getSerialNumber()).isEqualTo("SN-UPDATED");
         assertThat(found.getLotNumber()).isEqualTo("LOT-A");
+        assertThat(found.getMemo()).isEqualTo("상태 확인 완료");
     }
 }

@@ -1,6 +1,6 @@
 package com.seu.seustock.mapper;
 
-import com.seu.seustock.model.StockStatus;
+import com.seu.seustock.model.enumeration.StockStatus;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.ItemSpaceStockDTO;
 import com.seu.seustock.model.dto.StockDetailDTO;
@@ -16,6 +16,7 @@ import java.util.UUID;
 @Mapper
 public interface StockMapper {
     void insertStock(StockDTO stock);
+    void insertStocks(List<StockDTO> stocks);
     Optional<StockDTO> findById(Long id);
     Optional<StockDTO> findByExternalId(UUID externalId);
     List<StockDTO> findByItemId(Long itemId);
@@ -26,7 +27,13 @@ public interface StockMapper {
     List<StockDTO> findByShelfIdDirectOnly(Long shelfId);
     List<StockDTO> findBySpaceIdDirectOnly(Long spaceId);
     int updateStatusIfInStock(@Param("id") Long id, @Param("status") StockStatus status);
+    int updateLocationIfInStock(@Param("ids") List<Long> ids,
+                                @Param("spaceId") Long spaceId,
+                                @Param("shelfId") Long shelfId,
+                                @Param("boxId") Long boxId);
     void deleteById(Long id);
+    int deleteInStockByExternalIdAndUserId(@Param("externalId") UUID externalId,
+                                           @Param("userId") Long userId);
     void deleteInStockByItemAndBox(@Param("itemId") Long itemId, @Param("boxId") Long boxId);
     void deleteInStockByItemAndShelf(@Param("itemId") Long itemId, @Param("shelfId") Long shelfId);
     void deleteInStockByItemAndSpace(@Param("itemId") Long itemId, @Param("spaceId") Long spaceId);
@@ -38,6 +45,9 @@ public interface StockMapper {
     List<StockPanelDTO> findPanelByBoxId(Long boxId);
     List<StockPanelDTO> findPanelByShelfDirectOnly(Long shelfId);
     List<StockPanelDTO> findPanelBySpaceDirectOnly(Long spaceId);
+    List<StockPanelDTO> findPanelBySpaceAllWithOptions(@Param("spaceId") Long spaceId,
+                                                       @Param("keyword") String keyword,
+                                                       @Param("sortBy") String sortBy);
 
     List<ItemSpaceStockDTO> findSpaceStockByItem(@Param("itemExternalId") UUID itemExternalId,
                                                  @Param("userId") Long userId);

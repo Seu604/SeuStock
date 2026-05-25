@@ -1,15 +1,20 @@
 package com.seu.seustock.service;
 
+import com.seu.seustock.mapper.ItemImageMapper;
 import com.seu.seustock.mapper.ItemMapper;
 import com.seu.seustock.mapper.StockMapper;
+import com.seu.seustock.mapper.StockTransactionMapper;
 import com.seu.seustock.mapper.UserMapper;
+import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.UserDTO;
+import com.seu.seustock.model.form.ItemForm;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -31,7 +36,11 @@ class ItemServiceTest {
     @Mock
     private StockMapper stockMapper;
     @Mock
+    private ItemImageMapper itemImageMapper;
+    @Mock
     private ImageStorageService imageStorageService;
+    @Mock
+    private StockTransactionMapper transactionMapper;
 
     @InjectMocks
     private ItemService itemService;
@@ -123,5 +132,34 @@ class ItemServiceTest {
 
         verify(itemMapper, never()).deactivateById(any());
         verify(itemMapper).deleteById(item.getId());
+    }
+
+    @Test
+    void update_reusesExistingImageAssociationInsteadOfInsertingDuplicate() {
+        ItemDTO item = new ItemDTO();
+        item.setId(10L);
+        item.setExternalId(ITEM_EXTERNAL_ID);
+        item.setUserId(1L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+        ImageDTO image = new ImageDTO();
+        image.setId(20L);
+        MultipartFile imageFile = mock(MultipartFile.class);
+        ItemForm form = new ItemForm();
+        form.setName("수정품목");
+        form.setDescription("수정설명");
+        form.setImageFile(imageFile);
+        form.setImageHash("abc123");
+
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(imageStorageService.store(imageFile, user, "abc123")).thenReturn(image);
+        when(itemImageMapper.countByItemIdAndImageId(item.getId(), image.getId())).thenReturn(1);
+
+        itemService.update(ITEM_EXTERNAL_ID, form, USERNAME);
+
+        verify(itemImageMapper).unsetPrimaryByItemId(item.getId());
+        verify(itemImageMapper).updateItemImage(item.getId(), image.getId(), 0, true);
+        verify(itemImageMapper, never()).insertItemImage(any(), any(), anyInt(), anyBoolean());
     }
 }

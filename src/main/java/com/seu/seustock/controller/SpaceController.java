@@ -1,10 +1,12 @@
 package com.seu.seustock.controller;
 
+import com.seu.seustock.configuration.HtmxResponse;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.form.SpaceForm;
 import com.seu.seustock.service.ShelfService;
 import com.seu.seustock.service.SpaceService;
 import com.seu.seustock.service.StockService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.UUID;
 
@@ -48,13 +51,16 @@ public class SpaceController {
     public String create(@Valid @ModelAttribute("form") SpaceForm form,
                          BindingResult result,
                          HttpSession session,
-                         Model model) {
+                         Model model,
+                         RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
             String username = (String) session.getAttribute("loginUser");
             model.addAttribute("spaces", spaceService.findAllByUsername(username));
             return "spaces/list";
         }
         spaceService.create((String) session.getAttribute("loginUser"), form);
+        redirectAttributes.addFlashAttribute("toastType", "success");
+        redirectAttributes.addFlashAttribute("toastMessage", "공간이 추가되었습니다.");
         return "redirect:/spaces";
     }
 
@@ -72,7 +78,8 @@ public class SpaceController {
                             @Valid SpaceForm form,
                             BindingResult result,
                             HttpSession session,
-                            Model model) {
+                            Model model,
+                            HttpServletResponse response) {
         if (result.hasErrors()) {
             String username = (String) session.getAttribute("loginUser");
             model.addAttribute("space", spaceService.findByExternalId(externalId, username));
@@ -81,6 +88,7 @@ public class SpaceController {
         String username = (String) session.getAttribute("loginUser");
         SpaceDTO updated = spaceService.update(externalId, form, username);
         model.addAttribute("space", updated);
+        HtmxResponse.success(response, "공간이 저장되었습니다.");
         return "spaces/fragments/row :: view";
     }
 
@@ -92,10 +100,14 @@ public class SpaceController {
     }
 
     @DeleteMapping("/{externalId}")
-    public String delete(@PathVariable UUID externalId, HttpSession session, Model model) {
+    public String delete(@PathVariable UUID externalId,
+                         HttpSession session,
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         spaceService.delete(externalId, username);
         model.addAttribute("spaces", spaceService.findAllByUsername(username));
+        HtmxResponse.success(response, "공간이 삭제되었습니다.");
         return "spaces/list :: space-list";
     }
 }

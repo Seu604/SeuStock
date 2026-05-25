@@ -1,4 +1,4 @@
-package com.seu.seustock.model;
+package com.seu.seustock.model.enumeration;
 
 public enum StockStatus {
     IN_STOCK("재고중"),
