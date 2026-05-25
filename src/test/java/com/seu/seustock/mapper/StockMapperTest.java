@@ -230,6 +230,54 @@ class StockMapperTest {
     }
 
     @Test
+    void deleteInStockByExternalIdAndUserId_deletesOwnedInStockUnit() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int deleted = stockMapper.deleteInStockByExternalIdAndUserId(externalId, userId);
+
+        assertThat(deleted).isEqualTo(1);
+        assertThat(stockMapper.findById(stock.getId())).isEmpty();
+    }
+
+    @Test
+    void deleteInStockByExternalIdAndUserId_rejectsOtherUserUnit() {
+        UserDTO otherUser = new UserDTO();
+        otherUser.setUsername("otheruser");
+        otherUser.setPassword("password");
+        userMapper.insertUser(otherUser);
+
+        ItemDTO otherItem = new ItemDTO();
+        otherItem.setUserId(otherUser.getId());
+        otherItem.setName("다른 사용자 품목");
+        itemMapper.insertItem(otherItem);
+
+        StockDTO stock = buildStock();
+        stock.setItemId(otherItem.getId());
+        stockMapper.insertStock(stock);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int deleted = stockMapper.deleteInStockByExternalIdAndUserId(externalId, userId);
+
+        assertThat(deleted).isZero();
+        assertThat(stockMapper.findById(stock.getId())).isPresent();
+    }
+
+    @Test
+    void deleteInStockByExternalIdAndUserId_rejectsDispatchedUnit() {
+        StockDTO stock = buildStock();
+        stockMapper.insertStock(stock);
+        stockMapper.updateStatusIfInStock(stock.getId(), StockStatus.DISPATCHED);
+        UUID externalId = stockMapper.findById(stock.getId()).orElseThrow().getExternalId();
+
+        int deleted = stockMapper.deleteInStockByExternalIdAndUserId(externalId, userId);
+
+        assertThat(deleted).isZero();
+        assertThat(stockMapper.findById(stock.getId())).isPresent();
+    }
+
+    @Test
     void findPanelBySpaceDirectOnly_groupsByItem() {
         stockMapper.insertStock(buildStock());
         stockMapper.insertStock(buildStock());

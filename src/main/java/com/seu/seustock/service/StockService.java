@@ -230,6 +230,15 @@ public class StockService {
         }
     }
 
+    @Transactional
+    public void deleteUnit(UUID stockExternalId, String username) {
+        UserDTO user = getUser(username);
+        int deleted = stockMapper.deleteInStockByExternalIdAndUserId(stockExternalId, user.getId());
+        if (deleted != 1) {
+            throw new NoSuchElementException("삭제 가능한 재고를 찾을 수 없습니다.");
+        }
+    }
+
     private ItemDTO getVerifiedItem(UUID itemExternalId, String username) {
         ItemDTO item = itemMapper.findByExternalId(itemExternalId)
                 .orElseThrow(() -> new NoSuchElementException("품목을 찾을 수 없습니다."));

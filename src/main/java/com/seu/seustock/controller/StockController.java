@@ -199,6 +199,15 @@ public class StockController {
         return buildPanelResponse(spaceExternalId, shelfExternalId, boxExternalId, username, model);
     }
 
+    @DeleteMapping("/stocks/{stockExternalId}")
+    @ResponseBody
+    public String deleteRow(@PathVariable UUID stockExternalId,
+                            HttpSession session) {
+        String username = (String) session.getAttribute("loginUser");
+        stockService.deleteUnit(stockExternalId, username);
+        return "";
+    }
+
     /* ── 통합 액션 모달 ── */
 
     @GetMapping("/stocks/action-form")

@@ -27,6 +27,8 @@ public interface StockMapper {
     List<StockDTO> findBySpaceIdDirectOnly(Long spaceId);
     int updateStatusIfInStock(@Param("id") Long id, @Param("status") StockStatus status);
     void deleteById(Long id);
+    int deleteInStockByExternalIdAndUserId(@Param("externalId") UUID externalId,
+                                           @Param("userId") Long userId);
     void deleteInStockByItemAndBox(@Param("itemId") Long itemId, @Param("boxId") Long boxId);
     void deleteInStockByItemAndShelf(@Param("itemId") Long itemId, @Param("shelfId") Long shelfId);
     void deleteInStockByItemAndSpace(@Param("itemId") Long itemId, @Param("spaceId") Long spaceId);

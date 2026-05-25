@@ -195,6 +195,24 @@ class StockServiceTest {
     }
 
     @Test
+    void deleteUnit_deletesOwnedInStockUnit() {
+        when(stockMapper.deleteInStockByExternalIdAndUserId(STOCK_EXTERNAL_ID, user.getId())).thenReturn(1);
+
+        stockService.deleteUnit(STOCK_EXTERNAL_ID, USERNAME);
+
+        verify(stockMapper).deleteInStockByExternalIdAndUserId(STOCK_EXTERNAL_ID, user.getId());
+    }
+
+    @Test
+    void deleteUnit_rejectsMissingUnauthorizedOrNonInStockUnit() {
+        when(stockMapper.deleteInStockByExternalIdAndUserId(STOCK_EXTERNAL_ID, user.getId())).thenReturn(0);
+
+        assertThatThrownBy(() -> stockService.deleteUnit(STOCK_EXTERNAL_ID, USERNAME))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("삭제 가능한 재고");
+    }
+
+    @Test
     void create_happyPath_spaceOnly() {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
