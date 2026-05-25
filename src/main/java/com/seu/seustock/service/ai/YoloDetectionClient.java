@@ -30,10 +30,12 @@ public class YoloDetectionClient {
 
     public List<YoloDetection> detect(byte[] imageBytes, String mimeType) {
         if (!enabled) {
+            log.info("[YoloDetectionClient] YOLO 비활성화 - Gemma 단독 분석으로 진행합니다.");
             return List.of();
         }
 
         try {
+            log.info("[YoloDetectionClient] YOLO 호출 시작 - mimeType={}, size={}", mimeType, imageBytes.length);
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", new NamedByteArrayResource(imageBytes, "analysis-image.jpg"));
 
@@ -45,11 +47,14 @@ public class YoloDetectionClient {
                     .body(YoloDetectionResponse.class);
 
             if (response == null || response.objects() == null) {
+                log.info("[YoloDetectionClient] YOLO 응답 수신 - detections=0");
                 return List.of();
             }
-            return response.objects().stream()
+            List<YoloDetection> detections = response.objects().stream()
                     .map(YoloDetectionPayload::toDetection)
                     .toList();
+            log.info("[YoloDetectionClient] YOLO 응답 수신 - detections={}", detections.size());
+            return detections;
         } catch (Exception e) {
             log.warn("[YoloDetectionClient] YOLO 호출 실패, Gemma 단독 분석으로 fallback합니다.", e);
             return List.of();

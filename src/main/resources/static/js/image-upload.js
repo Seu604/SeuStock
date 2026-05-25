@@ -98,7 +98,12 @@ function initImageUpload(config, root) {
                        ? scope.querySelector(config.labelTextSelector)
                        : null;
 
-    if (!fileInput || fileInput.dataset.imageUploadInitialized === 'true') return;
+    if (!fileInput) return;
+    fileInput.imageUploadOnImageReady = typeof config.onImageReady === 'function'
+        ? config.onImageReady
+        : fileInput.imageUploadOnImageReady;
+
+    if (fileInput.dataset.imageUploadInitialized === 'true') return;
     fileInput.dataset.imageUploadInitialized = 'true';
 
     fileInput.addEventListener('change', async function () {
@@ -128,8 +133,8 @@ function initImageUpload(config, root) {
             }
         }
 
-        if (typeof config.onImageReady === 'function') {
-            config.onImageReady(file);
+        if (typeof fileInput.imageUploadOnImageReady === 'function') {
+            fileInput.imageUploadOnImageReady(file);
         }
     });
 

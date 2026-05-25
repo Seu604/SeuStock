@@ -17,20 +17,50 @@ public final class HtmxResponse {
 
     private static void toast(HttpServletResponse response, String type, String message) {
         response.addHeader("HX-Trigger", "{\"app:toast\":{\"type\":\""
-                + escapeJson(type)
+                + asciiJsonString(type)
                 + "\",\"message\":\""
-                + escapeJson(message)
+                + asciiJsonString(message)
                 + "\"}}");
     }
 
-    private static String escapeJson(String value) {
+    private static String asciiJsonString(String value) {
         if (value == null) {
             return "";
         }
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
+
+        StringBuilder builder = new StringBuilder(value.length());
+        value.codePoints().forEach(codePoint -> appendEscapedJson(builder, codePoint));
+        return builder.toString();
+    }
+
+    private static void appendEscapedJson(StringBuilder builder, int codePoint) {
+        switch (codePoint) {
+            case '\\' -> builder.append("\\\\");
+            case '"' -> builder.append("\\\"");
+            case '\b' -> builder.append("\\b");
+            case '\f' -> builder.append("\\f");
+            case '\n' -> builder.append("\\n");
+            case '\r' -> builder.append("\\r");
+            case '\t' -> builder.append("\\t");
+            default -> {
+                if (codePoint < 0x20 || codePoint > 0x7E) {
+                    appendUnicodeEscape(builder, codePoint);
+                } else {
+                    builder.appendCodePoint(codePoint);
+                }
+            }
+        }
+    }
+
+    private static void appendUnicodeEscape(StringBuilder builder, int codePoint) {
+        if (Character.isBmpCodePoint(codePoint)) {
+            builder.append("\\u").append(String.format("%04x", codePoint));
+            return;
+        }
+
+        char[] surrogates = Character.toChars(codePoint);
+        for (char surrogate : surrogates) {
+            builder.append("\\u").append(String.format("%04x", (int) surrogate));
+        }
     }
 }

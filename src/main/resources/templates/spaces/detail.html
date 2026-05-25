@@ -71,17 +71,6 @@
         }
     }
 
-    document.body.addEventListener('htmx:afterSwap', function (event) {
-        if (!event.detail.target || event.detail.target.id !== 'modal') return;
-        initImageUpload({
-            fileInputSelector:  '#modal input[name="imageFile"]',
-            previewSelector:    '#quick-image-preview',
-            hashInputSelector:  '#quick-image-hash',
-            submitSelector:     '#quick-submit-btn',
-            labelTextSelector:  '#image-label-text'
-        });
-    });
-
     function startStockMoveMode() {
         const panel = document.getElementById('stock-panel');
         if (!panel) return;
