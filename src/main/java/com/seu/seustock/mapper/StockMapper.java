@@ -1,6 +1,6 @@
 package com.seu.seustock.mapper;
 
-import com.seu.seustock.model.StockStatus;
+import com.seu.seustock.model.enumeration.StockStatus;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.ItemSpaceStockDTO;
 import com.seu.seustock.model.dto.StockDetailDTO;

@@ -1,4 +1,4 @@
-package com.seu.seustock.model;
+package com.seu.seustock.model.enumeration;
 
 public enum TransactionType {
     IN("입고"),

@@ -1,6 +1,6 @@
 package com.seu.seustock.mapper;
 
-import com.seu.seustock.model.TransactionType;
+import com.seu.seustock.model.enumeration.TransactionType;
 import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;

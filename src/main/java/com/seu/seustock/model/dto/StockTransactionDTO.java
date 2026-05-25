@@ -1,6 +1,6 @@
 package com.seu.seustock.model.dto;
 
-import com.seu.seustock.model.TransactionType;
+import com.seu.seustock.model.enumeration.TransactionType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

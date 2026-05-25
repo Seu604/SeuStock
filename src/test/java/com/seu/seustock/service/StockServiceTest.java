@@ -1,8 +1,8 @@
 package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.*;
-import com.seu.seustock.model.StockStatus;
-import com.seu.seustock.model.TransactionType;
+import com.seu.seustock.model.enumeration.StockStatus;
+import com.seu.seustock.model.enumeration.TransactionType;
 import com.seu.seustock.model.dto.StockTransactionDTO;
 import com.seu.seustock.model.dto.*;
 import com.seu.seustock.model.form.StockForm;

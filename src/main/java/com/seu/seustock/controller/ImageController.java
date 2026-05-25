@@ -2,7 +2,7 @@ package com.seu.seustock.controller;
 
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ImageAnalysisDTO;
-import com.seu.seustock.service.ImageAnalysisService;
+import com.seu.seustock.service.ai.ImageAnalysisService;
 import com.seu.seustock.service.ImageStorageService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
