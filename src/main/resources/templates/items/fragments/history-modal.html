@@ -44,7 +44,26 @@
                     <!-- 장소 -->
                     <div class="mt-1.5 flex items-start gap-2 text-sm">
                         <span class="shrink-0 w-20 text-xs font-medium text-slate-400">장소</span>
-                        <span class="text-slate-700">
+                        <span th:if="${tx.transactionType.name() == 'MOVE' and tx.fromSpaceName != null and tx.toSpaceName != null}"
+                              class="text-slate-700">
+                            <span th:text="${tx.fromSpaceName}"></span>
+                            <span th:if="${tx.fromShelfName != null}"
+                                  th:text="' › ' + ${tx.fromShelfName}"
+                                  class="text-slate-400"></span>
+                            <span th:if="${tx.fromBoxName != null}"
+                                  th:text="' › ' + ${tx.fromBoxName}"
+                                  class="text-slate-400"></span>
+                            <span class="mx-1 text-slate-300">→</span>
+                            <span th:text="${tx.toSpaceName}"></span>
+                            <span th:if="${tx.toShelfName != null}"
+                                  th:text="' › ' + ${tx.toShelfName}"
+                                  class="text-slate-400"></span>
+                            <span th:if="${tx.toBoxName != null}"
+                                  th:text="' › ' + ${tx.toBoxName}"
+                                  class="text-slate-400"></span>
+                        </span>
+                        <span th:unless="${tx.transactionType.name() == 'MOVE' and tx.fromSpaceName != null and tx.toSpaceName != null}"
+                              class="text-slate-700">
                             <span th:text="${tx.spaceName}"></span>
                             <span th:if="${tx.shelfName != null}"
                                   th:text="' › ' + ${tx.shelfName}"

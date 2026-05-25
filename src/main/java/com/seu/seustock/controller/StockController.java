@@ -1,14 +1,17 @@
 package com.seu.seustock.controller;
 
+import com.seu.seustock.configuration.HtmxResponse;
 import com.seu.seustock.model.dto.StockPanelDTO;
 import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
+import com.seu.seustock.model.form.StockMoveForm;
 import com.seu.seustock.model.form.StockUpdateForm;
 import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ItemService;
 import com.seu.seustock.service.ShelfService;
 import com.seu.seustock.service.StockService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +21,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Controller
@@ -69,13 +73,15 @@ public class StockController {
                             @Valid @ModelAttribute("form") StockUpdateForm form,
                             BindingResult result,
                             HttpSession session,
-                            Model model) {
+                            Model model,
+                            HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         if (result.hasErrors()) {
             model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
             return "stocks/fragments/detail-row :: edit";
         }
         model.addAttribute("stock", stockService.updateDetails(stockExternalId, form, username));
+        HtmxResponse.success(response, "재고 정보가 저장되었습니다.");
         return "stocks/fragments/detail-row :: view";
     }
 
@@ -144,7 +150,9 @@ public class StockController {
     @PostMapping("/stocks")
     public String create(@Valid @ModelAttribute("form") StockForm form,
                          BindingResult result,
-                         HttpSession session, Model model) {
+                         HttpSession session,
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         if (result.hasErrors()) {
             model.addAttribute("items", itemService.findAllByUsername(username));
@@ -154,6 +162,7 @@ public class StockController {
             return "stocks/fragments/modal :: modal";
         }
         stockService.create(form, username);
+        HtmxResponse.success(response, "재고가 추가되었습니다.");
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username, model);
     }
 
@@ -174,7 +183,9 @@ public class StockController {
     @PostMapping("/stocks/quick")
     public String createQuick(@Valid @ModelAttribute("form") QuickStockForm form,
                               BindingResult result,
-                              HttpSession session, Model model) {
+                              HttpSession session,
+                              Model model,
+                              HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         if (result.hasErrors()) {
             model.addAttribute("spaceId", form.getSpaceExternalId());
@@ -183,6 +194,7 @@ public class StockController {
             return "stocks/fragments/quick-modal :: modal";
         }
         stockService.createWithNewItem(form, username);
+        HtmxResponse.success(response, "품목과 재고가 추가되었습니다.");
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username, model);
     }
 
@@ -193,18 +205,23 @@ public class StockController {
                          @RequestParam UUID spaceExternalId,
                          @RequestParam(required = false) UUID shelfExternalId,
                          @RequestParam(required = false) UUID boxExternalId,
-                         HttpSession session, Model model) {
+                         HttpSession session,
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         stockService.deleteUnits(itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, username);
+        HtmxResponse.success(response, "재고가 삭제되었습니다.");
         return buildPanelResponse(spaceExternalId, shelfExternalId, boxExternalId, username, model);
     }
 
     @DeleteMapping("/stocks/{stockExternalId}")
     @ResponseBody
     public String deleteRow(@PathVariable UUID stockExternalId,
-                            HttpSession session) {
+                            HttpSession session,
+                            HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         stockService.deleteUnit(stockExternalId, username);
+        HtmxResponse.success(response, "재고가 삭제되었습니다.");
         return "";
     }
 
@@ -247,11 +264,14 @@ public class StockController {
     @PostMapping("/stocks/in")
     public String processIn(@Valid @ModelAttribute("form") StockInOutForm form,
                             BindingResult result,
-                            HttpSession session, Model model) {
+                            HttpSession session,
+                            Model model,
+                            HttpServletResponse response) {
         if (result.hasErrors()) {
             return "stocks/fragments/in-modal :: modal";
         }
         stockService.addUnits(form, (String) session.getAttribute("loginUser"));
+        HtmxResponse.success(response, "입고되었습니다.");
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
                 (String) session.getAttribute("loginUser"), model);
     }
@@ -276,13 +296,44 @@ public class StockController {
     @PostMapping("/stocks/out")
     public String processOut(@Valid @ModelAttribute("form") StockInOutForm form,
                              BindingResult result,
-                             HttpSession session, Model model) {
+                             HttpSession session,
+                             Model model,
+                             HttpServletResponse response) {
         if (result.hasErrors()) {
             return "stocks/fragments/out-modal :: modal";
         }
         stockService.dispatchUnits(form, (String) session.getAttribute("loginUser"));
+        HtmxResponse.success(response, "출고되었습니다.");
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
                 (String) session.getAttribute("loginUser"), model);
+    }
+
+    /* ── 이동 ── */
+
+    @GetMapping("/stocks/move-form")
+    public String moveForm(@ModelAttribute("form") StockMoveForm form,
+                           HttpSession session,
+                           Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        model.addAttribute("locationOptions", buildMoveLocationOptions(form, username));
+        return "stocks/fragments/move-modal :: modal";
+    }
+
+    @PostMapping("/stocks/move")
+    public String processMove(@Valid @ModelAttribute("form") StockMoveForm form,
+                              BindingResult result,
+                              HttpSession session,
+                              Model model,
+                              HttpServletResponse response) {
+        String username = (String) session.getAttribute("loginUser");
+        if (result.hasErrors()) {
+            model.addAttribute("locationOptions", buildMoveLocationOptions(form, username));
+            return "stocks/fragments/move-modal :: modal";
+        }
+        stockService.moveUnits(form, username);
+        HtmxResponse.success(response, "재고가 이동되었습니다.");
+        return buildPanelResponse(form.getSourceSpaceExternalId(), form.getSourceShelfExternalId(), form.getSourceBoxExternalId(),
+                username, model);
     }
 
     private String buildPanelResponse(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId,
@@ -306,5 +357,48 @@ public class StockController {
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("boxExternalId", boxExternalId);
         return "stocks/fragments/panel :: stock-panel-response";
+    }
+
+    private List<MoveLocationOption> buildMoveLocationOptions(StockMoveForm form, String username) {
+        List<MoveLocationOption> options = new java.util.ArrayList<>();
+        UUID spaceExternalId = form.getSourceSpaceExternalId();
+        options.add(new MoveLocationOption(
+                "공간 직접 재고",
+                spaceExternalId,
+                null,
+                null,
+                isSameLocation(form, spaceExternalId, null, null)));
+
+        for (var shelf : shelfService.findAllBySpaceId(spaceExternalId, username)) {
+            options.add(new MoveLocationOption(
+                    shelf.getName() + " (선반 직접 재고)",
+                    spaceExternalId,
+                    shelf.getExternalId(),
+                    null,
+                    isSameLocation(form, spaceExternalId, shelf.getExternalId(), null)));
+
+            for (var box : boxService.findAllByShelfId(spaceExternalId, shelf.getExternalId(), username)) {
+                options.add(new MoveLocationOption(
+                        shelf.getName() + " / " + box.getName(),
+                        spaceExternalId,
+                        shelf.getExternalId(),
+                        box.getExternalId(),
+                        isSameLocation(form, spaceExternalId, shelf.getExternalId(), box.getExternalId())));
+            }
+        }
+        return options;
+    }
+
+    private boolean isSameLocation(StockMoveForm form, UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId) {
+        return Objects.equals(form.getSourceSpaceExternalId(), spaceExternalId)
+                && Objects.equals(form.getSourceShelfExternalId(), shelfExternalId)
+                && Objects.equals(form.getSourceBoxExternalId(), boxExternalId);
+    }
+
+    public record MoveLocationOption(String label,
+                                     UUID spaceExternalId,
+                                     UUID shelfExternalId,
+                                     UUID boxExternalId,
+                                     boolean current) {
     }
 }

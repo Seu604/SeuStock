@@ -7,6 +7,7 @@ import com.seu.seustock.model.dto.*;
 import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
+import com.seu.seustock.model.form.StockMoveForm;
 import com.seu.seustock.model.form.StockUpdateForm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -217,6 +219,55 @@ public class StockService {
     }
 
     @Transactional
+    public void moveUnits(StockMoveForm form, String username) {
+        VerifiedLocation source = resolveVerifiedLocation(
+                form.getSourceSpaceExternalId(),
+                form.getSourceShelfExternalId(),
+                form.getSourceBoxExternalId(),
+                username);
+        VerifiedLocation target = resolveVerifiedLocation(
+                form.getTargetSpaceExternalId(),
+                form.getTargetShelfExternalId(),
+                form.getTargetBoxExternalId(),
+                username);
+
+        if (isSameLocation(source, target)) {
+            throw new IllegalArgumentException("같은 위치로는 이동할 수 없습니다.");
+        }
+
+        for (StockMoveForm.Item moveItem : form.getItems()) {
+            ItemDTO item = getVerifiedItem(moveItem.getItemExternalId(), username);
+            List<StockDTO> candidates = findInStockUnits(item.getId(), source);
+            if (candidates.size() < moveItem.getCount()) {
+                throw new IllegalArgumentException(
+                        item.getName() + " 재고가 부족합니다. (현재: " + candidates.size() + "개)");
+            }
+
+            List<StockDTO> selected = candidates.subList(0, moveItem.getCount());
+            List<Long> stockIds = selected.stream().map(StockDTO::getId).toList();
+            int updated = stockMapper.updateLocationIfInStock(
+                    stockIds, target.space().getId(), target.shelfId(), target.boxId());
+            if (updated != stockIds.size()) {
+                throw new IllegalStateException("재고 상태가 변경되어 이동할 수 없습니다.");
+            }
+
+            for (StockDTO unit : selected) {
+                StockTransactionDTO tx = new StockTransactionDTO();
+                tx.setStockId(unit.getId());
+                tx.setTransactionType(TransactionType.MOVE);
+                tx.setFromSpaceId(source.space().getId());
+                tx.setFromShelfId(source.shelfId());
+                tx.setFromBoxId(source.boxId());
+                tx.setToSpaceId(target.space().getId());
+                tx.setToShelfId(target.shelfId());
+                tx.setToBoxId(target.boxId());
+                tx.setMemo(form.getMemo());
+                transactionMapper.insertTransaction(tx);
+            }
+        }
+    }
+
+    @Transactional
     public void deleteUnits(UUID itemExternalId, UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
         ItemDTO item = getVerifiedItem(itemExternalId, username);
         VerifiedLocation location = resolveVerifiedLocation(spaceExternalId, shelfExternalId, boxExternalId, username);
@@ -285,6 +336,22 @@ public class StockService {
         }
 
         return new VerifiedLocation(space, shelf, box);
+    }
+
+    private List<StockDTO> findInStockUnits(Long itemId, VerifiedLocation location) {
+        if (location.box() != null) {
+            return stockMapper.findInStockByItemAndBox(itemId, location.box().getId());
+        }
+        if (location.shelf() != null) {
+            return stockMapper.findInStockByItemAndShelf(itemId, location.shelf().getId());
+        }
+        return stockMapper.findInStockByItemAndSpace(itemId, location.space().getId());
+    }
+
+    private boolean isSameLocation(VerifiedLocation source, VerifiedLocation target) {
+        return Objects.equals(source.space().getId(), target.space().getId())
+                && Objects.equals(source.shelfId(), target.shelfId())
+                && Objects.equals(source.boxId(), target.boxId());
     }
 
     private SpaceDTO getVerifiedSpace(UUID spaceExternalId, String username) {

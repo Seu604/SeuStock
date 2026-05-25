@@ -24,4 +24,11 @@ public class ItemTransactionHistoryDTO {
     private String spaceName;
     private String shelfName;
     private String boxName;
+
+    private String fromSpaceName;
+    private String fromShelfName;
+    private String fromBoxName;
+    private String toSpaceName;
+    private String toShelfName;
+    private String toBoxName;
 }

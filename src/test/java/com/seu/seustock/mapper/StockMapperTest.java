@@ -220,6 +220,26 @@ class StockMapperTest {
     }
 
     @Test
+    void updateLocationIfInStock_movesOnlyInStockUnits() {
+        StockDTO inStock = buildStock();
+        stockMapper.insertStock(inStock);
+        StockDTO dispatched = buildStock();
+        stockMapper.insertStock(dispatched);
+        stockMapper.updateStatusIfInStock(dispatched.getId(), StockStatus.DISPATCHED);
+
+        int updated = stockMapper.updateLocationIfInStock(
+                List.of(inStock.getId(), dispatched.getId()), spaceId, shelfId, boxId);
+
+        StockDTO moved = stockMapper.findById(inStock.getId()).orElseThrow();
+        StockDTO unchanged = stockMapper.findById(dispatched.getId()).orElseThrow();
+        assertThat(updated).isEqualTo(1);
+        assertThat(moved.getShelfId()).isEqualTo(shelfId);
+        assertThat(moved.getBoxId()).isEqualTo(boxId);
+        assertThat(unchanged.getShelfId()).isNull();
+        assertThat(unchanged.getBoxId()).isNull();
+    }
+
+    @Test
     void deleteById() {
         StockDTO stock = buildStock();
         stockMapper.insertStock(stock);

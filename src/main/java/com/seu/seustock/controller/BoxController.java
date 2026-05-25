@@ -1,8 +1,10 @@
 package com.seu.seustock.controller;
 
+import com.seu.seustock.configuration.HtmxResponse;
 import com.seu.seustock.model.form.BoxForm;
 import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ShelfService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +44,9 @@ public class BoxController {
                          @PathVariable UUID boxExternalId,
                          @Valid @ModelAttribute("form") BoxForm form,
                          BindingResult result,
-                         HttpSession session, Model model) {
+                         HttpSession session,
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         if (result.hasErrors()) {
             model.addAttribute("spaceExternalId", spaceExternalId);
@@ -54,6 +58,7 @@ public class BoxController {
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelf", shelfService.findByExternalId(spaceExternalId, shelfExternalId, username));
         model.addAttribute("boxes", boxService.findAllByShelfId(spaceExternalId, shelfExternalId, username));
+        HtmxResponse.success(response, "박스가 변경되었습니다.");
         return "shelves/fragments/box-list :: box-list-response";
     }
 
@@ -72,7 +77,9 @@ public class BoxController {
                          @RequestParam UUID spaceExternalId,
                          @Valid @ModelAttribute("form") BoxForm form,
                          BindingResult result,
-                         HttpSession session, Model model) {
+                         HttpSession session,
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         if (result.hasErrors()) {
             model.addAttribute("spaceExternalId", spaceExternalId);
@@ -84,6 +91,7 @@ public class BoxController {
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("shelf", shelfService.findByExternalId(spaceExternalId, shelfExternalId, username));
         model.addAttribute("boxes", boxService.findAllByShelfId(spaceExternalId, shelfExternalId, username));
+        HtmxResponse.success(response, "박스가 추가되었습니다.");
         return "shelves/fragments/box-list :: box-list-response";
     }
 
@@ -92,12 +100,14 @@ public class BoxController {
                          @PathVariable UUID shelfExternalId,
                          @PathVariable UUID boxExternalId,
                          HttpSession session,
-                         Model model) {
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         boxService.delete(spaceExternalId, shelfExternalId, boxExternalId, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelf", shelfService.findByExternalId(spaceExternalId, shelfExternalId, username));
         model.addAttribute("boxes", boxService.findAllByShelfId(spaceExternalId, shelfExternalId, username));
+        HtmxResponse.success(response, "박스가 삭제되었습니다.");
         return "shelves/fragments/box-list :: box-list-container";
     }
 }

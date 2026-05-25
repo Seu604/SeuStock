@@ -81,6 +81,92 @@
             labelTextSelector:  '#image-label-text'
         });
     });
+
+    function startStockMoveMode() {
+        const panel = document.getElementById('stock-panel');
+        if (!panel) return;
+        panel.classList.add('stock-move-mode');
+        panel.querySelectorAll('.stock-default-only').forEach(function(el) {
+            el.classList.add('hidden');
+        });
+        panel.querySelectorAll('.stock-move-only').forEach(function(el) {
+            el.classList.remove('hidden');
+        });
+        const form = document.getElementById('stock-move-selection-form');
+        if (form) form.classList.remove('hidden');
+        syncStockMoveControls();
+    }
+
+    function cancelStockMoveMode() {
+        const panel = document.getElementById('stock-panel');
+        if (!panel) return;
+        panel.classList.remove('stock-move-mode');
+        panel.querySelectorAll('.stock-default-only').forEach(function(el) {
+            el.classList.remove('hidden');
+        });
+        panel.querySelectorAll('.stock-move-only').forEach(function(el) {
+            el.classList.add('hidden');
+        });
+        panel.querySelectorAll('.stock-move-check').forEach(function(input) {
+            input.checked = false;
+        });
+        panel.querySelectorAll('.stock-move-count').forEach(function(input) {
+            input.value = input.max || '1';
+        });
+        const form = document.getElementById('stock-move-selection-form');
+        if (form) form.classList.add('hidden');
+        const fields = document.getElementById('move-selection-fields');
+        if (fields) fields.innerHTML = '';
+        syncStockMoveControls();
+    }
+
+    function syncStockMoveControls() {
+        const submit = document.getElementById('stock-move-submit');
+        if (!submit) return;
+        const checkedRows = Array.from(document.querySelectorAll('#stock-panel .stock-move-check:checked'));
+        const hasInvalidCount = checkedRows.some(function(check) {
+            const row = check.closest('[data-item-external-id]');
+            const countInput = row ? row.querySelector('.stock-move-count') : null;
+            const count = countInput ? parseInt(countInput.value, 10) : NaN;
+            const max = countInput ? parseInt(countInput.max, 10) : NaN;
+            return isNaN(count) || count < 1 || count > max;
+        });
+        submit.disabled = checkedRows.length === 0 || hasInvalidCount;
+    }
+
+    function prepareStockMoveSelection() {
+        const fields = document.getElementById('move-selection-fields');
+        if (!fields) return false;
+        fields.innerHTML = '';
+
+        const checkedRows = Array.from(document.querySelectorAll('#stock-panel .stock-move-check:checked'));
+        if (checkedRows.length === 0) {
+            syncStockMoveControls();
+            return false;
+        }
+
+        for (let i = 0; i < checkedRows.length; i++) {
+            const row = checkedRows[i].closest('[data-item-external-id]');
+            const countInput = row ? row.querySelector('.stock-move-count') : null;
+            const count = countInput ? parseInt(countInput.value, 10) : NaN;
+            const max = countInput ? parseInt(countInput.max, 10) : NaN;
+            if (!row || isNaN(count) || count < 1 || count > max) {
+                syncStockMoveControls();
+                return false;
+            }
+            fields.appendChild(hiddenInput('items[' + i + '].itemExternalId', row.dataset.itemExternalId));
+            fields.appendChild(hiddenInput('items[' + i + '].count', String(count)));
+        }
+        return true;
+    }
+
+    function hiddenInput(name, value) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value || '';
+        return input;
+    }
 </script>
 
 </body>

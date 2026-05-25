@@ -1,8 +1,10 @@
 package com.seu.seustock.controller;
 
+import com.seu.seustock.configuration.HtmxResponse;
 import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.form.ItemForm;
 import com.seu.seustock.service.ItemService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,13 +39,15 @@ public class ItemController {
     public String create(@Valid @ModelAttribute("form") ItemForm form,
                          BindingResult result,
                          HttpSession session,
-                         Model model) {
+                         Model model,
+                         HttpServletResponse response) {
         if (result.hasErrors()) {
             return "items/fragments/modal :: modal";
         }
         String username = (String) session.getAttribute("loginUser");
         ItemDTO created = itemService.create(username, form);
         model.addAttribute("item", created);
+        HtmxResponse.success(response, "품목이 추가되었습니다.");
         return "items/fragments/modal :: created";
     }
 
@@ -61,7 +65,8 @@ public class ItemController {
                             @Valid @ModelAttribute("form") ItemForm form,
                             BindingResult result,
                             HttpSession session,
-                            Model model) {
+                            Model model,
+                            HttpServletResponse response) {
         if (result.hasErrors()) {
             String username = (String) session.getAttribute("loginUser");
             model.addAttribute("item", itemService.findByExternalId(externalId, username));
@@ -70,6 +75,7 @@ public class ItemController {
         String username = (String) session.getAttribute("loginUser");
         ItemDTO updated = itemService.update(externalId, form, username);
         model.addAttribute("item", updated);
+        HtmxResponse.success(response, "품목이 저장되었습니다.");
         return "items/fragments/card :: view";
     }
 
@@ -98,10 +104,14 @@ public class ItemController {
     }
 
     @DeleteMapping("/{externalId}")
-    public String delete(@PathVariable UUID externalId, HttpSession session, Model model) {
+    public String delete(@PathVariable UUID externalId,
+                         HttpSession session,
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         itemService.delete(externalId, username);
         model.addAttribute("items", itemService.findAllByUsername(username));
+        HtmxResponse.success(response, "품목이 삭제되었습니다.");
         return "items/list :: item-list";
     }
 }

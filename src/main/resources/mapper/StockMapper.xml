@@ -160,6 +160,18 @@
           AND status = 'IN_STOCK'
     </update>
 
+    <update id="updateLocationIfInStock">
+        UPDATE stocks
+        SET space_id = #{spaceId},
+            shelf_id = #{shelfId},
+            box_id   = #{boxId}
+        WHERE status = 'IN_STOCK'
+          AND id IN
+          <foreach collection="ids" item="id" open="(" separator="," close=")">
+              #{id}
+          </foreach>
+    </update>
+
     <delete id="deleteById" parameterType="long">
         DELETE FROM stocks
         WHERE id = #{id}

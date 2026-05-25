@@ -70,9 +70,21 @@ CREATE TABLE IF NOT EXISTS stock_transactions (
     external_id      UUID        DEFAULT RANDOM_UUID() NOT NULL UNIQUE,
     stock_id         BIGINT      NOT NULL,
     transaction_type VARCHAR(20) NOT NULL,
+    from_space_id    BIGINT,
+    from_shelf_id    BIGINT,
+    from_box_id      BIGINT,
+    to_space_id      BIGINT,
+    to_shelf_id      BIGINT,
+    to_box_id        BIGINT,
     memo             TEXT,
     created_at       TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stocks(id) ON DELETE CASCADE,
+    FOREIGN KEY (from_space_id) REFERENCES spaces(id),
+    FOREIGN KEY (from_shelf_id) REFERENCES shelves(id),
+    FOREIGN KEY (from_box_id)   REFERENCES boxes(id),
+    FOREIGN KEY (to_space_id)   REFERENCES spaces(id),
+    FOREIGN KEY (to_shelf_id)   REFERENCES shelves(id),
+    FOREIGN KEY (to_box_id)     REFERENCES boxes(id),
     CONSTRAINT chk_transaction_type CHECK (transaction_type IN ('IN', 'OUT', 'MOVE', 'ADJUST'))
 );
 

@@ -1,8 +1,10 @@
 package com.seu.seustock.controller;
 
+import com.seu.seustock.configuration.HtmxResponse;
 import com.seu.seustock.model.form.ShelfForm;
 import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ShelfService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +52,9 @@ public class ShelfController {
                          @PathVariable UUID shelfExternalId,
                          @Valid @ModelAttribute("form") ShelfForm form,
                          BindingResult result,
-                         HttpSession session, Model model) {
+                         HttpSession session,
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         if (result.hasErrors()) {
             model.addAttribute("spaceExternalId", spaceExternalId);
@@ -60,6 +64,7 @@ public class ShelfController {
         shelfService.rename(spaceExternalId, shelfExternalId, form, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
+        HtmxResponse.success(response, "선반이 변경되었습니다.");
         return "spaces/fragments/shelf-list-response :: shelf-list-response";
     }
 
@@ -74,7 +79,9 @@ public class ShelfController {
     public String create(@PathVariable UUID spaceExternalId,
                          @Valid @ModelAttribute("form") ShelfForm form,
                          BindingResult result,
-                         HttpSession session, Model model) {
+                         HttpSession session,
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         if (result.hasErrors()) {
             model.addAttribute("spaceExternalId", spaceExternalId);
@@ -83,6 +90,7 @@ public class ShelfController {
         shelfService.create(spaceExternalId, form, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
+        HtmxResponse.success(response, "선반이 추가되었습니다.");
         return "spaces/fragments/shelf-list-response :: shelf-list-response";
     }
 
@@ -90,11 +98,13 @@ public class ShelfController {
     public String delete(@PathVariable UUID spaceExternalId,
                          @PathVariable UUID shelfExternalId,
                          HttpSession session,
-                         Model model) {
+                         Model model,
+                         HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         shelfService.delete(spaceExternalId, shelfExternalId, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
+        HtmxResponse.success(response, "선반이 삭제되었습니다.");
         return "spaces/detail :: shelf-list";
     }
 }

@@ -20,21 +20,12 @@ public class YoloDetectionClient {
 
     private final RestClient restClient;
     private final boolean enabled;
-    private final int imageSize;
-    private final double confidenceThreshold;
-    private final double iouThreshold;
 
     public YoloDetectionClient(RestClient.Builder restClientBuilder,
                                @Value("${seustock.ai.yolo.base-url:http://localhost:8000}") String baseUrl,
-                               @Value("${seustock.ai.yolo.enabled:false}") boolean enabled,
-                               @Value("${seustock.ai.yolo.image-size:640}") int imageSize,
-                               @Value("${seustock.ai.yolo.confidence-threshold:0.25}") double confidenceThreshold,
-                               @Value("${seustock.ai.yolo.iou-threshold:0.7}") double iouThreshold) {
+                               @Value("${seustock.ai.yolo.enabled:false}") boolean enabled) {
         this.restClient = restClientBuilder.baseUrl(baseUrl).build();
         this.enabled = enabled;
-        this.imageSize = imageSize;
-        this.confidenceThreshold = confidenceThreshold;
-        this.iouThreshold = iouThreshold;
     }
 
     public List<YoloDetection> detect(byte[] imageBytes, String mimeType) {
@@ -44,10 +35,7 @@ public class YoloDetectionClient {
 
         try {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("imageFile", new NamedByteArrayResource(imageBytes, "analysis-image.jpg"));
-            body.add("imageSize", imageSize);
-            body.add("confidenceThreshold", confidenceThreshold);
-            body.add("iouThreshold", iouThreshold);
+            body.add("file", new NamedByteArrayResource(imageBytes, "analysis-image.jpg"));
 
             YoloDetectionResponse response = restClient.post()
                     .uri("/detect")
@@ -56,10 +44,10 @@ public class YoloDetectionClient {
                     .retrieve()
                     .body(YoloDetectionResponse.class);
 
-            if (response == null || response.detections() == null) {
+            if (response == null || response.objects() == null) {
                 return List.of();
             }
-            return response.detections().stream()
+            return response.objects().stream()
                     .map(YoloDetectionPayload::toDetection)
                     .toList();
         } catch (Exception e) {
@@ -83,18 +71,25 @@ public class YoloDetectionClient {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record YoloDetectionResponse(List<YoloDetectionPayload> detections) {
+    private record YoloDetectionResponse(List<YoloDetectionPayload> objects) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record YoloDetectionPayload(String label,
                                         Double confidence,
-                                        Double x1,
-                                        Double y1,
-                                        Double x2,
-                                        Double y2) {
+                                        Bbox bbox) {
         private YoloDetection toDetection() {
-            return new YoloDetection(label, confidence, x1, y1, x2, y2);
+            if (bbox == null) {
+                return new YoloDetection(label, confidence, null, null, null, null);
+            }
+            return new YoloDetection(label, confidence, bbox.x1(), bbox.y1(), bbox.x2(), bbox.y2());
         }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record Bbox(Double x1,
+                        Double y1,
+                        Double x2,
+                        Double y2) {
     }
 }

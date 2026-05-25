@@ -28,6 +28,80 @@
             }
         }
     </script>
+    <script>
+        (function () {
+            function ensureToastContainer() {
+                var container = document.getElementById('toast-container');
+                if (container) return container;
+
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed right-4 top-4 z-[60] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2';
+                document.body.appendChild(container);
+                return container;
+            }
+
+            function showToast(detail) {
+                var message = detail && detail.message ? detail.message : '요청을 처리했습니다.';
+                var type = detail && detail.type ? detail.type : 'success';
+                var isError = type === 'error';
+                var toast = document.createElement('div');
+                toast.className = 'rounded-md border px-4 py-3 text-sm shadow-lg transition ' +
+                    (isError
+                        ? 'border-red-200 bg-red-50 text-red-700'
+                        : 'border-emerald-200 bg-emerald-50 text-emerald-700');
+                toast.textContent = message;
+                ensureToastContainer().appendChild(toast);
+
+                window.setTimeout(function () {
+                    toast.classList.add('opacity-0');
+                    window.setTimeout(function () { toast.remove(); }, 200);
+                }, 2800);
+            }
+
+            window.SeuStockToast = showToast;
+
+            function replaceModalFromResponse(xhr) {
+                if (!xhr || !xhr.responseText) return false;
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(xhr.responseText, 'text/html');
+                var incomingModal = doc.getElementById('modal');
+                if (!incomingModal || !incomingModal.hasAttribute('data-error-modal')) return false;
+
+                var currentModal = document.getElementById('modal');
+                var insertedModal;
+                if (currentModal) {
+                    currentModal.outerHTML = incomingModal.outerHTML;
+                    insertedModal = document.getElementById('modal');
+                } else {
+                    document.body.insertAdjacentHTML('beforeend', incomingModal.outerHTML);
+                    insertedModal = document.getElementById('modal');
+                }
+                if (insertedModal && window.htmx) {
+                    window.htmx.process(insertedModal);
+                }
+                return true;
+            }
+
+            document.addEventListener('app:toast', function (event) {
+                showToast(event.detail);
+            });
+
+            document.addEventListener('htmx:responseError', function (event) {
+                if (!replaceModalFromResponse(event.detail && event.detail.xhr)) {
+                    showToast({ type: 'error', message: '요청을 처리하지 못했습니다.' });
+                }
+            });
+        })();
+    </script>
+    <script th:if="${toastMessage != null}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            window.SeuStockToast({
+                type: /*[[${toastType}]]*/ 'success' || 'success',
+                message: /*[[${toastMessage}]]*/ '요청을 처리했습니다.'
+            });
+        });
+    </script>
 </head>
 
 <!--/* 공통 네비게이션 바 */-->
