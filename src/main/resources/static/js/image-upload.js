@@ -215,9 +215,16 @@ function createImageAnalysisHandler(config, root) {
                 fd.append('previousDescription', descInput ? descInput.value : '');
             }
 
+            var csrfTokenEl = document.querySelector('meta[name="_csrf"]');
+            var csrfHeaderEl = document.querySelector('meta[name="_csrf_header"]');
+            var fetchHeaders = {};
+            if (csrfTokenEl && csrfHeaderEl) {
+                fetchHeaders[csrfHeaderEl.getAttribute('content')] = csrfTokenEl.getAttribute('content');
+            }
             var res = await fetch('/images/analyze', {
                 method: 'POST',
                 body: fd,
+                headers: fetchHeaders,
                 signal: requestCtrl.signal
             });
             if (!res.ok) throw new Error('Image analysis request failed');

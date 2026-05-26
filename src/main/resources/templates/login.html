@@ -13,12 +13,11 @@
         <h1 class="mb-6 text-2xl font-bold text-slate-800">로그인</h1>
 
         <form th:action="@{/login}" th:object="${form}" method="post" class="space-y-4">
-            <input type="hidden" name="redirect" th:value="${redirect}">
 
-            <!-- 전역 인증 오류 -->
-            <div th:if="${#fields.hasGlobalErrors()}"
+            <!-- 인증 오류 -->
+            <div th:if="${param.error}"
                  class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
-                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+                아이디 또는 비밀번호가 올바르지 않습니다.
             </div>
 
             <!-- 아이디 -->

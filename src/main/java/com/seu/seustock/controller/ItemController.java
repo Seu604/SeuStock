@@ -5,7 +5,6 @@ import com.seu.seustock.model.dto.ItemDTO;
 import com.seu.seustock.model.form.ItemForm;
 import com.seu.seustock.service.ItemService;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -13,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.UUID;
 
 @Controller
@@ -23,9 +23,16 @@ public class ItemController {
     private final ItemService itemService;
 
     @GetMapping
-    public String list(HttpSession session, Model model) {
+    public String list(@RequestParam(required = false) String keyword,
+                       @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                       @RequestParam(required = false) Integer page,
+                       HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
-        model.addAttribute("items", itemService.findAllByUsername(username));
+        var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
+        model.addAttribute("items", itemsPage.content());
+        model.addAttribute("page", itemsPage);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         return "items/list";
     }
 
@@ -38,13 +45,13 @@ public class ItemController {
     @PostMapping
     public String create(@Valid @ModelAttribute("form") ItemForm form,
                          BindingResult result,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
         if (result.hasErrors()) {
             return "items/fragments/modal :: modal";
         }
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         ItemDTO created = itemService.create(username, form);
         model.addAttribute("item", created);
         HtmxResponse.success(response, "품목이 추가되었습니다.");
@@ -54,8 +61,8 @@ public class ItemController {
     /* ── HTMX 인라인 수정 ── */
 
     @GetMapping("/{externalId}/edit")
-    public String editRow(@PathVariable UUID externalId, HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+    public String editRow(@PathVariable UUID externalId, Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("item", itemService.findByExternalId(externalId, username));
         return "items/fragments/card :: edit";
     }
@@ -64,15 +71,14 @@ public class ItemController {
     public String updateRow(@PathVariable UUID externalId,
                             @Valid @ModelAttribute("form") ItemForm form,
                             BindingResult result,
-                            HttpSession session,
+                            Principal principal,
                             Model model,
                             HttpServletResponse response) {
+        String username = principal.getName();
         if (result.hasErrors()) {
-            String username = (String) session.getAttribute("loginUser");
             model.addAttribute("item", itemService.findByExternalId(externalId, username));
             return "items/fragments/card :: edit";
         }
-        String username = (String) session.getAttribute("loginUser");
         ItemDTO updated = itemService.update(externalId, form, username);
         model.addAttribute("item", updated);
         HtmxResponse.success(response, "품목이 저장되었습니다.");
@@ -80,15 +86,15 @@ public class ItemController {
     }
 
     @GetMapping("/{externalId}/cancel")
-    public String cancelEdit(@PathVariable UUID externalId, HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+    public String cancelEdit(@PathVariable UUID externalId, Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("item", itemService.findByExternalId(externalId, username));
         return "items/fragments/card :: view";
     }
 
     @GetMapping("/{externalId}/spaces")
-    public String spaces(@PathVariable UUID externalId, HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+    public String spaces(@PathVariable UUID externalId, Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("externalId", externalId);
         model.addAttribute("itemName", itemService.findByExternalId(externalId, username).getName());
         model.addAttribute("spaceStocks", itemService.findSpaceStock(externalId, username));
@@ -96,8 +102,8 @@ public class ItemController {
     }
 
     @GetMapping("/{externalId}/history")
-    public String history(@PathVariable UUID externalId, HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+    public String history(@PathVariable UUID externalId, Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("itemName", itemService.findByExternalId(externalId, username).getName());
         model.addAttribute("history", itemService.findTransactionHistory(externalId, username));
         return "items/fragments/history-modal :: modal";
@@ -105,13 +111,20 @@ public class ItemController {
 
     @DeleteMapping("/{externalId}")
     public String delete(@PathVariable UUID externalId,
+                         @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                         @RequestParam(required = false) Integer page,
                          HttpSession session,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         itemService.delete(externalId, username);
-        model.addAttribute("items", itemService.findAllByUsername(username));
+        var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
+        model.addAttribute("items", itemsPage.content());
+        model.addAttribute("page", itemsPage);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         HtmxResponse.success(response, "품목이 삭제되었습니다.");
-        return "items/list :: item-list";
+        return "items/list :: item-list-section";
     }
 }
