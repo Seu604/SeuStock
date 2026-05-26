@@ -16,7 +16,6 @@ import com.seu.seustock.service.ShelfService;
 import com.seu.seustock.service.SpaceService;
 import com.seu.seustock.service.StockService;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -24,6 +23,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -45,8 +45,8 @@ public class StockController {
                        @RequestParam(required = false) UUID spaceExternalId,
                        @RequestParam(required = false) UUID shelfExternalId,
                        @RequestParam(required = false) UUID boxExternalId,
-                       HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                       Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("stocks", stockService.searchDetails(
                 itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, username));
         model.addAttribute("itemExternalId", itemExternalId);
@@ -60,8 +60,8 @@ public class StockController {
 
     @GetMapping("/stocks/{stockExternalId}/edit")
     public String editRow(@PathVariable UUID stockExternalId,
-                          HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                          Principal principal, Model model) {
+        String username = principal.getName();
         StockUpdateForm form = new StockUpdateForm();
         var stock = stockService.findDetailByExternalId(stockExternalId, username);
         form.setSerialNumber(stock.getSerialNumber());
@@ -77,10 +77,10 @@ public class StockController {
     public String updateRow(@PathVariable UUID stockExternalId,
                             @Valid @ModelAttribute("form") StockUpdateForm form,
                             BindingResult result,
-                            HttpSession session,
+                            Principal principal,
                             Model model,
                             HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         if (result.hasErrors()) {
             model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
             return "stocks/fragments/detail-row :: edit";
@@ -92,8 +92,8 @@ public class StockController {
 
     @GetMapping("/stocks/{stockExternalId}/cancel")
     public String cancelEdit(@PathVariable UUID stockExternalId,
-                             HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                             Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
         return "stocks/fragments/detail-row :: view";
     }
@@ -104,8 +104,8 @@ public class StockController {
     public String panelBySpaceAll(@PathVariable UUID spaceExternalId,
                                   @RequestParam(required = false) String keyword,
                                   @RequestParam(required = false, defaultValue = "newest") String sortBy,
-                                  HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                                  Principal principal, Model model) {
+        String username = principal.getName();
         SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
         model.addAttribute("stocks", stockService.findPanelBySpaceAll(spaceExternalId, keyword, sortBy, username));
         model.addAttribute("breadcrumb", space.getName() + " 전체보기");
@@ -118,8 +118,8 @@ public class StockController {
 
     @GetMapping("/spaces/{spaceExternalId}/stocks")
     public String panelBySpace(@PathVariable UUID spaceExternalId,
-                               HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                               Principal principal, Model model) {
+        String username = principal.getName();
         SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
         model.addAttribute("stocks", stockService.findPanelBySpace(spaceExternalId, username));
         model.addAttribute("breadcrumb", space.getName() + "에 대충 던져놓은 물건들");
@@ -130,8 +130,8 @@ public class StockController {
     @GetMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}/stocks")
     public String panelByShelf(@PathVariable UUID spaceExternalId,
                                @PathVariable UUID shelfExternalId,
-                               HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                               Principal principal, Model model) {
+        String username = principal.getName();
         ShelfDTO shelf = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username);
         model.addAttribute("stocks", stockService.findPanelByShelf(spaceExternalId, shelfExternalId, username));
         model.addAttribute("breadcrumb", shelf.getName());
@@ -144,8 +144,8 @@ public class StockController {
     public String panelByBox(@PathVariable UUID spaceExternalId,
                              @PathVariable UUID shelfExternalId,
                              @PathVariable UUID boxExternalId,
-                             HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                             Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("stocks", stockService.findPanelByBox(spaceExternalId, shelfExternalId, boxExternalId, username));
         model.addAttribute("breadcrumb", boxService.findByExternalId(spaceExternalId, shelfExternalId, boxExternalId, username).getName());
         model.addAttribute("spaceExternalId", spaceExternalId);
@@ -160,8 +160,8 @@ public class StockController {
     public String newModal(@RequestParam UUID spaceId,
                            @RequestParam(required = false) UUID shelfId,
                            @RequestParam(required = false) UUID boxId,
-                           HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                           Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("items", itemService.findAllByUsername(username));
         model.addAttribute("spaceId", spaceId);
         model.addAttribute("shelfId", shelfId);
@@ -173,10 +173,10 @@ public class StockController {
     @PostMapping("/stocks")
     public String create(@Valid @ModelAttribute("form") StockForm form,
                          BindingResult result,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         if (result.hasErrors()) {
             model.addAttribute("items", itemService.findAllByUsername(username));
             model.addAttribute("spaceId", form.getSpaceExternalId());
@@ -206,10 +206,10 @@ public class StockController {
     @PostMapping("/stocks/quick")
     public String createQuick(@Valid @ModelAttribute("form") QuickStockForm form,
                               BindingResult result,
-                              HttpSession session,
+                              Principal principal,
                               Model model,
                               HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         if (result.hasErrors()) {
             model.addAttribute("spaceId", form.getSpaceExternalId());
             model.addAttribute("shelfId", form.getShelfExternalId());
@@ -228,10 +228,10 @@ public class StockController {
                          @RequestParam UUID spaceExternalId,
                          @RequestParam(required = false) UUID shelfExternalId,
                          @RequestParam(required = false) UUID boxExternalId,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         stockService.deleteUnits(itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, username);
         HtmxResponse.success(response, "재고가 삭제되었습니다.");
         return buildPanelResponse(spaceExternalId, shelfExternalId, boxExternalId, username, model);
@@ -240,9 +240,9 @@ public class StockController {
     @DeleteMapping("/stocks/{stockExternalId}")
     @ResponseBody
     public String deleteRow(@PathVariable UUID stockExternalId,
-                            HttpSession session,
+                            Principal principal,
                             HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         stockService.deleteUnit(stockExternalId, username);
         HtmxResponse.success(response, "재고가 삭제되었습니다.");
         return "";
@@ -257,9 +257,9 @@ public class StockController {
                              @RequestParam(required = false) UUID shelfExternalId,
                              @RequestParam(required = false) UUID boxExternalId,
                              @RequestParam(defaultValue = "0") Integer count,
-                             HttpSession session,
+                             Principal principal,
                              Model model) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         model.addAttribute("itemName", itemName);
         model.addAttribute("itemExternalId", itemExternalId);
         model.addAttribute("spaceExternalId", spaceExternalId);
@@ -291,16 +291,17 @@ public class StockController {
     @PostMapping("/stocks/in")
     public String processIn(@Valid @ModelAttribute("form") StockInOutForm form,
                             BindingResult result,
-                            HttpSession session,
+                            Principal principal,
                             Model model,
                             HttpServletResponse response) {
         if (result.hasErrors()) {
             return "stocks/fragments/in-modal :: modal";
         }
-        stockService.addUnits(form, (String) session.getAttribute("loginUser"));
+        String username = principal.getName();
+        stockService.addUnits(form, username);
         HtmxResponse.success(response, "입고되었습니다.");
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
-                (String) session.getAttribute("loginUser"), model);
+                username, model);
     }
 
     /* ── 출고 ── */
@@ -323,25 +324,26 @@ public class StockController {
     @PostMapping("/stocks/out")
     public String processOut(@Valid @ModelAttribute("form") StockInOutForm form,
                              BindingResult result,
-                             HttpSession session,
+                             Principal principal,
                              Model model,
                              HttpServletResponse response) {
         if (result.hasErrors()) {
             return "stocks/fragments/out-modal :: modal";
         }
-        stockService.dispatchUnits(form, (String) session.getAttribute("loginUser"));
+        String username = principal.getName();
+        stockService.dispatchUnits(form, username);
         HtmxResponse.success(response, "출고되었습니다.");
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
-                (String) session.getAttribute("loginUser"), model);
+                username, model);
     }
 
     /* ── 이동 ── */
 
     @GetMapping("/stocks/move-form")
     public String moveForm(@ModelAttribute("form") StockMoveForm form,
-                           HttpSession session,
+                           Principal principal,
                            Model model) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         model.addAttribute("locationOptions", buildMoveLocationOptions(form, username));
         return "stocks/fragments/move-modal :: modal";
     }
@@ -349,10 +351,10 @@ public class StockController {
     @PostMapping("/stocks/move")
     public String processMove(@Valid @ModelAttribute("form") StockMoveForm form,
                               BindingResult result,
-                              HttpSession session,
+                              Principal principal,
                               Model model,
                               HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         if (result.hasErrors()) {
             model.addAttribute("locationOptions", buildMoveLocationOptions(form, username));
             return "stocks/fragments/move-modal :: modal";

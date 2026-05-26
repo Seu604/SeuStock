@@ -5,7 +5,6 @@ import com.seu.seustock.model.form.BoxForm;
 import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ShelfService;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -13,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.UUID;
 
 @Controller
@@ -26,8 +26,8 @@ public class BoxController {
     public String editModal(@PathVariable UUID spaceExternalId,
                             @PathVariable UUID shelfExternalId,
                             @PathVariable UUID boxExternalId,
-                            HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                            Principal principal, Model model) {
+        String username = principal.getName();
         var box = boxService.findByExternalId(spaceExternalId, shelfExternalId, boxExternalId, username);
         BoxForm form = new BoxForm();
         form.setName(box.getName());
@@ -44,10 +44,10 @@ public class BoxController {
                          @PathVariable UUID boxExternalId,
                          @Valid @ModelAttribute("form") BoxForm form,
                          BindingResult result,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         if (result.hasErrors()) {
             model.addAttribute("spaceExternalId", spaceExternalId);
             model.addAttribute("shelfExternalId", shelfExternalId);
@@ -77,10 +77,10 @@ public class BoxController {
                          @RequestParam UUID spaceExternalId,
                          @Valid @ModelAttribute("form") BoxForm form,
                          BindingResult result,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         if (result.hasErrors()) {
             model.addAttribute("spaceExternalId", spaceExternalId);
             model.addAttribute("shelfExternalId", shelfExternalId);
@@ -99,10 +99,10 @@ public class BoxController {
     public String delete(@PathVariable UUID spaceExternalId,
                          @PathVariable UUID shelfExternalId,
                          @PathVariable UUID boxExternalId,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         boxService.delete(spaceExternalId, shelfExternalId, boxExternalId, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelf", shelfService.findByExternalId(spaceExternalId, shelfExternalId, username));
