@@ -126,8 +126,8 @@
 
     <div class="flex flex-wrap gap-2 items-center md:justify-end">
         <button class="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition md:order-last"
-                th:attr="hx-delete=@{/items/{id}(id=${item.externalId})},hx-confirm=|'${item.name}' 품목을 삭제하시겠습니까?|"
-                hx-target="#item-list"
+                th:attr="hx-delete=@{/items/{id}(id=${item.externalId},page=${page != null ? page.page() : 1},sortBy=${sortBy},keyword=${keyword})},hx-confirm=|'${item.name}' 품목을 삭제하시겠습니까?|"
+                hx-target="#item-list-section"
                 hx-swap="outerHTML">삭제</button>
         <button class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
                 th:attr="hx-put=@{/items/{id}(id=${item.externalId})},hx-target='#item-' + ${item.externalId},hx-include='#item-' + ${item.externalId}"

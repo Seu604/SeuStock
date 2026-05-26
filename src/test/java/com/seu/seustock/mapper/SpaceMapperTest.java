@@ -77,6 +77,34 @@ class SpaceMapperTest {
     }
 
     @Test
+    void findByUserIdWithOptions_filtersByNameAndSorts() {
+        spaceMapper.insertSpace(buildSpace("창고B"));
+        spaceMapper.insertSpace(buildSpace("창고A"));
+        spaceMapper.insertSpace(buildSpace("매장"));
+
+        List<SpaceDTO> searched = spaceMapper.findByUserIdWithOptions(userId, "창고", "name", 10, 0);
+        List<SpaceDTO> newest = spaceMapper.findByUserIdWithOptions(userId, null, "newest", 10, 0);
+
+        assertThat(searched).extracting(SpaceDTO::getName).containsExactly("창고A", "창고B");
+        assertThat(newest).extracting(SpaceDTO::getName).containsExactly("매장", "창고A", "창고B");
+        assertThat(spaceMapper.countByUserIdWithOptions(userId, "창고")).isEqualTo(2);
+    }
+
+    @Test
+    void findByUserIdWithOptions_appliesLimitAndOffset() {
+        for (int i = 0; i < 12; i++) {
+            spaceMapper.insertSpace(buildSpace("공간%02d".formatted(i)));
+        }
+
+        List<SpaceDTO> firstPage = spaceMapper.findByUserIdWithOptions(userId, null, "name", 10, 0);
+        List<SpaceDTO> secondPage = spaceMapper.findByUserIdWithOptions(userId, null, "name", 10, 10);
+
+        assertThat(firstPage).hasSize(10);
+        assertThat(secondPage).extracting(SpaceDTO::getName).containsExactly("공간10", "공간11");
+        assertThat(spaceMapper.countByUserIdWithOptions(userId, null)).isEqualTo(12);
+    }
+
+    @Test
     void updateSpace() {
         SpaceDTO space = buildSpace("구창고");
         spaceMapper.insertSpace(space);

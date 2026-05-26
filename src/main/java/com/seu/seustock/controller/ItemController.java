@@ -23,9 +23,16 @@ public class ItemController {
     private final ItemService itemService;
 
     @GetMapping
-    public String list(Principal principal, Model model) {
-        String username = principal.getName();
-        model.addAttribute("items", itemService.findAllByUsername(username));
+    public String list(@RequestParam(required = false) String keyword,
+                       @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                       @RequestParam(required = false) Integer page,
+                       HttpSession session, Model model) {
+        String username = (String) session.getAttribute("loginUser");
+        var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
+        model.addAttribute("items", itemsPage.content());
+        model.addAttribute("page", itemsPage);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         return "items/list";
     }
 
@@ -104,13 +111,20 @@ public class ItemController {
 
     @DeleteMapping("/{externalId}")
     public String delete(@PathVariable UUID externalId,
-                         Principal principal,
+                         @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                         @RequestParam(required = false) Integer page,
+                         HttpSession session,
                          Model model,
                          HttpServletResponse response) {
         String username = principal.getName();
         itemService.delete(externalId, username);
-        model.addAttribute("items", itemService.findAllByUsername(username));
+        var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
+        model.addAttribute("items", itemsPage.content());
+        model.addAttribute("page", itemsPage);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         HtmxResponse.success(response, "품목이 삭제되었습니다.");
-        return "items/list :: item-list";
+        return "items/list :: item-list-section";
     }
 }

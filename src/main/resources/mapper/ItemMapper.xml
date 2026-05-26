@@ -90,6 +90,55 @@
           AND i.active = TRUE
     </select>
 
+    <select id="findByUserIdWithOptions" resultMap="ItemResultMap">
+        SELECT i.id, i.external_id, i.user_id, i.name, i.description, i.active, i.created_at,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS primary_image_external_id,
+               (SELECT COUNT(*)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS stock_count,
+               (SELECT COUNT(DISTINCT s.space_id)
+                FROM stocks s
+                WHERE s.item_id = i.id
+                  AND s.status = 'IN_STOCK') AS space_count
+        FROM items i
+        WHERE i.user_id = #{userId}
+          AND i.active = TRUE
+        <if test="keyword != null and keyword != ''">
+          AND i.name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'oldest'">
+                i.created_at ASC, i.id ASC
+            </when>
+            <when test="sortBy == 'name'">
+                i.name ASC, i.created_at DESC, i.id DESC
+            </when>
+            <otherwise>
+                i.created_at DESC, i.id DESC
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUserIdWithOptions" resultType="int">
+        SELECT COUNT(*)
+        FROM items i
+        WHERE i.user_id = #{userId}
+          AND i.active = TRUE
+        <if test="keyword != null and keyword != ''">
+          AND i.name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
+
     <update id="updateItem" parameterType="ItemDTO">
         UPDATE items
         SET name        = #{name},
