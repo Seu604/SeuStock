@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -60,6 +62,31 @@ public class ImageController {
                 .body(resource);
     }
 
+    @PostMapping("/images/{externalId}/analyze")
+    public CompletableFuture<ResponseEntity<ImageAnalysisDTO>> analyzeStored(
+            @PathVariable UUID externalId,
+            @RequestParam(defaultValue = "0") int retryAttempt,
+            @RequestParam(required = false) String previousName,
+            @RequestParam(required = false) String previousDescription,
+            HttpSession session) {
+        String username = (String) session.getAttribute("loginUser");
+        ImageDTO image = imageStorageService.loadForUser(externalId, username);
+        Resource resource = imageStorageService.load(image);
+        MultipartFile multipartFile = new StoredImageMultipartFile(image, resource);
+        log.info("[analyzeStored] externalId={}, retryAttempt={}", externalId, retryAttempt);
+        return CompletableFuture.supplyAsync(() -> {
+            ImageAnalysisDTO result = imageAnalysisService.analyze(
+                    multipartFile, retryAttempt, previousName, previousDescription);
+            log.info("[analyzeStored] 완료 — name={}, description={}", result.getName(), result.getDescription());
+            return result;
+        }, aiAnalysisExecutor)
+        .thenApply(ResponseEntity::ok)
+        .exceptionally(ex -> {
+            log.error("[analyzeStored] 오류", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        });
+    }
+
     @PostMapping("/images/analyze")
     public CompletableFuture<ResponseEntity<ImageAnalysisDTO>> analyze(
             @RequestParam("imageFile") MultipartFile imageFile,
@@ -80,5 +107,26 @@ public class ImageController {
             log.error("[analyze] 분석 중 오류 발생", ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         });
+    }
+
+    private record StoredImageMultipartFile(ImageDTO image, Resource resource) implements MultipartFile {
+        @Override public String getName() { return "imageFile"; }
+        @Override public String getOriginalFilename() { return image.getOriginalFilename(); }
+        @Override public String getContentType() { return image.getContentType(); }
+        @Override public boolean isEmpty() {
+            try { return resource.contentLength() == 0; } catch (IOException e) { return false; }
+        }
+        @Override public long getSize() {
+            try { return resource.contentLength(); } catch (IOException e) { return 0; }
+        }
+        @Override public byte[] getBytes() throws IOException {
+            return resource.getInputStream().readAllBytes();
+        }
+        @Override public InputStream getInputStream() throws IOException {
+            return resource.getInputStream();
+        }
+        @Override public void transferTo(java.io.File dest) throws IOException {
+            throw new UnsupportedOperationException();
+        }
     }
 }
