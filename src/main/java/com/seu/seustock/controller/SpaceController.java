@@ -32,8 +32,8 @@ public class SpaceController {
                        @RequestParam(required = false, defaultValue = "newest") String sortBy,
                        @RequestParam(required = false) Integer page,
                        @RequestParam(required = false, defaultValue = "false") boolean append,
-                       HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                       Principal principal, Model model) {
+        String username = principal.getName();
         var spacesPage = spaceService.findPageByUsername(username, keyword, sortBy, page);
         model.addAttribute("spaces", spacesPage.content());
         model.addAttribute("page", spacesPage);
@@ -41,7 +41,7 @@ public class SpaceController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
         if (append) {
-            return "spaces/list :: space-more-response";
+            return "spaces/fragments/list-response :: space-more-response";
         }
         return "spaces/list";
     }
@@ -64,12 +64,11 @@ public class SpaceController {
                          @RequestParam(required = false) String keyword,
                          @RequestParam(required = false, defaultValue = "newest") String sortBy,
                          @RequestParam(required = false) Integer page,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          RedirectAttributes redirectAttributes) {
         String username = principal.getName();
         if (result.hasErrors()) {
-            String username = (String) session.getAttribute("loginUser");
             var spacesPage = spaceService.findPageByUsername(username, keyword, sortBy, page);
             model.addAttribute("spaces", spacesPage.content());
             model.addAttribute("page", spacesPage);
@@ -122,7 +121,7 @@ public class SpaceController {
                          @RequestParam(required = false) String keyword,
                          @RequestParam(required = false, defaultValue = "newest") String sortBy,
                          @RequestParam(required = false) Integer page,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
         String username = principal.getName();

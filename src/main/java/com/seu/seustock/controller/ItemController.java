@@ -26,8 +26,8 @@ public class ItemController {
     public String list(@RequestParam(required = false) String keyword,
                        @RequestParam(required = false, defaultValue = "newest") String sortBy,
                        @RequestParam(required = false) Integer page,
-                       HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                       Principal principal, Model model) {
+        String username = principal.getName();
         var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
         model.addAttribute("items", itemsPage.content());
         model.addAttribute("page", itemsPage);
@@ -114,7 +114,7 @@ public class ItemController {
                          @RequestParam(required = false) String keyword,
                          @RequestParam(required = false, defaultValue = "newest") String sortBy,
                          @RequestParam(required = false) Integer page,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
         String username = principal.getName();

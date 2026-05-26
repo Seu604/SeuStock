@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Run the application (auto-starts Docker Compose for PostgreSQL)
+# Run the application (auto-starts Docker Compose: PostgreSQL, MinIO, Redis)
 ./gradlew bootRun
 
 # Build
@@ -21,7 +21,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew test --tests "com.seu.seustock.mapper.*"
 ```
 
-The `spring-boot-docker-compose` dependency automatically starts `compose.yaml` when running via Gradle. Docker must be running. PostgreSQL is exposed on port **5433** (mapped from container's 5432). The app runs on port **8080**.
+The `spring-boot-docker-compose` dependency automatically starts `compose.yaml` when running via Gradle. Docker must be running. `compose.yaml` starts PostgreSQL (port 5433), MinIO (ports 9000/9001), and Redis (port 6379). The app runs on port **8080**.
+
+Use `-Dspring.profiles.active=local` (or set it in `application-local.properties`) to activate local credentials for all three services and the YOLO AI endpoint.
 
 ## Architecture
 
@@ -35,16 +37,20 @@ Spring Boot 4.0.6 / Java 25 / Gradle (Kotlin DSL) web app for personal inventory
 
 ```
 com.seu.seustock
-├── configuration/   UUIDTypeHandler, LoginCheckInterceptor, WebMvcConfig, AppConfig, GlobalExceptionHandler, HtmxResponse
+├── configuration/   UUIDTypeHandler, WebMvcConfig, AppConfig, MinioConfig, SecurityConfig,
+│                    GlobalExceptionHandler, GlobalModelAttributes, HtmxResponse
 ├── controller/      @Controller classes returning Thymeleaf view names
 ├── mapper/          @Mapper interfaces (MyBatis)
 ├── model/
 │   ├── dto/         Query result objects (Lombok @Getter/@Setter/@ToString)
 │   ├── enumeration/ StockStatus, TransactionType, TransactionMemoMaster
-│   └── form/        Input form objects (Bean Validation annotations)
+│   ├── form/        Input form objects (Bean Validation annotations)
+│   └── pagination/  PageRequest, PageResult<T>
 └── service/
-    ├── ai/          ImageAnalysisService (interface), GemmaVisionClient, ImageResizeService, YoloDetectionClient, YoloGemmaImageAnalysisService
-    └── (root)       Business logic between Controller and Mapper
+    ├── ai/          ImageAnalysisService (interface), GemmaVisionClient, ImageResizeService,
+    │                YoloDetectionClient, YoloGemmaImageAnalysisService
+    └── (root)       Business logic; ImageStorageService (interface), MinioImageStorageService (@Primary),
+                     LocalImageStorageService, CustomUserDetailsService
 ```
 
 ## Key conventions
@@ -85,11 +91,16 @@ com.seu.seustock
 - Batch inserts use `<foreach>` in the XML with a `List<T>` parameter (e.g., `StockMapper.insertStocks`, `StockTransactionMapper.insertTransactions`). Prefer batch inserts when creating multiple rows in one service call (e.g., `StockService.create()` with `count > 1`).
 
 **Authentication**
-- Session-based, not Spring Security. `LoginCheckInterceptor` guards `/spaces/**`, `/stocks/**`, `/shelves/**`, `/boxes/**`, `/items/**`, `/images/**` by checking `session.getAttribute("loginUser")` (a username string). All controllers read ownership from this attribute.
-- `spring-security-crypto` (BCrypt) is used for password hashing via `AppConfig.passwordEncoder()`. The full Spring Security web filter chain is commented out in `build.gradle.kts`.
+- Spring Security is fully active. `SecurityConfig` declares a `SecurityFilterChain` with `DaoAuthenticationProvider` (backed by `CustomUserDetailsService`) and `CookieCsrfTokenRepository`. All routes require authentication except `/login`, `/register`, static assets, and QR scan-redirect endpoints.
+- Controllers obtain the current username via a `Principal principal` parameter: `principal.getName()`. The `GlobalModelAttributes` `@ControllerAdvice` exposes `currentUsername` to every Thymeleaf template from the same principal.
+- BCrypt strength is configured via `security.bcrypt.strength` (default 10) in `AppConfig.passwordEncoder()`.
+- Sessions are stored in Redis (`spring.session.store-type=redis`). The session cookie is `SESSION`; CSRF token cookie is `XSRF-TOKEN`.
+
+**CSRF**
+- `CookieCsrfTokenRepository.withHttpOnlyFalse()` is used so JavaScript can read the `XSRF-TOKEN` cookie. HTMX requests must include the token as the `X-XSRF-TOKEN` header; standard form POSTs receive it automatically via Thymeleaf's `th:action`. The `CsrfTokenRequestAttributeHandler` (non-XOR variant) is required so JS can pass the raw cookie value directly.
 
 **Service ownership pattern**
-- Every service method that touches user-owned data follows the same sequence: resolve entity by external UUID → fetch owning user record → compare `userId` against the session username → throw `SecurityException` if mismatch. When adding new service methods, mirror this pattern rather than skipping the ownership check.
+- Every service method that touches user-owned data follows the same sequence: resolve entity by external UUID → fetch owning user record → compare `userId` against the username from `Principal.getName()` → throw `SecurityException` if mismatch. When adding new service methods, mirror this pattern rather than skipping the ownership check.
 
 **HTMX responses**
 - `HtmxResponse` (in `configuration/`) is a utility for emitting `HX-Trigger` toast notification headers. Use `HtmxResponse.success(response, message)` / `HtmxResponse.error(response, message)` from controller methods rather than building the header string manually. Non-ASCII characters (Korean) are Unicode-escaped to remain JSON-safe inside the header value.
@@ -102,7 +113,7 @@ com.seu.seustock
 - Service methods use these standard exceptions rather than custom exception types.
 
 **Image storage**
-- `ImageStorageService` handles file upload, deduplication, and serving. Files are stored on disk at `seustock.upload-dir` (defaults to `uploads/images` relative to the working directory, configured in `application.properties`).
+- `ImageStorageService` is an interface with two implementations: `MinioImageStorageService` (`@Primary`, stores objects in MinIO under `users/{id}/{uuid}.ext`) and `LocalImageStorageService` (disk-based fallback at `seustock.upload-dir`, defaults to `uploads/images`). MinIO is the active backend; configure it via `seustock.minio.*` properties.
 - Deduplication: if the client sends a SHA-256 `contentHash` and the user already has an image with that hash, the existing `ImageDTO` is returned without writing a new file.
 - Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`.
 - Images are linked to items or stocks via junction tables `item_images` / `stock_images` (with `display_order` and `is_primary` columns). `ImageMapper`, `ItemImageMapper`, and `StockImageMapper` are the corresponding mappers.
@@ -112,7 +123,7 @@ com.seu.seustock
 **Image analysis (AI)**
 - `ImageAnalysisService` (interface in `service/ai/`) is the entry point for image analysis. `YoloGemmaImageAnalysisService` is the active implementation: it first runs `YoloDetectionClient` to detect objects (optional pre-processing), then calls `GemmaVisionClient` which sends the image and YOLO hints to a local Ollama instance via Spring AI (`spring-ai-starter-model-ollama`). Returns `ImageAnalysisDTO` with `name` and `description` in Korean.
 - Endpoint: `POST /images/analyze` (multipart). Requires Ollama running locally; not guarded by authentication (analysis is stateless).
-- Images larger than 1024px on either side are automatically resized to JPEG by `ImageResizeService` before the Ollama call. The model is configured via `spring.ai.ollama.chat.model` (default `gemma4:e2b`).
+- Images larger than 1024px on either side are automatically resized to JPEG by `ImageResizeService` before the Ollama call. The model is configured via `spring.ai.ollama.chat.model` (default `gemma3:4b`).
 - Retry behavior: `GemmaVisionClient` increases `temperature` across attempts (0.1 → 0.35 → 0.55 → 0.7) and randomizes the seed on retries so each attempt yields different output.
 - The modal templates (`items/fragments/modal.html`, `stocks/fragments/quick-modal.html`) call this endpoint on image selection and prefill the name/description fields. An abort controller on the modal element cancels in-flight requests when a new image is chosen before the prior response arrives.
 - Ollama is **not** required for tests — `application-test.properties` omits the AI configuration entirely.

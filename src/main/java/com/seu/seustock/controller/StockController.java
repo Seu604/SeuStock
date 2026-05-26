@@ -48,8 +48,8 @@ public class StockController {
                        @RequestParam(required = false) String keyword,
                        @RequestParam(required = false, defaultValue = "newest") String sortBy,
                        @RequestParam(required = false) Integer page,
-                       HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                       Principal principal, Model model) {
+        String username = principal.getName();
         var stocksPage = stockService.searchDetailsPage(
                 itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, keyword, sortBy, username, page);
         model.addAttribute("stocks", stocksPage.content());
@@ -114,8 +114,8 @@ public class StockController {
                                   @RequestParam(required = false, defaultValue = "newest") String sortBy,
                                   @RequestParam(required = false) Integer page,
                                   @RequestParam(required = false, defaultValue = "false") boolean append,
-                                  HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                                  Principal principal, Model model) {
+        String username = principal.getName();
         SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
         var stocksPage = stockService.findPanelPageBySpaceAll(spaceExternalId, keyword, sortBy, username, page);
         model.addAttribute("stocks", stocksPage.content());
@@ -135,8 +135,8 @@ public class StockController {
     public String panelBySpace(@PathVariable UUID spaceExternalId,
                                @RequestParam(required = false) Integer page,
                                @RequestParam(required = false, defaultValue = "false") boolean append,
-                               HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                               Principal principal, Model model) {
+        String username = principal.getName();
         SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
         var stocksPage = stockService.findPanelPageBySpace(spaceExternalId, username, page);
         model.addAttribute("stocks", stocksPage.content());
@@ -155,8 +155,8 @@ public class StockController {
                                @PathVariable UUID shelfExternalId,
                                @RequestParam(required = false) Integer page,
                                @RequestParam(required = false, defaultValue = "false") boolean append,
-                               HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                               Principal principal, Model model) {
+        String username = principal.getName();
         ShelfDTO shelf = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username);
         var stocksPage = stockService.findPanelPageByShelf(spaceExternalId, shelfExternalId, username, page);
         model.addAttribute("stocks", stocksPage.content());
@@ -177,8 +177,8 @@ public class StockController {
                              @PathVariable UUID boxExternalId,
                              @RequestParam(required = false) Integer page,
                              @RequestParam(required = false, defaultValue = "false") boolean append,
-                             HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                             Principal principal, Model model) {
+        String username = principal.getName();
         var stocksPage = stockService.findPanelPageByBox(spaceExternalId, shelfExternalId, boxExternalId, username, page);
         model.addAttribute("stocks", stocksPage.content());
         model.addAttribute("page", stocksPage);

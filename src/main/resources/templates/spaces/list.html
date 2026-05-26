@@ -113,15 +113,6 @@
 
     </div>
 
-    <th:block th:fragment="space-more-response">
-        <div hx-swap-oob="beforeend:#space-list-rows">
-            <th:block th:each="space : ${spaces}">
-                <th:block th:replace="~{spaces/fragments/row :: view}"></th:block>
-            </th:block>
-        </div>
-        <div id="space-list-more" th:replace="~{:: space-list-more}"></div>
-    </th:block>
-
 </main>
 
 </body>
