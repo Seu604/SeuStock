@@ -23,7 +23,7 @@ import com.seu.seustock.service.ImageStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,7 +47,11 @@ import java.util.Random;
 
 @Slf4j
 @Component
-@Profile("!test")
+@ConditionalOnProperty(
+        name = "seustock.datainit.enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
