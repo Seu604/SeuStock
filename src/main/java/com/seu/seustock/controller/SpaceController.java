@@ -7,7 +7,6 @@ import com.seu.seustock.service.ShelfService;
 import com.seu.seustock.service.SpaceService;
 import com.seu.seustock.service.StockService;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -16,6 +15,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.security.Principal;
 import java.util.UUID;
 
 @Controller
@@ -28,16 +28,16 @@ public class SpaceController {
     private final StockService stockService;
 
     @GetMapping
-    public String list(HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+    public String list(Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("spaces", spaceService.findAllByUsername(username));
         model.addAttribute("form", new SpaceForm());
         return "spaces/list";
     }
 
     @GetMapping("/{externalId}")
-    public String detail(@PathVariable UUID externalId, HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+    public String detail(@PathVariable UUID externalId, Principal principal, Model model) {
+        String username = principal.getName();
         SpaceDTO space = spaceService.findByExternalId(externalId, username);
         model.addAttribute("space", space);
         model.addAttribute("shelves", shelfService.findAllBySpaceId(externalId, username));
@@ -50,15 +50,15 @@ public class SpaceController {
     @PostMapping
     public String create(@Valid @ModelAttribute("form") SpaceForm form,
                          BindingResult result,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          RedirectAttributes redirectAttributes) {
+        String username = principal.getName();
         if (result.hasErrors()) {
-            String username = (String) session.getAttribute("loginUser");
             model.addAttribute("spaces", spaceService.findAllByUsername(username));
             return "spaces/list";
         }
-        spaceService.create((String) session.getAttribute("loginUser"), form);
+        spaceService.create(username, form);
         redirectAttributes.addFlashAttribute("toastType", "success");
         redirectAttributes.addFlashAttribute("toastMessage", "공간이 추가되었습니다.");
         return "redirect:/spaces";
@@ -67,8 +67,8 @@ public class SpaceController {
     /* ── HTMX 인라인 수정 ── */
 
     @GetMapping("/{externalId}/edit")
-    public String editRow(@PathVariable UUID externalId, HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+    public String editRow(@PathVariable UUID externalId, Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("space", spaceService.findByExternalId(externalId, username));
         return "spaces/fragments/row :: edit";
     }
@@ -77,15 +77,14 @@ public class SpaceController {
     public String updateRow(@PathVariable UUID externalId,
                             @Valid SpaceForm form,
                             BindingResult result,
-                            HttpSession session,
+                            Principal principal,
                             Model model,
                             HttpServletResponse response) {
+        String username = principal.getName();
         if (result.hasErrors()) {
-            String username = (String) session.getAttribute("loginUser");
             model.addAttribute("space", spaceService.findByExternalId(externalId, username));
             return "spaces/fragments/row :: edit";
         }
-        String username = (String) session.getAttribute("loginUser");
         SpaceDTO updated = spaceService.update(externalId, form, username);
         model.addAttribute("space", updated);
         HtmxResponse.success(response, "공간이 저장되었습니다.");
@@ -93,18 +92,18 @@ public class SpaceController {
     }
 
     @GetMapping("/{externalId}/cancel")
-    public String cancelEdit(@PathVariable UUID externalId, HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+    public String cancelEdit(@PathVariable UUID externalId, Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("space", spaceService.findByExternalId(externalId, username));
         return "spaces/fragments/row :: view";
     }
 
     @DeleteMapping("/{externalId}")
     public String delete(@PathVariable UUID externalId,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         spaceService.delete(externalId, username);
         model.addAttribute("spaces", spaceService.findAllByUsername(username));
         HtmxResponse.success(response, "공간이 삭제되었습니다.");

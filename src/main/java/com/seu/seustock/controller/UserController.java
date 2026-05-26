@@ -1,11 +1,8 @@
 package com.seu.seustock.controller;
 
-import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.LoginForm;
 import com.seu.seustock.model.form.UserRegistrationForm;
 import com.seu.seustock.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -16,7 +13,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.Optional;
+import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor
@@ -59,44 +56,11 @@ public class UserController {
     }
 
     @GetMapping("/login")
-    public String loginForm(@RequestParam(required = false) String redirect,
-                            HttpSession session, Model model) {
-        if (session.getAttribute("loginUser") != null) {
+    public String loginForm(Principal principal, Model model) {
+        if (principal != null) {
             return "redirect:/";
         }
         model.addAttribute("form", new LoginForm());
-        model.addAttribute("redirect", redirect);
         return "login";
-    }
-
-    @PostMapping("/login")
-    public String login(@Valid @ModelAttribute("form") LoginForm form,
-                        BindingResult result,
-                        @RequestParam(required = false) String redirect,
-                        HttpServletRequest request,
-                        HttpSession session) {
-        if (result.hasErrors()) {
-            return "login";
-        }
-
-        Optional<UserDTO> user = userService.authenticate(form);
-        if (user.isEmpty()) {
-            result.reject("invalidCredentials", "아이디 또는 비밀번호가 올바르지 않습니다.");
-            return "login";
-        }
-
-        session.invalidate();
-        request.getSession(true).setAttribute("loginUser", user.get().getUsername());
-
-        if (redirect != null && !redirect.isBlank()) {
-            return "redirect:" + redirect;
-        }
-        return "redirect:/";
-    }
-
-    @GetMapping("/logout")
-    public String logout(HttpSession session) {
-        session.invalidate();
-        return "redirect:/login";
     }
 }
