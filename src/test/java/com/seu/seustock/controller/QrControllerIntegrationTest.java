@@ -14,12 +14,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.HttpSession;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,6 +52,9 @@ class QrControllerIntegrationTest {
     @Autowired
     private BoxMapper boxMapper;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private UserDTO testUser;
     private SpaceDTO testSpace;
     private ShelfDTO testShelf;
@@ -53,7 +64,7 @@ class QrControllerIntegrationTest {
     void setUp() {
         testUser = new UserDTO();
         testUser.setUsername("testuser");
-        testUser.setPassword("password");
+        testUser.setPassword(passwordEncoder.encode("password"));
         userMapper.insertUser(testUser);
         testUser = userMapper.findByUsername("testuser").orElseThrow();
 
@@ -87,10 +98,45 @@ class QrControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("로그인하지 않은 상태에서 박스 QR 스캔 시 로그인 페이지로 리다이렉트 (redirect 파라미터 포함)")
+    @DisplayName("로그인하지 않은 상태에서 박스 QR 스캔 시 로그인 페이지로 리다이렉트되고 saved request가 세션에 저장된다")
     void scanBoxUnauthenticated() throws Exception {
-        mockMvc.perform(get("/qr/boxes/" + testBox.getExternalId()))
+        String qrPath = "/qr/boxes/" + testBox.getExternalId();
+
+        MvcResult result = mockMvc.perform(get(qrPath))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?redirect=/qr/boxes/" + testBox.getExternalId()));
+                .andExpect(redirectedUrl("/login"))
+                .andReturn();
+
+        HttpSession session = result.getRequest().getSession(false);
+        assertThat(session).isNotNull();
+        SavedRequest savedRequest = (SavedRequest) session.getAttribute(
+                "SPRING_SECURITY_SAVED_REQUEST");
+        assertThat(savedRequest).isNotNull();
+        assertThat(savedRequest.getRedirectUrl()).contains(qrPath);
+    }
+
+    @Test
+    @DisplayName("QR 스캔 후 로그인하면 saved request 덕분에 원래 박스 재고 페이지로 되돌아간다")
+    void scanBoxThenLoginRestoresOriginalDestination() throws Exception {
+        String qrPath = "/qr/boxes/" + testBox.getExternalId();
+
+        MvcResult scanResult = mockMvc.perform(get(qrPath))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+
+        org.springframework.mock.web.MockHttpSession session =
+                (org.springframework.mock.web.MockHttpSession) scanResult.getRequest().getSession(false);
+        assertThat(session).isNotNull();
+
+        MvcResult loginResult = mockMvc.perform(post("/login")
+                        .session(session)
+                        .param("username", "testuser")
+                        .param("password", "password")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+
+        String location = loginResult.getResponse().getRedirectedUrl();
+        assertThat(location).contains(qrPath);
     }
 }

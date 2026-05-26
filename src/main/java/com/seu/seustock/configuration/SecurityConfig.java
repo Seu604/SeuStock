@@ -33,7 +33,6 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/login", "/register", "/register/check-username",
                     "/css/**", "/js/**", "/static/**",
-                    "/qr/boxes/**", "/qr/shelves/**",
                     "/api/qr/generate", "/api/qr/modal"
                 ).permitAll()
                 .anyRequest().authenticated()

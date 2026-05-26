@@ -53,44 +53,30 @@ public class QrController {
 
     @GetMapping("/qr/boxes/{externalId}")
     public String scanBox(@PathVariable UUID externalId, Principal principal) {
-        if (principal == null) {
-            return "redirect:/login?redirect=/qr/boxes/" + externalId;
-        }
         String username = principal.getName();
-        try {
-            BoxDTO box = boxService.findByExternalIdOnly(externalId);
-            ShelfDTO shelf = shelfService.findById(box.getShelfId());
-            SpaceDTO space = spaceService.findById(shelf.getSpaceId());
+        BoxDTO box = boxService.findByExternalIdOnly(externalId);
+        ShelfDTO shelf = shelfService.findById(box.getShelfId());
+        SpaceDTO space = spaceService.findById(shelf.getSpaceId());
 
-            if (!space.getUserId().equals(spaceService.getUserIdByUsername(username))) {
-                return "redirect:/error/403";
-            }
-
-            return String.format("redirect:/spaces/%s/shelves/%s/boxes/%s/stocks",
-                    space.getExternalId(), shelf.getExternalId(), box.getExternalId());
-        } catch (Exception e) {
-            return "redirect:/error/404";
+        if (!space.getUserId().equals(spaceService.getUserIdByUsername(username))) {
+            throw new SecurityException("해당 박스에 접근할 권한이 없습니다.");
         }
+
+        return String.format("redirect:/spaces/%s/shelves/%s/boxes/%s/stocks",
+                space.getExternalId(), shelf.getExternalId(), box.getExternalId());
     }
 
     @GetMapping("/qr/shelves/{externalId}")
     public String scanShelf(@PathVariable UUID externalId, Principal principal) {
-        if (principal == null) {
-            return "redirect:/login?redirect=/qr/shelves/" + externalId;
-        }
         String username = principal.getName();
-        try {
-            ShelfDTO shelf = shelfService.findByExternalIdOnly(externalId);
-            SpaceDTO space = spaceService.findById(shelf.getSpaceId());
+        ShelfDTO shelf = shelfService.findByExternalIdOnly(externalId);
+        SpaceDTO space = spaceService.findById(shelf.getSpaceId());
 
-            if (!space.getUserId().equals(spaceService.getUserIdByUsername(username))) {
-                return "redirect:/error/403";
-            }
-
-            return String.format("redirect:/spaces/%s/shelves/%s/stocks",
-                    space.getExternalId(), shelf.getExternalId());
-        } catch (Exception e) {
-            return "redirect:/error/404";
+        if (!space.getUserId().equals(spaceService.getUserIdByUsername(username))) {
+            throw new SecurityException("해당 선반에 접근할 권한이 없습니다.");
         }
+
+        return String.format("redirect:/spaces/%s/shelves/%s/stocks",
+                space.getExternalId(), shelf.getExternalId());
     }
 }
