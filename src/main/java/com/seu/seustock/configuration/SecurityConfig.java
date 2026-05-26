@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login")
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID", "XSRF-TOKEN")
+                .deleteCookies("SESSION", "XSRF-TOKEN")
                 .permitAll()
             )
             .authenticationProvider(daoAuthProvider(userDetailsService, passwordEncoder));
