@@ -14,13 +14,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -81,10 +79,8 @@ class QrControllerIntegrationTest {
     @Test
     @DisplayName("박스 QR 스캔 시 해당 재고 페이지로 리다이렉트 (로그인 상태)")
     void scanBoxRedirect() throws Exception {
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute("loginUser", "testuser");
-
-        mockMvc.perform(get("/qr/boxes/" + testBox.getExternalId()).session(session))
+        mockMvc.perform(get("/qr/boxes/" + testBox.getExternalId())
+                        .with(user("testuser").roles("USER")))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl(String.format("/spaces/%s/shelves/%s/boxes/%s/stocks",
                         testSpace.getExternalId(), testShelf.getExternalId(), testBox.getExternalId())));

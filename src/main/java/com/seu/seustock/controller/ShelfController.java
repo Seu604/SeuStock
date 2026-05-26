@@ -5,7 +5,6 @@ import com.seu.seustock.model.form.ShelfForm;
 import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.ShelfService;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -13,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.UUID;
 
 @Controller
@@ -25,8 +25,8 @@ public class ShelfController {
     @GetMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}/boxes")
     public String boxList(@PathVariable UUID spaceExternalId,
                           @PathVariable UUID shelfExternalId,
-                          HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                          Principal principal, Model model) {
+        String username = principal.getName();
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelf", shelfService.findByExternalId(spaceExternalId, shelfExternalId, username));
         model.addAttribute("boxes", boxService.findAllByShelfId(spaceExternalId, shelfExternalId, username));
@@ -36,8 +36,8 @@ public class ShelfController {
     @GetMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}/edit")
     public String editModal(@PathVariable UUID spaceExternalId,
                             @PathVariable UUID shelfExternalId,
-                            HttpSession session, Model model) {
-        String username = (String) session.getAttribute("loginUser");
+                            Principal principal, Model model) {
+        String username = principal.getName();
         var shelf = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username);
         ShelfForm form = new ShelfForm();
         form.setName(shelf.getName());
@@ -52,10 +52,10 @@ public class ShelfController {
                          @PathVariable UUID shelfExternalId,
                          @Valid @ModelAttribute("form") ShelfForm form,
                          BindingResult result,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         if (result.hasErrors()) {
             model.addAttribute("spaceExternalId", spaceExternalId);
             model.addAttribute("shelfExternalId", shelfExternalId);
@@ -79,10 +79,10 @@ public class ShelfController {
     public String create(@PathVariable UUID spaceExternalId,
                          @Valid @ModelAttribute("form") ShelfForm form,
                          BindingResult result,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         if (result.hasErrors()) {
             model.addAttribute("spaceExternalId", spaceExternalId);
             return "shelves/fragments/modal :: modal";
@@ -97,10 +97,10 @@ public class ShelfController {
     @DeleteMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}")
     public String delete(@PathVariable UUID spaceExternalId,
                          @PathVariable UUID shelfExternalId,
-                         HttpSession session,
+                         Principal principal,
                          Model model,
                          HttpServletResponse response) {
-        String username = (String) session.getAttribute("loginUser");
+        String username = principal.getName();
         shelfService.delete(spaceExternalId, shelfExternalId, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));

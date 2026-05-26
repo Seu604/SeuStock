@@ -4,7 +4,6 @@ import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ImageAnalysisDTO;
 import com.seu.seustock.service.ai.ImageAnalysisService;
 import com.seu.seustock.service.ImageStorageService;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -42,8 +42,8 @@ public class ImageController {
     private final Executor aiAnalysisExecutor;
 
     @GetMapping("/images/{externalId}")
-    public ResponseEntity<Resource> show(@PathVariable UUID externalId, HttpSession session) {
-        String username = (String) session.getAttribute("loginUser");
+    public ResponseEntity<Resource> show(@PathVariable UUID externalId, Principal principal) {
+        String username = principal.getName();
         ImageDTO image = imageStorageService.loadForUser(externalId, username);
         Resource resource = imageStorageService.load(image);
         MediaType contentType = image.getContentType() == null
@@ -68,8 +68,8 @@ public class ImageController {
             @RequestParam(defaultValue = "0") int retryAttempt,
             @RequestParam(required = false) String previousName,
             @RequestParam(required = false) String previousDescription,
-            HttpSession session) {
-        String username = (String) session.getAttribute("loginUser");
+            Principal principal) {
+        String username = principal.getName();
         ImageDTO image = imageStorageService.loadForUser(externalId, username);
         Resource resource = imageStorageService.load(image);
         MultipartFile multipartFile = new StoredImageMultipartFile(image, resource);

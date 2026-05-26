@@ -8,7 +8,6 @@ import com.seu.seustock.service.BoxService;
 import com.seu.seustock.service.QrCodeService;
 import com.seu.seustock.service.ShelfService;
 import com.seu.seustock.service.SpaceService;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.UUID;
 
 @Controller
@@ -52,22 +52,16 @@ public class QrController {
     }
 
     @GetMapping("/qr/boxes/{externalId}")
-    public String scanBox(@PathVariable UUID externalId, HttpSession session) {
-        String username = (String) session.getAttribute("loginUser");
-        if (username == null) {
+    public String scanBox(@PathVariable UUID externalId, Principal principal) {
+        if (principal == null) {
             return "redirect:/login?redirect=/qr/boxes/" + externalId;
         }
-
-        // 박스 정보 조회 (권한 체크 포함)
-        // 현재 BoxService 등에는 externalId만으로 조회하는 기능이 제한적일 수 있음
-        // BoxService를 보완하여 Space, Shelf UUID를 함께 가져오는 기능이 필요할 수 있음
-        // 여기서는 일단 간략하게 구현하고 필요시 Service 보완
+        String username = principal.getName();
         try {
             BoxDTO box = boxService.findByExternalIdOnly(externalId);
             ShelfDTO shelf = shelfService.findById(box.getShelfId());
             SpaceDTO space = spaceService.findById(shelf.getSpaceId());
-            
-            // 소유권 확인
+
             if (!space.getUserId().equals(spaceService.getUserIdByUsername(username))) {
                 return "redirect:/error/403";
             }
@@ -80,12 +74,11 @@ public class QrController {
     }
 
     @GetMapping("/qr/shelves/{externalId}")
-    public String scanShelf(@PathVariable UUID externalId, HttpSession session) {
-        String username = (String) session.getAttribute("loginUser");
-        if (username == null) {
+    public String scanShelf(@PathVariable UUID externalId, Principal principal) {
+        if (principal == null) {
             return "redirect:/login?redirect=/qr/shelves/" + externalId;
         }
-
+        String username = principal.getName();
         try {
             ShelfDTO shelf = shelfService.findByExternalIdOnly(externalId);
             SpaceDTO space = spaceService.findById(shelf.getSpaceId());

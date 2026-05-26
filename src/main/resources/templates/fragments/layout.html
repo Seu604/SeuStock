@@ -4,6 +4,8 @@
 <!--/* 공통 <head> — 모든 페이지에서 th:replace="~{fragments/layout :: head(~{::title})}" 로 사용 */-->
 <head th:fragment="head(titleContent)">
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:replace="${titleContent}">SeuStock</title>
     <link rel="stylesheet" as="style" crossorigin
@@ -11,6 +13,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="/js/image-upload.js"></script>
+    <script>
+        document.addEventListener('htmx:configRequest', function(evt) {
+            var csrfToken = document.querySelector('meta[name="_csrf"]');
+            var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            if (csrfToken && csrfHeader) {
+                evt.detail.headers[csrfHeader.getAttribute('content')] = csrfToken.getAttribute('content');
+            }
+        });
+    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -111,7 +122,7 @@
 
         <!--/* 데스크탑: md 이상에서 가로 나열 */-->
         <div class="hidden md:flex items-center gap-x-4 text-sm">
-            <th:block th:if="${session.loginUser != null}">
+            <th:block th:if="${currentUsername != null}">
                 <a href="/spaces"
                    class="text-slate-600 hover:text-slate-900 transition">내 공간</a>
                 <span class="text-slate-300">|</span>
@@ -121,11 +132,13 @@
                 <a href="/stocks"
                    class="text-slate-600 hover:text-slate-900 transition">내 재고</a>
                 <span class="text-slate-300">|</span>
-                <span class="text-slate-500" th:text="${session.loginUser}"></span>
-                <a href="/logout"
-                   class="text-slate-600 hover:text-slate-900 transition">로그아웃</a>
+                <span class="text-slate-500" th:text="${currentUsername}"></span>
+                <form th:action="@{/logout}" method="post" class="inline">
+                    <button type="submit"
+                            class="text-slate-600 hover:text-slate-900 transition cursor-pointer bg-transparent border-0 p-0">로그아웃</button>
+                </form>
             </th:block>
-            <th:block th:if="${session.loginUser == null}">
+            <th:block th:if="${currentUsername == null}">
                 <a href="/login"
                    class="text-slate-600 hover:text-slate-900 transition">로그인</a>
                 <a href="/register"
@@ -142,9 +155,9 @@
             </summary>
             <div class="absolute right-0 top-full mt-1 min-w-[120px] rounded-md
                         border border-slate-200 bg-white shadow-md py-1 z-50">
-                <th:block th:if="${session.loginUser != null}">
+                <th:block th:if="${currentUsername != null}">
                     <div class="px-3 py-1.5 text-xs text-slate-400"
-                         th:text="${session.loginUser}"></div>
+                         th:text="${currentUsername}"></div>
                     <hr class="border-slate-100 mx-2 my-1"/>
                     <a href="/spaces"
                        class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">내 공간</a>
@@ -153,10 +166,12 @@
                     <a href="/stocks"
                        class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">내 재고</a>
                     <hr class="border-slate-100 mx-2 my-1"/>
-                    <a href="/logout"
-                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">로그아웃</a>
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit"
+                                class="block w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 transition bg-transparent border-0 cursor-pointer">로그아웃</button>
+                    </form>
                 </th:block>
-                <th:block th:if="${session.loginUser == null}">
+                <th:block th:if="${currentUsername == null}">
                     <a href="/login"
                        class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">로그인</a>
                     <a href="/register"
