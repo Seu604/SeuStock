@@ -16,7 +16,11 @@ public interface SpaceMapper {
     List<SpaceDTO> findByUserId(Long userId);
     List<SpaceDTO> findByUserIdWithOptions(@Param("userId") Long userId,
                                            @Param("keyword") String keyword,
-                                           @Param("sortBy") String sortBy);
+                                           @Param("sortBy") String sortBy,
+                                           @Param("limit") int limit,
+                                           @Param("offset") int offset);
+    int countByUserIdWithOptions(@Param("userId") Long userId,
+                                 @Param("keyword") String keyword);
     void updateSpace(SpaceDTO space);
     void deleteById(Long id);
 }

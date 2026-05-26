@@ -16,7 +16,11 @@ public interface ItemMapper {
     List<ItemDTO> findByUserId(Long userId);
     List<ItemDTO> findByUserIdWithOptions(@Param("userId") Long userId,
                                           @Param("keyword") String keyword,
-                                          @Param("sortBy") String sortBy);
+                                          @Param("sortBy") String sortBy,
+                                          @Param("limit") int limit,
+                                          @Param("offset") int offset);
+    int countByUserIdWithOptions(@Param("userId") Long userId,
+                                 @Param("keyword") String keyword);
     void updateItem(ItemDTO item);
     void deactivateById(Long id);
     void deleteById(Long id);

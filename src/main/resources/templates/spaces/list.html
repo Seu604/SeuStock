@@ -44,6 +44,7 @@
                   hx-push-url="true"
                   class="flex items-center gap-2">
                 <input type="hidden" name="sortBy" th:value="${sortBy}">
+                <input type="hidden" name="page" value="1">
                 <span class="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500">공간명</span>
                 <input type="text"
                        name="keyword"
@@ -91,14 +92,35 @@
                 등록된 공간이 없습니다. 위에서 추가해보세요.
             </div>
 
-            <div th:if="${!spaces.empty}" class="divide-y divide-slate-100">
+            <div id="space-list-rows"
+                 th:if="${!spaces.empty}"
+                 class="divide-y divide-slate-100">
                 <th:block th:each="space : ${spaces}">
                     <th:block th:replace="~{spaces/fragments/row :: view}"></th:block>
                 </th:block>
             </div>
         </div>
 
+        <div id="space-list-more" th:fragment="space-list-more" class="flex justify-center">
+            <button th:if="${page.hasNext()}"
+                    th:attr="hx-get=@{/spaces(page=${page.nextPage()},sortBy=${sortBy},keyword=${keyword},append=true)}"
+                    hx-target="#space-list-more"
+                    hx-swap="outerHTML"
+                    class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                더 보기
+            </button>
+        </div>
+
     </div>
+
+    <th:block th:fragment="space-more-response">
+        <div hx-swap-oob="beforeend:#space-list-rows">
+            <th:block th:each="space : ${spaces}">
+                <th:block th:replace="~{spaces/fragments/row :: view}"></th:block>
+            </th:block>
+        </div>
+        <div id="space-list-more" th:replace="~{:: space-list-more}"></div>
+    </th:block>
 
 </main>
 

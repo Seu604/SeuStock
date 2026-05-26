@@ -56,6 +56,7 @@
               hx-swap="outerHTML"
               class="flex items-center gap-2">
             <input type="hidden" name="sortBy" th:value="${sortBy}">
+            <input type="hidden" name="page" value="1">
             <span class="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500">물품명</span>
             <input type="text"
                    name="keyword"
@@ -123,18 +124,60 @@
         </div>
     </form>
 
-    <div class="divide-y divide-slate-100">
+    <div id="stock-panel-rows" class="divide-y divide-slate-100">
 
         <div th:if="${stocks.empty}" class="px-4 py-8 text-center text-sm text-slate-400">
             이 위치에 등록된 재고가 없습니다.
         </div>
 
-        <th:block th:each="stock : ${stocks}">
-            <th:block th:replace="~{stocks/fragments/row :: view(stock=${stock})}"></th:block>
-        </th:block>
+        <th:block th:replace="~{:: stock-panel-row-content}"></th:block>
 
     </div>
 
+    <div id="stock-panel-more" th:fragment="stock-panel-more" class="border-t border-slate-100 px-4 py-3 text-center">
+        <button th:if="${page.hasNext() and isAllView}"
+                th:attr="hx-get=@{/spaces/{id}/stocks/all(id=${spaceExternalId},page=${page.nextPage()},sortBy=${sortBy},keyword=${keyword},append=true)}"
+                hx-target="#stock-panel-more"
+                hx-swap="outerHTML"
+                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+            더 보기
+        </button>
+        <button th:if="${page.hasNext() and isAllView == false and shelfExternalId == null}"
+                th:attr="hx-get=@{/spaces/{id}/stocks(id=${spaceExternalId},page=${page.nextPage()},append=true)}"
+                hx-target="#stock-panel-more"
+                hx-swap="outerHTML"
+                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+            더 보기
+        </button>
+        <button th:if="${page.hasNext() and isAllView == false and shelfExternalId != null and boxExternalId == null}"
+                th:attr="hx-get=@{/spaces/{sid}/shelves/{id}/stocks(sid=${spaceExternalId},id=${shelfExternalId},page=${page.nextPage()},append=true)}"
+                hx-target="#stock-panel-more"
+                hx-swap="outerHTML"
+                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+            더 보기
+        </button>
+        <button th:if="${page.hasNext() and isAllView == false and shelfExternalId != null and boxExternalId != null}"
+                th:attr="hx-get=@{/spaces/{sid}/shelves/{shelfId}/boxes/{boxId}/stocks(sid=${spaceExternalId},shelfId=${shelfExternalId},boxId=${boxExternalId},page=${page.nextPage()},append=true)}"
+                hx-target="#stock-panel-more"
+                hx-swap="outerHTML"
+                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+            더 보기
+        </button>
+    </div>
+
+</th:block>
+
+<th:block th:fragment="stock-panel-row-content">
+    <th:block th:each="stock : ${stocks}">
+        <th:block th:replace="~{stocks/fragments/row :: view(stock=${stock})}"></th:block>
+    </th:block>
+</th:block>
+
+<th:block th:fragment="stock-panel-more-response">
+    <div hx-swap-oob="beforeend:#stock-panel-rows">
+        <th:block th:replace="~{:: stock-panel-row-content}"></th:block>
+    </div>
+    <div id="stock-panel-more" th:replace="~{:: stock-panel-more}"></div>
 </th:block>
 
 </body>

@@ -43,11 +43,27 @@ public interface StockMapper {
     List<StockDTO> findInStockByItemAndSpace(@Param("itemId") Long itemId, @Param("spaceId") Long spaceId);
 
     List<StockPanelDTO> findPanelByBoxId(Long boxId);
+    List<StockPanelDTO> findPanelByBoxIdPaged(@Param("boxId") Long boxId,
+                                              @Param("limit") int limit,
+                                              @Param("offset") int offset);
+    int countPanelByBoxId(Long boxId);
     List<StockPanelDTO> findPanelByShelfDirectOnly(Long shelfId);
+    List<StockPanelDTO> findPanelByShelfDirectOnlyPaged(@Param("shelfId") Long shelfId,
+                                                        @Param("limit") int limit,
+                                                        @Param("offset") int offset);
+    int countPanelByShelfDirectOnly(Long shelfId);
     List<StockPanelDTO> findPanelBySpaceDirectOnly(Long spaceId);
+    List<StockPanelDTO> findPanelBySpaceDirectOnlyPaged(@Param("spaceId") Long spaceId,
+                                                        @Param("limit") int limit,
+                                                        @Param("offset") int offset);
+    int countPanelBySpaceDirectOnly(Long spaceId);
     List<StockPanelDTO> findPanelBySpaceAllWithOptions(@Param("spaceId") Long spaceId,
                                                        @Param("keyword") String keyword,
-                                                       @Param("sortBy") String sortBy);
+                                                       @Param("sortBy") String sortBy,
+                                                       @Param("limit") int limit,
+                                                       @Param("offset") int offset);
+    int countPanelBySpaceAllWithOptions(@Param("spaceId") Long spaceId,
+                                        @Param("keyword") String keyword);
 
     List<ItemSpaceStockDTO> findSpaceStockByItem(@Param("itemExternalId") UUID itemExternalId,
                                                  @Param("userId") Long userId);
@@ -58,7 +74,15 @@ public interface StockMapper {
                                        @Param("shelfExternalId") UUID shelfExternalId,
                                        @Param("boxExternalId") UUID boxExternalId,
                                        @Param("keyword") String keyword,
-                                       @Param("sortBy") String sortBy);
+                                       @Param("sortBy") String sortBy,
+                                       @Param("limit") int limit,
+                                       @Param("offset") int offset);
+    int countSearchDetails(@Param("userId") Long userId,
+                           @Param("itemExternalId") UUID itemExternalId,
+                           @Param("spaceExternalId") UUID spaceExternalId,
+                           @Param("shelfExternalId") UUID shelfExternalId,
+                           @Param("boxExternalId") UUID boxExternalId,
+                           @Param("keyword") String keyword);
 
     Optional<StockDetailDTO> findDetailByExternalId(@Param("externalId") UUID externalId,
                                                     @Param("userId") Long userId);

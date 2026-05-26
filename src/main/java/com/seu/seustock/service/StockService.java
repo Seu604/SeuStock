@@ -10,6 +10,8 @@ import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
 import com.seu.seustock.model.form.StockMoveForm;
 import com.seu.seustock.model.form.StockUpdateForm;
+import com.seu.seustock.model.pagination.PageRequest;
+import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,19 +49,41 @@ public class StockService {
     }
 
     public List<StockPanelDTO> findPanelBySpace(UUID spaceExternalId, String username) {
+        return findPanelPageBySpace(spaceExternalId, username, 1).content();
+    }
+
+    public PageResult<StockPanelDTO> findPanelPageBySpace(UUID spaceExternalId, String username, Integer page) {
         UserDTO user = getUser(username);
         SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
-        return stockMapper.findPanelBySpaceDirectOnly(space.getId());
+        int totalCount = stockMapper.countPanelBySpaceDirectOnly(space.getId());
+        PageRequest pageRequest = PageRequest.of(page, totalCount);
+        List<StockPanelDTO> stocks = stockMapper.findPanelBySpaceDirectOnlyPaged(
+                space.getId(), pageRequest.size(), pageRequest.offset());
+        return new PageResult<>(stocks, pageRequest.page(), pageRequest.size(), totalCount);
     }
 
     public List<StockPanelDTO> findPanelBySpaceAll(UUID spaceExternalId, String keyword, String sortBy, String username) {
+        return findPanelPageBySpaceAll(spaceExternalId, keyword, sortBy, username, 1).content();
+    }
+
+    public PageResult<StockPanelDTO> findPanelPageBySpaceAll(UUID spaceExternalId, String keyword, String sortBy,
+                                                             String username, Integer page) {
         UserDTO user = getUser(username);
         SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
-        String effectiveSort = (sortBy == null || sortBy.isBlank()) ? "newest" : sortBy;
-        return stockMapper.findPanelBySpaceAllWithOptions(space.getId(), keyword, effectiveSort);
+        String effectiveKeyword = normalizeKeyword(keyword);
+        int totalCount = stockMapper.countPanelBySpaceAllWithOptions(space.getId(), effectiveKeyword);
+        PageRequest pageRequest = PageRequest.of(page, totalCount);
+        List<StockPanelDTO> stocks = stockMapper.findPanelBySpaceAllWithOptions(space.getId(), effectiveKeyword,
+                normalizeSort(sortBy), pageRequest.size(), pageRequest.offset());
+        return new PageResult<>(stocks, pageRequest.page(), pageRequest.size(), totalCount);
     }
 
     public List<StockPanelDTO> findPanelByShelf(UUID spaceExternalId, UUID shelfExternalId, String username) {
+        return findPanelPageByShelf(spaceExternalId, shelfExternalId, username, 1).content();
+    }
+
+    public PageResult<StockPanelDTO> findPanelPageByShelf(UUID spaceExternalId, UUID shelfExternalId,
+                                                          String username, Integer page) {
         UserDTO user = getUser(username);
         SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)
@@ -67,10 +91,19 @@ public class StockService {
         if (!shelf.getSpaceId().equals(space.getId())) {
             throw new SecurityException("접근 권한이 없습니다.");
         }
-        return stockMapper.findPanelByShelfDirectOnly(shelf.getId());
+        int totalCount = stockMapper.countPanelByShelfDirectOnly(shelf.getId());
+        PageRequest pageRequest = PageRequest.of(page, totalCount);
+        List<StockPanelDTO> stocks = stockMapper.findPanelByShelfDirectOnlyPaged(
+                shelf.getId(), pageRequest.size(), pageRequest.offset());
+        return new PageResult<>(stocks, pageRequest.page(), pageRequest.size(), totalCount);
     }
 
     public List<StockPanelDTO> findPanelByBox(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
+        return findPanelPageByBox(spaceExternalId, shelfExternalId, boxExternalId, username, 1).content();
+    }
+
+    public PageResult<StockPanelDTO> findPanelPageByBox(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId,
+                                                        String username, Integer page) {
         UserDTO user = getUser(username);
         SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)
@@ -83,7 +116,11 @@ public class StockService {
         if (!box.getShelfId().equals(shelf.getId())) {
             throw new SecurityException("접근 권한이 없습니다.");
         }
-        return stockMapper.findPanelByBoxId(box.getId());
+        int totalCount = stockMapper.countPanelByBoxId(box.getId());
+        PageRequest pageRequest = PageRequest.of(page, totalCount);
+        List<StockPanelDTO> stocks = stockMapper.findPanelByBoxIdPaged(
+                box.getId(), pageRequest.size(), pageRequest.offset());
+        return new PageResult<>(stocks, pageRequest.page(), pageRequest.size(), totalCount);
     }
 
     public List<StockDetailDTO> searchDetails(UUID itemExternalId,
@@ -93,9 +130,27 @@ public class StockService {
                                               String keyword,
                                               String sortBy,
                                               String username) {
+        return searchDetailsPage(itemExternalId, spaceExternalId, shelfExternalId, boxExternalId,
+                keyword, sortBy, username, 1).content();
+    }
+
+    public PageResult<StockDetailDTO> searchDetailsPage(UUID itemExternalId,
+                                                        UUID spaceExternalId,
+                                                        UUID shelfExternalId,
+                                                        UUID boxExternalId,
+                                                        String keyword,
+                                                        String sortBy,
+                                                        String username,
+                                                        Integer page) {
         UserDTO user = getUser(username);
-        return stockMapper.searchDetails(user.getId(), itemExternalId, spaceExternalId, shelfExternalId, boxExternalId,
-                normalizeKeyword(keyword), normalizeSort(sortBy));
+        String effectiveKeyword = normalizeKeyword(keyword);
+        int totalCount = stockMapper.countSearchDetails(user.getId(), itemExternalId, spaceExternalId,
+                shelfExternalId, boxExternalId, effectiveKeyword);
+        PageRequest pageRequest = PageRequest.of(page, totalCount);
+        List<StockDetailDTO> stocks = stockMapper.searchDetails(user.getId(), itemExternalId, spaceExternalId,
+                shelfExternalId, boxExternalId, effectiveKeyword, normalizeSort(sortBy),
+                pageRequest.size(), pageRequest.offset());
+        return new PageResult<>(stocks, pageRequest.page(), pageRequest.size(), totalCount);
     }
 
     public StockDetailDTO findDetailByExternalId(UUID externalId, String username) {

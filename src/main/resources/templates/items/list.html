@@ -32,6 +32,7 @@
                   hx-push-url="true"
                   class="flex items-center gap-2">
                 <input type="hidden" name="sortBy" th:value="${sortBy}">
+                <input type="hidden" name="page" value="1">
                 <span class="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500">품목명</span>
                 <input type="text"
                        name="keyword"
@@ -88,6 +89,29 @@
                     <div th:replace="~{items/fragments/card :: view}"></div>
                 </th:block>
             </div>
+        </div>
+
+        <div th:if="${page.totalPages() > 1}"
+             class="flex items-center justify-center gap-1">
+            <button th:if="${page.hasPrevious()}"
+                    th:attr="hx-get=@{/items(page=${page.previousPage()},sortBy=${sortBy},keyword=${keyword})}"
+                    hx-target="#item-list-section" hx-select="#item-list-section" hx-swap="outerHTML" hx-push-url="true"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                이전
+            </button>
+            <th:block th:each="pageNumber : ${#numbers.sequence(1, page.totalPages())}">
+                <button th:attr="hx-get=@{/items(page=${pageNumber},sortBy=${sortBy},keyword=${keyword})}"
+                        hx-target="#item-list-section" hx-select="#item-list-section" hx-swap="outerHTML" hx-push-url="true"
+                        th:classappend="${pageNumber == page.page()} ? 'bg-blue-600 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50'"
+                        class="min-w-9 rounded-md px-3 py-1.5 text-sm font-semibold transition"
+                        th:text="${pageNumber}">1</button>
+            </th:block>
+            <button th:if="${page.hasNext()}"
+                    th:attr="hx-get=@{/items(page=${page.nextPage()},sortBy=${sortBy},keyword=${keyword})}"
+                    hx-target="#item-list-section" hx-select="#item-list-section" hx-swap="outerHTML" hx-push-url="true"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                다음
+            </button>
         </div>
     </div>
 

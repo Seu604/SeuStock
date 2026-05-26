@@ -31,6 +31,7 @@
                   hx-push-url="true"
                   class="flex items-center gap-2">
                 <input type="hidden" name="sortBy" th:value="${sortBy}">
+                <input type="hidden" name="page" value="1">
                 <input th:if="${itemExternalId != null}" type="hidden" name="itemExternalId" th:value="${itemExternalId}">
                 <input th:if="${spaceExternalId != null}" type="hidden" name="spaceExternalId" th:value="${spaceExternalId}">
                 <input th:if="${shelfExternalId != null}" type="hidden" name="shelfExternalId" th:value="${shelfExternalId}">
@@ -89,6 +90,29 @@
                     <th:block th:replace="~{stocks/fragments/detail-row :: view(stock=${stock})}"></th:block>
                 </th:block>
             </div>
+        </div>
+
+        <div th:if="${page.totalPages() > 1}"
+             class="flex items-center justify-center gap-1">
+            <button th:if="${page.hasPrevious()}"
+                    th:attr="hx-get=@{/stocks(page=${page.previousPage()},sortBy=${sortBy},keyword=${keyword},itemExternalId=${itemExternalId},spaceExternalId=${spaceExternalId},shelfExternalId=${shelfExternalId},boxExternalId=${boxExternalId})}"
+                    hx-target="#stock-detail-section" hx-select="#stock-detail-section" hx-swap="outerHTML" hx-push-url="true"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                이전
+            </button>
+            <th:block th:each="pageNumber : ${#numbers.sequence(1, page.totalPages())}">
+                <button th:attr="hx-get=@{/stocks(page=${pageNumber},sortBy=${sortBy},keyword=${keyword},itemExternalId=${itemExternalId},spaceExternalId=${spaceExternalId},shelfExternalId=${shelfExternalId},boxExternalId=${boxExternalId})}"
+                        hx-target="#stock-detail-section" hx-select="#stock-detail-section" hx-swap="outerHTML" hx-push-url="true"
+                        th:classappend="${pageNumber == page.page()} ? 'bg-blue-600 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-50'"
+                        class="min-w-9 rounded-md px-3 py-1.5 text-sm font-semibold transition"
+                        th:text="${pageNumber}">1</button>
+            </th:block>
+            <button th:if="${page.hasNext()}"
+                    th:attr="hx-get=@{/stocks(page=${page.nextPage()},sortBy=${sortBy},keyword=${keyword},itemExternalId=${itemExternalId},spaceExternalId=${spaceExternalId},shelfExternalId=${shelfExternalId},boxExternalId=${boxExternalId})}"
+                    hx-target="#stock-detail-section" hx-select="#stock-detail-section" hx-swap="outerHTML" hx-push-url="true"
+                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                다음
+            </button>
         </div>
     </div>
 

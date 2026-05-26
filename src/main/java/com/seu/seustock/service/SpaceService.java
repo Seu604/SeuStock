@@ -6,6 +6,8 @@ import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.SpaceForm;
+import com.seu.seustock.model.pagination.PageRequest;
+import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,8 +29,17 @@ public class SpaceService {
     }
 
     public List<SpaceDTO> findAllByUsername(String username, String keyword, String sortBy) {
+        return findPageByUsername(username, keyword, sortBy, 1).content();
+    }
+
+    public PageResult<SpaceDTO> findPageByUsername(String username, String keyword, String sortBy, Integer page) {
         UserDTO user = getUser(username);
-        return spaceMapper.findByUserIdWithOptions(user.getId(), normalizeKeyword(keyword), normalizeSort(sortBy));
+        String effectiveKeyword = normalizeKeyword(keyword);
+        int totalCount = spaceMapper.countByUserIdWithOptions(user.getId(), effectiveKeyword);
+        PageRequest pageRequest = PageRequest.of(page, totalCount);
+        List<SpaceDTO> spaces = spaceMapper.findByUserIdWithOptions(user.getId(), effectiveKeyword,
+                normalizeSort(sortBy), pageRequest.size(), pageRequest.offset());
+        return new PageResult<>(spaces, pageRequest.page(), pageRequest.size(), totalCount);
     }
 
     public SpaceDTO findByExternalId(UUID externalId, String username) {

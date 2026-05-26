@@ -25,9 +25,12 @@ public class ItemController {
     @GetMapping
     public String list(@RequestParam(required = false) String keyword,
                        @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                       @RequestParam(required = false) Integer page,
                        HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
-        model.addAttribute("items", itemService.findAllByUsername(username, keyword, sortBy));
+        var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
+        model.addAttribute("items", itemsPage.content());
+        model.addAttribute("page", itemsPage);
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
         return "items/list";
@@ -111,15 +114,18 @@ public class ItemController {
     public String delete(@PathVariable UUID externalId,
                          @RequestParam(required = false) String keyword,
                          @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                         @RequestParam(required = false) Integer page,
                          HttpSession session,
                          Model model,
                          HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         itemService.delete(externalId, username);
-        model.addAttribute("items", itemService.findAllByUsername(username, keyword, sortBy));
+        var itemsPage = itemService.findPageByUsername(username, keyword, sortBy, page);
+        model.addAttribute("items", itemsPage.content());
+        model.addAttribute("page", itemsPage);
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
         HtmxResponse.success(response, "품목이 삭제되었습니다.");
-        return "items/list :: item-list";
+        return "items/list :: item-list-section";
     }
 }

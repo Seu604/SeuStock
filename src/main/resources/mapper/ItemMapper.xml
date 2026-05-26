@@ -126,6 +126,17 @@
                 i.created_at DESC, i.id DESC
             </otherwise>
         </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUserIdWithOptions" resultType="int">
+        SELECT COUNT(*)
+        FROM items i
+        WHERE i.user_id = #{userId}
+          AND i.active = TRUE
+        <if test="keyword != null and keyword != ''">
+          AND i.name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
     </select>
 
     <update id="updateItem" parameterType="ItemDTO">

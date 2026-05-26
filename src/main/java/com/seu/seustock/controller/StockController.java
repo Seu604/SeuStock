@@ -47,10 +47,13 @@ public class StockController {
                        @RequestParam(required = false) UUID boxExternalId,
                        @RequestParam(required = false) String keyword,
                        @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                       @RequestParam(required = false) Integer page,
                        HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
-        model.addAttribute("stocks", stockService.searchDetails(
-                itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, keyword, sortBy, username));
+        var stocksPage = stockService.searchDetailsPage(
+                itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, keyword, sortBy, username, page);
+        model.addAttribute("stocks", stocksPage.content());
+        model.addAttribute("page", stocksPage);
         model.addAttribute("itemExternalId", itemExternalId);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
@@ -109,39 +112,62 @@ public class StockController {
     public String panelBySpaceAll(@PathVariable UUID spaceExternalId,
                                   @RequestParam(required = false) String keyword,
                                   @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                                  @RequestParam(required = false) Integer page,
+                                  @RequestParam(required = false, defaultValue = "false") boolean append,
                                   HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
         SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
-        model.addAttribute("stocks", stockService.findPanelBySpaceAll(spaceExternalId, keyword, sortBy, username));
+        var stocksPage = stockService.findPanelPageBySpaceAll(spaceExternalId, keyword, sortBy, username, page);
+        model.addAttribute("stocks", stocksPage.content());
+        model.addAttribute("page", stocksPage);
         model.addAttribute("breadcrumb", space.getName() + " 전체보기");
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("isAllView", true);
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
+        if (append) {
+            return "stocks/fragments/panel :: stock-panel-more-response";
+        }
         return "stocks/fragments/panel :: stock-panel";
     }
 
     @GetMapping("/spaces/{spaceExternalId}/stocks")
     public String panelBySpace(@PathVariable UUID spaceExternalId,
+                               @RequestParam(required = false) Integer page,
+                               @RequestParam(required = false, defaultValue = "false") boolean append,
                                HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
         SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
-        model.addAttribute("stocks", stockService.findPanelBySpace(spaceExternalId, username));
+        var stocksPage = stockService.findPanelPageBySpace(spaceExternalId, username, page);
+        model.addAttribute("stocks", stocksPage.content());
+        model.addAttribute("page", stocksPage);
         model.addAttribute("breadcrumb", space.getName() + "에 대충 던져놓은 물건들");
         model.addAttribute("spaceExternalId", spaceExternalId);
+        model.addAttribute("isAllView", false);
+        if (append) {
+            return "stocks/fragments/panel :: stock-panel-more-response";
+        }
         return "stocks/fragments/panel :: stock-panel";
     }
 
     @GetMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}/stocks")
     public String panelByShelf(@PathVariable UUID spaceExternalId,
                                @PathVariable UUID shelfExternalId,
+                               @RequestParam(required = false) Integer page,
+                               @RequestParam(required = false, defaultValue = "false") boolean append,
                                HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
         ShelfDTO shelf = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username);
-        model.addAttribute("stocks", stockService.findPanelByShelf(spaceExternalId, shelfExternalId, username));
+        var stocksPage = stockService.findPanelPageByShelf(spaceExternalId, shelfExternalId, username, page);
+        model.addAttribute("stocks", stocksPage.content());
+        model.addAttribute("page", stocksPage);
         model.addAttribute("breadcrumb", shelf.getName());
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
+        model.addAttribute("isAllView", false);
+        if (append) {
+            return "stocks/fragments/panel :: stock-panel-more-response";
+        }
         return "stocks/fragments/panel :: stock-panel";
     }
 
@@ -149,13 +175,21 @@ public class StockController {
     public String panelByBox(@PathVariable UUID spaceExternalId,
                              @PathVariable UUID shelfExternalId,
                              @PathVariable UUID boxExternalId,
+                             @RequestParam(required = false) Integer page,
+                             @RequestParam(required = false, defaultValue = "false") boolean append,
                              HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
-        model.addAttribute("stocks", stockService.findPanelByBox(spaceExternalId, shelfExternalId, boxExternalId, username));
+        var stocksPage = stockService.findPanelPageByBox(spaceExternalId, shelfExternalId, boxExternalId, username, page);
+        model.addAttribute("stocks", stocksPage.content());
+        model.addAttribute("page", stocksPage);
         model.addAttribute("breadcrumb", boxService.findByExternalId(spaceExternalId, shelfExternalId, boxExternalId, username).getName());
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("boxExternalId", boxExternalId);
+        model.addAttribute("isAllView", false);
+        if (append) {
+            return "stocks/fragments/panel :: stock-panel-more-response";
+        }
         return "stocks/fragments/panel :: stock-panel";
     }
 
@@ -370,25 +404,27 @@ public class StockController {
 
     private String buildPanelResponse(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId,
                                       String username, Model model) {
-        List<StockPanelDTO> stocks;
         String breadcrumb;
+        var page = boxExternalId != null
+                ? stockService.findPanelPageByBox(spaceExternalId, shelfExternalId, boxExternalId, username, 1)
+                : shelfExternalId != null
+                ? stockService.findPanelPageByShelf(spaceExternalId, shelfExternalId, username, 1)
+                : stockService.findPanelPageBySpace(spaceExternalId, username, 1);
         if (boxExternalId != null) {
-            stocks = stockService.findPanelByBox(spaceExternalId, shelfExternalId, boxExternalId, username);
             breadcrumb = boxService.findByExternalId(spaceExternalId, shelfExternalId, boxExternalId, username).getName();
         } else if (shelfExternalId != null) {
-            String shelfName = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName();
-            stocks = stockService.findPanelByShelf(spaceExternalId, shelfExternalId, username);
-            breadcrumb = shelfName;
+            breadcrumb = shelfService.findByExternalId(spaceExternalId, shelfExternalId, username).getName();
         } else {
             SpaceDTO space = spaceService.findByExternalId(spaceExternalId, username);
-            stocks = stockService.findPanelBySpace(spaceExternalId, username);
             breadcrumb = space.getName() + "에 대충 던져놓은 물건들";
         }
-        model.addAttribute("stocks", stocks);
+        model.addAttribute("stocks", page.content());
+        model.addAttribute("page", page);
         model.addAttribute("breadcrumb", breadcrumb);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("boxExternalId", boxExternalId);
+        model.addAttribute("isAllView", false);
         return "stocks/fragments/panel :: stock-panel-response";
     }
 

@@ -387,6 +387,27 @@ class StockMapperTest {
     }
 
     @Test
+    void findPanelBySpaceDirectOnlyPaged_appliesLimitAndOffset() {
+        for (int i = 0; i < 12; i++) {
+            ItemDTO item = new ItemDTO();
+            item.setUserId(userId);
+            item.setName("품목%02d".formatted(i));
+            itemMapper.insertItem(item);
+            StockDTO stock = buildStock();
+            stock.setItemId(item.getId());
+            stockMapper.insertStock(stock);
+        }
+
+        List<StockPanelDTO> firstPage = stockMapper.findPanelBySpaceDirectOnlyPaged(spaceId, 10, 0);
+        List<StockPanelDTO> secondPage = stockMapper.findPanelBySpaceDirectOnlyPaged(spaceId, 10, 10);
+
+        assertThat(firstPage).hasSize(10);
+        assertThat(secondPage).extracting(StockPanelDTO::getItemName)
+                .containsExactly("품목10", "품목11");
+        assertThat(stockMapper.countPanelBySpaceDirectOnly(spaceId)).isEqualTo(12);
+    }
+
+    @Test
     void findInStockByItemAndSpace_returnsFifoOrder() {
         stockMapper.insertStock(buildStock());
         stockMapper.insertStock(buildStock());
@@ -460,7 +481,7 @@ class StockMapperTest {
         stockMapper.insertStock(dispatched);
         stockMapper.updateStatusIfInStock(dispatched.getId(), StockStatus.DISPATCHED);
 
-        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null);
+        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null, 10, 0);
 
         assertThat(details).hasSize(1);
         assertThat(details.get(0).getExternalId()).isNotNull();
@@ -486,7 +507,7 @@ class StockMapperTest {
 
         List<StockDetailDTO> details = stockMapper.searchDetails(
                 userId, item.getExternalId(), space.getExternalId(), shelf.getExternalId(), box.getExternalId(),
-                null, null);
+                null, null, 10, 0);
 
         assertThat(details).hasSize(1);
         assertThat(details.get(0).getBoxName()).isEqualTo("1번박스");
@@ -517,15 +538,16 @@ class StockMapperTest {
         stockMapper.insertStock(keyboard);
 
         List<StockDetailDTO> lotMatched = stockMapper.searchDetails(
-                userId, null, null, null, null, "LOT-SEARCH", "newest");
+                userId, null, null, null, null, "LOT-SEARCH", "newest", 10, 0);
         List<StockDetailDTO> memoMatched = stockMapper.searchDetails(
-                userId, null, null, null, null, "회의실", "newest");
+                userId, null, null, null, null, "회의실", "newest", 10, 0);
         List<StockDetailDTO> nameSorted = stockMapper.searchDetails(
-                userId, null, null, null, null, null, "name");
+                userId, null, null, null, null, null, "name", 10, 0);
 
         assertThat(lotMatched).extracting(StockDetailDTO::getItemName).containsExactly("마우스");
         assertThat(memoMatched).extracting(StockDetailDTO::getItemName).containsExactly("키보드");
         assertThat(nameSorted).extracting(StockDetailDTO::getItemName).containsExactly("노트북", "마우스", "키보드");
+        assertThat(stockMapper.countSearchDetails(userId, null, null, null, null, "LOT-SEARCH")).isEqualTo(1);
     }
 
     @Test

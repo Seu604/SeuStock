@@ -11,6 +11,8 @@ import com.seu.seustock.model.dto.ItemSpaceStockDTO;
 import com.seu.seustock.model.dto.ItemTransactionHistoryDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.ItemForm;
+import com.seu.seustock.model.pagination.PageRequest;
+import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +38,17 @@ public class ItemService {
     }
 
     public List<ItemDTO> findAllByUsername(String username, String keyword, String sortBy) {
+        return findPageByUsername(username, keyword, sortBy, 1).content();
+    }
+
+    public PageResult<ItemDTO> findPageByUsername(String username, String keyword, String sortBy, Integer page) {
         UserDTO user = getUser(username);
-        return itemMapper.findByUserIdWithOptions(user.getId(), normalizeKeyword(keyword), normalizeSort(sortBy));
+        String effectiveKeyword = normalizeKeyword(keyword);
+        int totalCount = itemMapper.countByUserIdWithOptions(user.getId(), effectiveKeyword);
+        PageRequest pageRequest = PageRequest.of(page, totalCount);
+        List<ItemDTO> items = itemMapper.findByUserIdWithOptions(user.getId(), effectiveKeyword,
+                normalizeSort(sortBy), pageRequest.size(), pageRequest.offset());
+        return new PageResult<>(items, pageRequest.page(), pageRequest.size(), totalCount);
     }
 
     public ItemDTO findByExternalId(UUID externalId, String username) {

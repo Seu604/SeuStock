@@ -302,6 +302,38 @@
                 s.created_at DESC, s.id DESC
             </otherwise>
         </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countSearchDetails" resultType="int">
+        SELECT COUNT(*)
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        JOIN spaces sp ON s.space_id = sp.id
+        LEFT JOIN shelves sh ON s.shelf_id = sh.id
+        LEFT JOIN boxes b ON s.box_id = b.id
+        WHERE i.user_id = #{userId}
+          AND s.status = 'IN_STOCK'
+        <if test="itemExternalId != null">
+          AND i.external_id = #{itemExternalId}
+        </if>
+        <if test="spaceExternalId != null">
+          AND sp.external_id = #{spaceExternalId}
+        </if>
+        <if test="shelfExternalId != null">
+          AND sh.external_id = #{shelfExternalId}
+        </if>
+        <if test="boxExternalId != null">
+          AND b.external_id = #{boxExternalId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          AND (
+              i.name LIKE CONCAT('%', #{keyword}, '%')
+              OR s.serial_number LIKE CONCAT('%', #{keyword}, '%')
+              OR s.lot_number LIKE CONCAT('%', #{keyword}, '%')
+              OR s.memo LIKE CONCAT('%', #{keyword}, '%')
+          )
+        </if>
     </select>
 
     <select id="findDetailByExternalId" resultMap="StockDetailResultMap">
@@ -344,6 +376,35 @@
         GROUP BY i.id, i.external_id, i.name
     </select>
 
+    <select id="findPanelByBoxIdPaged" resultMap="StockPanelResultMap">
+        SELECT i.external_id AS item_external_id,
+               i.name AS item_name,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS display_image_external_id,
+               COUNT(*) AS count
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.box_id = #{boxId}
+          AND s.status = 'IN_STOCK'
+        GROUP BY i.id, i.external_id, i.name
+        ORDER BY i.name ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPanelByBoxId" parameterType="long" resultType="int">
+        SELECT COUNT(DISTINCT i.id)
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.box_id = #{boxId}
+          AND s.status = 'IN_STOCK'
+    </select>
+
     <select id="findPanelByShelfDirectOnly" parameterType="long" resultMap="StockPanelResultMap">
         SELECT i.external_id AS item_external_id,
                i.name AS item_name,
@@ -364,6 +425,37 @@
         GROUP BY i.id, i.external_id, i.name
     </select>
 
+    <select id="findPanelByShelfDirectOnlyPaged" resultMap="StockPanelResultMap">
+        SELECT i.external_id AS item_external_id,
+               i.name AS item_name,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS display_image_external_id,
+               COUNT(*) AS count
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.shelf_id = #{shelfId}
+          AND s.box_id IS NULL
+          AND s.status = 'IN_STOCK'
+        GROUP BY i.id, i.external_id, i.name
+        ORDER BY i.name ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPanelByShelfDirectOnly" parameterType="long" resultType="int">
+        SELECT COUNT(DISTINCT i.id)
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.shelf_id = #{shelfId}
+          AND s.box_id IS NULL
+          AND s.status = 'IN_STOCK'
+    </select>
+
     <select id="findPanelBySpaceDirectOnly" parameterType="long" resultMap="StockPanelResultMap">
         SELECT i.external_id AS item_external_id,
                i.name AS item_name,
@@ -382,6 +474,37 @@
           AND s.shelf_id IS NULL
           AND s.status = 'IN_STOCK'
         GROUP BY i.id, i.external_id, i.name
+    </select>
+
+    <select id="findPanelBySpaceDirectOnlyPaged" resultMap="StockPanelResultMap">
+        SELECT i.external_id AS item_external_id,
+               i.name AS item_name,
+               (
+                   SELECT img.external_id
+                   FROM item_images ii
+                   JOIN images img ON img.id = ii.image_id
+                   WHERE ii.item_id = i.id
+                   ORDER BY ii.is_primary DESC, ii.display_order, ii.created_at
+                   LIMIT 1
+               ) AS display_image_external_id,
+               COUNT(*) AS count
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.space_id = #{spaceId}
+          AND s.shelf_id IS NULL
+          AND s.status = 'IN_STOCK'
+        GROUP BY i.id, i.external_id, i.name
+        ORDER BY i.name ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPanelBySpaceDirectOnly" parameterType="long" resultType="int">
+        SELECT COUNT(DISTINCT i.id)
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.space_id = #{spaceId}
+          AND s.shelf_id IS NULL
+          AND s.status = 'IN_STOCK'
     </select>
 
     <select id="findPanelBySpaceAllWithOptions" resultMap="StockPanelResultMap">
@@ -437,6 +560,18 @@
                 i.name ASC
             </otherwise>
         </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPanelBySpaceAllWithOptions" resultType="int">
+        SELECT COUNT(DISTINCT i.id)
+        FROM stocks s
+        JOIN items i ON s.item_id = i.id
+        WHERE s.space_id = #{spaceId}
+          AND s.status = 'IN_STOCK'
+          <if test="keyword != null and keyword != ''">
+              AND i.name LIKE CONCAT('%', #{keyword}, '%')
+          </if>
     </select>
 
 </mapper>

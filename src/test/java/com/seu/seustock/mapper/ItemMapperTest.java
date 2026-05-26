@@ -114,11 +114,26 @@ class ItemMapperTest {
         itemMapper.insertItem(buildItem("무선 마우스", null));
         itemMapper.insertItem(buildItem("유선 마우스", null));
 
-        List<ItemDTO> searched = itemMapper.findByUserIdWithOptions(userId, "마우스", "name");
-        List<ItemDTO> oldest = itemMapper.findByUserIdWithOptions(userId, null, "oldest");
+        List<ItemDTO> searched = itemMapper.findByUserIdWithOptions(userId, "마우스", "name", 10, 0);
+        List<ItemDTO> oldest = itemMapper.findByUserIdWithOptions(userId, null, "oldest", 10, 0);
 
         assertThat(searched).extracting(ItemDTO::getName).containsExactly("무선 마우스", "유선 마우스");
         assertThat(oldest).extracting(ItemDTO::getName).containsExactly("노트북", "무선 마우스", "유선 마우스");
+        assertThat(itemMapper.countByUserIdWithOptions(userId, "마우스")).isEqualTo(2);
+    }
+
+    @Test
+    void findByUserIdWithOptions_appliesLimitAndOffset() {
+        for (int i = 0; i < 12; i++) {
+            itemMapper.insertItem(buildItem("품목%02d".formatted(i), null));
+        }
+
+        List<ItemDTO> firstPage = itemMapper.findByUserIdWithOptions(userId, null, "name", 10, 0);
+        List<ItemDTO> secondPage = itemMapper.findByUserIdWithOptions(userId, null, "name", 10, 10);
+
+        assertThat(firstPage).hasSize(10);
+        assertThat(secondPage).extracting(ItemDTO::getName).containsExactly("품목10", "품목11");
+        assertThat(itemMapper.countByUserIdWithOptions(userId, null)).isEqualTo(12);
     }
 
     @Test
