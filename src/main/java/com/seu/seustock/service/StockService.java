@@ -90,9 +90,12 @@ public class StockService {
                                               UUID spaceExternalId,
                                               UUID shelfExternalId,
                                               UUID boxExternalId,
+                                              String keyword,
+                                              String sortBy,
                                               String username) {
         UserDTO user = getUser(username);
-        return stockMapper.searchDetails(user.getId(), itemExternalId, spaceExternalId, shelfExternalId, boxExternalId);
+        return stockMapper.searchDetails(user.getId(), itemExternalId, spaceExternalId, shelfExternalId, boxExternalId,
+                normalizeKeyword(keyword), normalizeSort(sortBy));
     }
 
     public StockDetailDTO findDetailByExternalId(UUID externalId, String username) {
@@ -414,6 +417,14 @@ public class StockService {
     private UserDTO getUser(String username) {
         return userMapper.findByUsername(username)
                 .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return keyword == null || keyword.isBlank() ? null : keyword.trim();
+    }
+
+    private String normalizeSort(String sortBy) {
+        return sortBy == null || sortBy.isBlank() ? "newest" : sortBy;
     }
 
     private void attachPrimaryImageIfPresent(Long itemId, UserDTO user, QuickStockForm form) {

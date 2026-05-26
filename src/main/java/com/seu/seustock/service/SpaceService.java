@@ -26,6 +26,11 @@ public class SpaceService {
         return spaceMapper.findByUserId(user.getId());
     }
 
+    public List<SpaceDTO> findAllByUsername(String username, String keyword, String sortBy) {
+        UserDTO user = getUser(username);
+        return spaceMapper.findByUserIdWithOptions(user.getId(), normalizeKeyword(keyword), normalizeSort(sortBy));
+    }
+
     public SpaceDTO findByExternalId(UUID externalId, String username) {
         SpaceDTO space = getSpace(externalId);
         verifyOwner(space, username);
@@ -69,6 +74,14 @@ public class SpaceService {
     private UserDTO getUser(String username) {
         return userMapper.findByUsername(username)
                 .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+    }
+
+    private String normalizeKeyword(String keyword) {
+        return keyword == null || keyword.isBlank() ? null : keyword.trim();
+    }
+
+    private String normalizeSort(String sortBy) {
+        return sortBy == null || sortBy.isBlank() ? "newest" : sortBy;
     }
 
     private SpaceDTO getSpace(UUID externalId) {

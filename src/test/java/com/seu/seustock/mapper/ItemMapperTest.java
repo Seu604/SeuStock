@@ -109,6 +109,19 @@ class ItemMapperTest {
     }
 
     @Test
+    void findByUserIdWithOptions_filtersByNameAndSorts() {
+        itemMapper.insertItem(buildItem("노트북", null));
+        itemMapper.insertItem(buildItem("무선 마우스", null));
+        itemMapper.insertItem(buildItem("유선 마우스", null));
+
+        List<ItemDTO> searched = itemMapper.findByUserIdWithOptions(userId, "마우스", "name");
+        List<ItemDTO> oldest = itemMapper.findByUserIdWithOptions(userId, null, "oldest");
+
+        assertThat(searched).extracting(ItemDTO::getName).containsExactly("무선 마우스", "유선 마우스");
+        assertThat(oldest).extracting(ItemDTO::getName).containsExactly("노트북", "무선 마우스", "유선 마우스");
+    }
+
+    @Test
     void deactivateById_excludesItemFromUserList() {
         ItemDTO activeItem = buildItem("활성아이템", null);
         itemMapper.insertItem(activeItem);

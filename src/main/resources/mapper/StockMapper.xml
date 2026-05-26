@@ -282,7 +282,26 @@
         <if test="boxExternalId != null">
           AND b.external_id = #{boxExternalId}
         </if>
-        ORDER BY i.name, sp.name, sh.name, b.name, s.created_at DESC
+        <if test="keyword != null and keyword != ''">
+          AND (
+              i.name LIKE CONCAT('%', #{keyword}, '%')
+              OR s.serial_number LIKE CONCAT('%', #{keyword}, '%')
+              OR s.lot_number LIKE CONCAT('%', #{keyword}, '%')
+              OR s.memo LIKE CONCAT('%', #{keyword}, '%')
+          )
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'oldest'">
+                s.created_at ASC, s.id ASC
+            </when>
+            <when test="sortBy == 'name'">
+                i.name ASC, sp.name ASC, sh.name ASC, b.name ASC, s.created_at DESC
+            </when>
+            <otherwise>
+                s.created_at DESC, s.id DESC
+            </otherwise>
+        </choose>
     </select>
 
     <select id="findDetailByExternalId" resultMap="StockDetailResultMap">

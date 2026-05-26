@@ -460,7 +460,7 @@ class StockMapperTest {
         stockMapper.insertStock(dispatched);
         stockMapper.updateStatusIfInStock(dispatched.getId(), StockStatus.DISPATCHED);
 
-        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null);
+        List<StockDetailDTO> details = stockMapper.searchDetails(userId, null, null, null, null, null, null);
 
         assertThat(details).hasSize(1);
         assertThat(details.get(0).getExternalId()).isNotNull();
@@ -485,10 +485,47 @@ class StockMapperTest {
         var box = boxMapper.findById(boxId).orElseThrow();
 
         List<StockDetailDTO> details = stockMapper.searchDetails(
-                userId, item.getExternalId(), space.getExternalId(), shelf.getExternalId(), box.getExternalId());
+                userId, item.getExternalId(), space.getExternalId(), shelf.getExternalId(), box.getExternalId(),
+                null, null);
 
         assertThat(details).hasSize(1);
         assertThat(details.get(0).getBoxName()).isEqualTo("1번박스");
+    }
+
+    @Test
+    void searchDetails_filtersByKeywordAndSorts() {
+        StockDTO laptop = buildStock();
+        laptop.setSerialNumber("SN-001");
+        stockMapper.insertStock(laptop);
+
+        ItemDTO mouseItem = new ItemDTO();
+        mouseItem.setUserId(userId);
+        mouseItem.setName("마우스");
+        itemMapper.insertItem(mouseItem);
+        StockDTO mouse = buildStockOnBox();
+        mouse.setItemId(mouseItem.getId());
+        mouse.setLotNumber("LOT-SEARCH");
+        stockMapper.insertStock(mouse);
+
+        ItemDTO keyboardItem = new ItemDTO();
+        keyboardItem.setUserId(userId);
+        keyboardItem.setName("키보드");
+        itemMapper.insertItem(keyboardItem);
+        StockDTO keyboard = buildStockOnShelf();
+        keyboard.setItemId(keyboardItem.getId());
+        keyboard.setMemo("회의실 비품");
+        stockMapper.insertStock(keyboard);
+
+        List<StockDetailDTO> lotMatched = stockMapper.searchDetails(
+                userId, null, null, null, null, "LOT-SEARCH", "newest");
+        List<StockDetailDTO> memoMatched = stockMapper.searchDetails(
+                userId, null, null, null, null, "회의실", "newest");
+        List<StockDetailDTO> nameSorted = stockMapper.searchDetails(
+                userId, null, null, null, null, null, "name");
+
+        assertThat(lotMatched).extracting(StockDetailDTO::getItemName).containsExactly("마우스");
+        assertThat(memoMatched).extracting(StockDetailDTO::getItemName).containsExactly("키보드");
+        assertThat(nameSorted).extracting(StockDetailDTO::getItemName).containsExactly("노트북", "마우스", "키보드");
     }
 
     @Test

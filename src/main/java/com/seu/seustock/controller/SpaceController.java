@@ -28,10 +28,14 @@ public class SpaceController {
     private final StockService stockService;
 
     @GetMapping
-    public String list(HttpSession session, Model model) {
+    public String list(@RequestParam(required = false) String keyword,
+                       @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                       HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
-        model.addAttribute("spaces", spaceService.findAllByUsername(username));
+        model.addAttribute("spaces", spaceService.findAllByUsername(username, keyword, sortBy));
         model.addAttribute("form", new SpaceForm());
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         return "spaces/list";
     }
 
@@ -50,12 +54,16 @@ public class SpaceController {
     @PostMapping
     public String create(@Valid @ModelAttribute("form") SpaceForm form,
                          BindingResult result,
+                         @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false, defaultValue = "newest") String sortBy,
                          HttpSession session,
                          Model model,
                          RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
             String username = (String) session.getAttribute("loginUser");
-            model.addAttribute("spaces", spaceService.findAllByUsername(username));
+            model.addAttribute("spaces", spaceService.findAllByUsername(username, keyword, sortBy));
+            model.addAttribute("keyword", keyword);
+            model.addAttribute("sortBy", sortBy);
             return "spaces/list";
         }
         spaceService.create((String) session.getAttribute("loginUser"), form);
@@ -101,12 +109,16 @@ public class SpaceController {
 
     @DeleteMapping("/{externalId}")
     public String delete(@PathVariable UUID externalId,
+                         @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false, defaultValue = "newest") String sortBy,
                          HttpSession session,
                          Model model,
                          HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         spaceService.delete(externalId, username);
-        model.addAttribute("spaces", spaceService.findAllByUsername(username));
+        model.addAttribute("spaces", spaceService.findAllByUsername(username, keyword, sortBy));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         HtmxResponse.success(response, "공간이 삭제되었습니다.");
         return "spaces/list :: space-list";
     }

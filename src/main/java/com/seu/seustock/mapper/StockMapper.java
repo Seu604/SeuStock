@@ -56,7 +56,9 @@ public interface StockMapper {
                                        @Param("itemExternalId") UUID itemExternalId,
                                        @Param("spaceExternalId") UUID spaceExternalId,
                                        @Param("shelfExternalId") UUID shelfExternalId,
-                                       @Param("boxExternalId") UUID boxExternalId);
+                                       @Param("boxExternalId") UUID boxExternalId,
+                                       @Param("keyword") String keyword,
+                                       @Param("sortBy") String sortBy);
 
     Optional<StockDetailDTO> findDetailByExternalId(@Param("externalId") UUID externalId,
                                                     @Param("userId") Long userId);

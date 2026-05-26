@@ -23,9 +23,13 @@ public class ItemController {
     private final ItemService itemService;
 
     @GetMapping
-    public String list(HttpSession session, Model model) {
+    public String list(@RequestParam(required = false) String keyword,
+                       @RequestParam(required = false, defaultValue = "newest") String sortBy,
+                       HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
-        model.addAttribute("items", itemService.findAllByUsername(username));
+        model.addAttribute("items", itemService.findAllByUsername(username, keyword, sortBy));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         return "items/list";
     }
 
@@ -105,12 +109,16 @@ public class ItemController {
 
     @DeleteMapping("/{externalId}")
     public String delete(@PathVariable UUID externalId,
+                         @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false, defaultValue = "newest") String sortBy,
                          HttpSession session,
                          Model model,
                          HttpServletResponse response) {
         String username = (String) session.getAttribute("loginUser");
         itemService.delete(externalId, username);
-        model.addAttribute("items", itemService.findAllByUsername(username));
+        model.addAttribute("items", itemService.findAllByUsername(username, keyword, sortBy));
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         HtmxResponse.success(response, "품목이 삭제되었습니다.");
         return "items/list :: item-list";
     }

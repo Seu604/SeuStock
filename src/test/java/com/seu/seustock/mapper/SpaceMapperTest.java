@@ -77,6 +77,19 @@ class SpaceMapperTest {
     }
 
     @Test
+    void findByUserIdWithOptions_filtersByNameAndSorts() {
+        spaceMapper.insertSpace(buildSpace("창고B"));
+        spaceMapper.insertSpace(buildSpace("창고A"));
+        spaceMapper.insertSpace(buildSpace("매장"));
+
+        List<SpaceDTO> searched = spaceMapper.findByUserIdWithOptions(userId, "창고", "name");
+        List<SpaceDTO> newest = spaceMapper.findByUserIdWithOptions(userId, null, "newest");
+
+        assertThat(searched).extracting(SpaceDTO::getName).containsExactly("창고A", "창고B");
+        assertThat(newest).extracting(SpaceDTO::getName).containsExactly("매장", "창고A", "창고B");
+    }
+
+    @Test
     void updateSpace() {
         SpaceDTO space = buildSpace("구창고");
         spaceMapper.insertSpace(space);

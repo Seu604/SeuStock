@@ -45,16 +45,21 @@ public class StockController {
                        @RequestParam(required = false) UUID spaceExternalId,
                        @RequestParam(required = false) UUID shelfExternalId,
                        @RequestParam(required = false) UUID boxExternalId,
+                       @RequestParam(required = false) String keyword,
+                       @RequestParam(required = false, defaultValue = "newest") String sortBy,
                        HttpSession session, Model model) {
         String username = (String) session.getAttribute("loginUser");
         model.addAttribute("stocks", stockService.searchDetails(
-                itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, username));
+                itemExternalId, spaceExternalId, shelfExternalId, boxExternalId, keyword, sortBy, username));
         model.addAttribute("itemExternalId", itemExternalId);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelfExternalId", shelfExternalId);
         model.addAttribute("boxExternalId", boxExternalId);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("sortBy", sortBy);
         model.addAttribute("filtered", itemExternalId != null || spaceExternalId != null
-                || shelfExternalId != null || boxExternalId != null);
+                || shelfExternalId != null || boxExternalId != null
+                || (keyword != null && !keyword.isBlank()));
         return "stocks/list";
     }
 
