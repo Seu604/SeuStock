@@ -82,7 +82,18 @@ class StockServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(messageSource.getMessage(anyString(), any(), any()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenAnswer(invocation -> switch ((String) invocation.getArgument(0)) {
+                    case "stock.memo.quick" -> "빠른 등록";
+                    case "enum.TransactionMemoMaster.PURCHASE_IN" -> "구매 입고";
+                    case "enum.TransactionMemoMaster.RETURN_IN" -> "반품 입고";
+                    case "enum.TransactionMemoMaster.FOUND_IN" -> "재고 발견";
+                    case "enum.TransactionMemoMaster.ADJUSTMENT_IN" -> "수량 보정";
+                    case "enum.TransactionMemoMaster.USE_OUT" -> "사용 출고";
+                    case "enum.TransactionMemoMaster.SALES_OUT" -> "판매 출고";
+                    case "enum.TransactionMemoMaster.DISPOSAL_OUT" -> "폐기 출고";
+                    case "enum.TransactionMemoMaster.LOST_OUT" -> "분실 처리";
+                    default -> invocation.getArgument(0);
+                });
 
         user = user(1L);
         item = item(10L, ITEM_EXTERNAL_ID, user.getId());

@@ -4,36 +4,36 @@ import java.util.Arrays;
 import java.util.List;
 
 public enum TransactionMemoMaster {
-    PURCHASE_IN(TransactionType.IN, "구매 입고"),
-    RETURN_IN(TransactionType.IN, "반품 입고"),
-    FOUND_IN(TransactionType.IN, "재고 발견"),
-    ADJUSTMENT_IN(TransactionType.IN, "수량 보정"),
+    PURCHASE_IN(TransactionType.IN, "enum.TransactionMemoMaster.PURCHASE_IN"),
+    RETURN_IN(TransactionType.IN, "enum.TransactionMemoMaster.RETURN_IN"),
+    FOUND_IN(TransactionType.IN, "enum.TransactionMemoMaster.FOUND_IN"),
+    ADJUSTMENT_IN(TransactionType.IN, "enum.TransactionMemoMaster.ADJUSTMENT_IN"),
 
-    USE_OUT(TransactionType.OUT, "사용 출고"),
-    SALES_OUT(TransactionType.OUT, "판매 출고"),
-    DISPOSAL_OUT(TransactionType.OUT, "폐기 출고"),
-    LOST_OUT(TransactionType.OUT, "분실 처리");
+    USE_OUT(TransactionType.OUT, "enum.TransactionMemoMaster.USE_OUT"),
+    SALES_OUT(TransactionType.OUT, "enum.TransactionMemoMaster.SALES_OUT"),
+    DISPOSAL_OUT(TransactionType.OUT, "enum.TransactionMemoMaster.DISPOSAL_OUT"),
+    LOST_OUT(TransactionType.OUT, "enum.TransactionMemoMaster.LOST_OUT");
 
     private final TransactionType transactionType;
-    private final String memo;
+    private final String messageKey;
 
-    TransactionMemoMaster(TransactionType transactionType, String memo) {
+    TransactionMemoMaster(TransactionType transactionType, String messageKey) {
         this.transactionType = transactionType;
-        this.memo = memo;
+        this.messageKey = messageKey;
     }
 
     public TransactionType getTransactionType() {
         return transactionType;
     }
 
-    public String getMemo() {
-        return memo;
+    public String getMessageKey() {
+        return messageKey;
     }
 
-    public static List<String> memosFor(TransactionType transactionType) {
+    public static List<String> messageKeysFor(TransactionType transactionType) {
         return Arrays.stream(values())
                 .filter(master -> master.transactionType == transactionType)
-                .map(TransactionMemoMaster::getMemo)
+                .map(TransactionMemoMaster::getMessageKey)
                 .toList();
     }
 }

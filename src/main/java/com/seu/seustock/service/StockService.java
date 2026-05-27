@@ -170,7 +170,10 @@ public class StockService {
         UserDTO user = getUser(username);
         List<String> frequentMemos = transactionMapper.findFrequentMemosByUserIdAndType(
                 user.getId(), transactionType, MEMO_SUGGESTION_LIMIT);
-        return Stream.concat(frequentMemos.stream(), TransactionMemoMaster.memosFor(transactionType).stream())
+        List<String> masterMemos = TransactionMemoMaster.messageKeysFor(transactionType).stream()
+                .map(this::getMsg)
+                .toList();
+        return Stream.concat(frequentMemos.stream(), masterMemos.stream())
                 .distinct()
                 .limit(MEMO_SUGGESTION_LIMIT)
                 .toList();
@@ -212,7 +215,7 @@ public class StockService {
         }
         stockMapper.insertStocks(units);
 
-        String memo = form.getMemo() != null ? form.getMemo() : "초기 등록";
+        String memo = form.getMemo() != null ? form.getMemo() : getMsg("stock.memo.initial");
         List<StockTransactionDTO> txs = new ArrayList<>(units.size());
         for (StockDTO unit : units) {
             StockTransactionDTO tx = new StockTransactionDTO();
@@ -249,7 +252,7 @@ public class StockService {
         }
         stockMapper.insertStocks(units);
 
-        String memo = form.getMemo() != null ? form.getMemo() : "빠른 등록";
+        String memo = form.getMemo() != null ? form.getMemo() : getMsg("stock.memo.quick");
         List<StockTransactionDTO> txs = new ArrayList<>(units.size());
         for (StockDTO unit : units) {
             StockTransactionDTO tx = new StockTransactionDTO();

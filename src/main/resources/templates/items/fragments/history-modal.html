@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <body>
 
 <div th:fragment="modal"
@@ -33,7 +33,7 @@
 
                     <!-- 유형 badge + 날짜 -->
                     <div class="flex items-center justify-between gap-2">
-                        <span th:text="${tx.transactionType.label}"
+                        <span th:text="#{${'enum.TransactionType.' + tx.transactionType.name()}}"
                               th:classappend="${tx.transactionType.name() == 'IN'} ? 'bg-blue-50 text-blue-600' :
                                               (${tx.transactionType.name() == 'OUT'} ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-600')"
                               class="inline-block rounded px-2 py-0.5 text-xs font-semibold"></span>
@@ -77,9 +77,9 @@
                     <!-- 상태 / 유형 -->
                     <div class="mt-1 flex items-start gap-2 text-sm">
                         <span class="shrink-0 w-20 text-xs font-medium text-slate-400" th:text="#{view.item.history.status}">상태</span>
-                        <span class="text-slate-700" th:text="${tx.status.label}"></span>
+                        <span class="text-slate-700" th:text="#{${'enum.StockStatus.' + tx.status.name()}}"></span>
                         <span class="text-slate-300">/</span>
-                        <span class="text-slate-500" th:text="${tx.transactionType.label}"></span>
+                        <span class="text-slate-500" th:text="#{${'enum.TransactionType.' + tx.transactionType.name()}}"></span>
                     </div>
 
                     <!-- 시리얼 / 로트 -->

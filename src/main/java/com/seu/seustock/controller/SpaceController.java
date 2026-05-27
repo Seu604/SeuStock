@@ -26,6 +26,11 @@ public class SpaceController {
     private final SpaceService spaceService;
     private final ShelfService shelfService;
     private final StockService stockService;
+    private final org.springframework.context.MessageSource messageSource;
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, org.springframework.context.i18n.LocaleContextHolder.getLocale());
+    }
 
     @GetMapping
     public String list(@RequestParam(required = false) String keyword,
@@ -78,7 +83,7 @@ public class SpaceController {
         }
         spaceService.create(username, form);
         redirectAttributes.addFlashAttribute("toastType", "success");
-        redirectAttributes.addFlashAttribute("toastMessage", "공간이 추가되었습니다.");
+        redirectAttributes.addFlashAttribute("toastMessage", getMsg("toast.space.created"));
         return "redirect:/spaces";
     }
 
@@ -105,7 +110,7 @@ public class SpaceController {
         }
         SpaceDTO updated = spaceService.update(externalId, form, username);
         model.addAttribute("space", updated);
-        HtmxResponse.success(response, "공간이 저장되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.space.updated"));
         return "spaces/fragments/row :: view";
     }
 
@@ -131,7 +136,7 @@ public class SpaceController {
         model.addAttribute("page", spacesPage);
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
-        HtmxResponse.success(response, "공간이 삭제되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.space.deleted"));
         return "spaces/list :: space-list-section";
     }
 }

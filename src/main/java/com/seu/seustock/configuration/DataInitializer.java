@@ -236,7 +236,7 @@ public class DataInitializer implements CommandLineRunner {
                 tx.setToSpaceId(stock.getSpaceId());
                 tx.setToShelfId(stock.getShelfId());
                 tx.setToBoxId(stock.getBoxId());
-                tx.setMemo(TransactionMemoMaster.PURCHASE_IN.getMemo());
+                tx.setMemo(TransactionMemoMaster.PURCHASE_IN.getMessageKey());
                 stockTransactionMapper.insertTransaction(tx);
 
                 stocks.add(stock);

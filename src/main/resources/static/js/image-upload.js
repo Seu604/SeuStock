@@ -2,6 +2,16 @@ var ANALYSIS_IMAGE_MAX_SIDE = 1024;
 var ANALYSIS_IMAGE_WEBP_THRESHOLD_BYTES = 1024 * 1024;
 var ANALYSIS_IMAGE_QUALITY = 0.85;
 
+function getCsrfHeaders() {
+    var csrfTokenEl = document.querySelector('meta[name="_csrf"]');
+    var csrfHeaderEl = document.querySelector('meta[name="_csrf_header"]');
+    var headers = {};
+    if (csrfTokenEl && csrfHeaderEl) {
+        headers[csrfHeaderEl.getAttribute('content')] = csrfTokenEl.getAttribute('content');
+    }
+    return headers;
+}
+
 function canEncodeWebP() {
     try {
         var canvas = document.createElement('canvas');
@@ -215,16 +225,10 @@ function createImageAnalysisHandler(config, root) {
                 fd.append('previousDescription', descInput ? descInput.value : '');
             }
 
-            var csrfTokenEl = document.querySelector('meta[name="_csrf"]');
-            var csrfHeaderEl = document.querySelector('meta[name="_csrf_header"]');
-            var fetchHeaders = {};
-            if (csrfTokenEl && csrfHeaderEl) {
-                fetchHeaders[csrfHeaderEl.getAttribute('content')] = csrfTokenEl.getAttribute('content');
-            }
             var res = await fetch('/images/analyze', {
                 method: 'POST',
                 body: fd,
-                headers: fetchHeaders,
+                headers: getCsrfHeaders(),
                 signal: requestCtrl.signal
             });
             if (!res.ok) {

@@ -21,6 +21,11 @@ public class BoxController {
 
     private final BoxService boxService;
     private final ShelfService shelfService;
+    private final org.springframework.context.MessageSource messageSource;
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, org.springframework.context.i18n.LocaleContextHolder.getLocale());
+    }
 
     @GetMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}/boxes/{boxExternalId}/edit")
     public String editModal(@PathVariable UUID spaceExternalId,

@@ -3,7 +3,7 @@
 This file provides context and instructions for the **SeuStock** project, a web-based inventory management system.
 
 ## Project Overview
-SeuStock is a personal or small-team inventory management application designed to track items across hierarchical locations: **Spaces → Shelves → Boxes**. It features a modern SSR-based UI with HTMX for interactivity, AI-powered image analysis for item identification, and QR code generation for physical location tracking.
+SeuStock은 **Team Ugui**에서 개발하는 개인/소규모 팀용 재고 관리 애플리케이션입니다. 공간 → 선반 → 박스로 이어지는 계층적 위치 구조를 통해 물품을 추적하며, HTMX 기반의 인터랙티브한 UI와 AI 기반 이미지 분석 기능을 제공합니다.
 
 ### Core Tech Stack
 - **Language:** Java 25
@@ -108,3 +108,11 @@ docker compose down
 3. **Logic:** Implement mappers (interface + XML), then service (with ownership checks), then controllers.
 4. **UI:** Create/Update Thymeleaf templates. Use HTMX for interactive elements like modals or inline edits.
 5. **Test:** Write Mapper tests (slice tests) and Service tests (mock tests). Use `./gradlew test` for verification.
+
+---
+
+## Deployment & Production Considerations
+- **Branding:** 모든 공개 UI와 문서에는 **Team Ugui** 저작권 표기를 유지합니다.
+- **Secrets:** 운영 환경(`prod`)에서는 환경 변수를 통해 민감 정보를 주입합니다. `.env` 파일이나 CI/CD 시크릿을 활용하세요.
+- **Infrastructure:** Docker Compose를 활용하여 배포하되, 운영 환경에서는 Redis와 MinIO(또는 S3)를 필수로 구성해야 합니다.
+- **SSL:** Nginx 등의 리버스 프록시를 통해 HTTPS를 필수로 적용해야 합니다.

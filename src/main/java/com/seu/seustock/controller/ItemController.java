@@ -21,6 +21,11 @@ import java.util.UUID;
 public class ItemController {
 
     private final ItemService itemService;
+    private final org.springframework.context.MessageSource messageSource;
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, org.springframework.context.i18n.LocaleContextHolder.getLocale());
+    }
 
     @GetMapping
     public String list(@RequestParam(required = false) String keyword,
@@ -54,7 +59,7 @@ public class ItemController {
         String username = principal.getName();
         ItemDTO created = itemService.create(username, form);
         model.addAttribute("item", created);
-        HtmxResponse.success(response, "품목이 추가되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.item.created"));
         return "items/fragments/modal :: created";
     }
 
@@ -81,7 +86,7 @@ public class ItemController {
         }
         ItemDTO updated = itemService.update(externalId, form, username);
         model.addAttribute("item", updated);
-        HtmxResponse.success(response, "품목이 저장되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.item.updated"));
         return "items/fragments/card :: view";
     }
 
@@ -124,7 +129,7 @@ public class ItemController {
         model.addAttribute("page", itemsPage);
         model.addAttribute("keyword", keyword);
         model.addAttribute("sortBy", sortBy);
-        HtmxResponse.success(response, "품목이 삭제되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.item.deleted"));
         return "items/list :: item-list-section";
     }
 }

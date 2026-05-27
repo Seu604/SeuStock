@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head th:replace="~{fragments/layout :: head(~{::title})}">
     <title th:text="${space.name} + ' · SeuStock'">공간 상세 · SeuStock</title>
 </head>
@@ -9,7 +9,7 @@
 
 <div id="modal"></div>
 
-<main class="mx-auto w-full max-w-5xl px-4 py-10">
+<main class="mx-auto w-full max-w-5xl px-4 py-10 flex-1">
 
     <!-- 헤더 -->
     <div class="mb-6 flex items-center gap-2 text-sm text-slate-500">
@@ -73,6 +73,7 @@
     </div>
 
 </main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
 
 <script>
     function toggleBoxList(shelfId, headerEl) {

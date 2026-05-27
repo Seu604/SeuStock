@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head th:replace="~{fragments/layout :: head(~{::title})}">
     <title th:text="|#{view.space.list.title} · SeuStock|">내 공간 · SeuStock</title>
 </head>
@@ -7,7 +7,7 @@
 
 <nav th:replace="~{fragments/layout :: nav}"></nav>
 
-<main class="mx-auto w-full max-w-3xl px-4 py-10">
+<main class="mx-auto w-full max-w-3xl px-4 py-10 flex-1">
 
     <div class="mb-6 flex items-center justify-between">
         <h1 class="text-2xl font-bold text-slate-800" th:text="#{view.space.list.title}">내 공간</h1>
@@ -121,6 +121,6 @@
     </div>
 
 </main>
-
+<footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>
 </html>

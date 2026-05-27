@@ -18,6 +18,8 @@ import com.seu.seustock.service.StockService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -37,6 +39,11 @@ public class StockController {
     private final ShelfService shelfService;
     private final BoxService boxService;
     private final ItemService itemService;
+    private final MessageSource messageSource;
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+    }
 
     /* ── 내 재고 페이지 ── */
 
@@ -94,7 +101,7 @@ public class StockController {
             return "stocks/fragments/detail-row :: edit";
         }
         model.addAttribute("stock", stockService.updateDetails(stockExternalId, form, username));
-        HtmxResponse.success(response, "재고 정보가 저장되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.stock.updated"));
         return "stocks/fragments/detail-row :: view";
     }
 
@@ -120,7 +127,7 @@ public class StockController {
         var stocksPage = stockService.findPanelPageBySpaceAll(spaceExternalId, keyword, sortBy, username, page);
         model.addAttribute("stocks", stocksPage.content());
         model.addAttribute("page", stocksPage);
-        model.addAttribute("breadcrumb", space.getName() + " 전체보기");
+        model.addAttribute("breadcrumb", getMsg("view.stock.breadcrumb.all", space.getName()));
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("isAllView", true);
         model.addAttribute("keyword", keyword);
@@ -141,7 +148,7 @@ public class StockController {
         var stocksPage = stockService.findPanelPageBySpace(spaceExternalId, username, page);
         model.addAttribute("stocks", stocksPage.content());
         model.addAttribute("page", stocksPage);
-        model.addAttribute("breadcrumb", space.getName() + "에 대충 던져놓은 물건들");
+        model.addAttribute("breadcrumb", getMsg("view.stock.breadcrumb.loose", space.getName()));
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("isAllView", false);
         if (append) {
@@ -224,7 +231,7 @@ public class StockController {
             return "stocks/fragments/modal :: modal";
         }
         stockService.create(form, username);
-        HtmxResponse.success(response, "재고가 추가되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.stock.created"));
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username, model);
     }
 
@@ -256,7 +263,7 @@ public class StockController {
             return "stocks/fragments/quick-modal :: modal";
         }
         stockService.createWithNewItem(form, username);
-        HtmxResponse.success(response, "품목과 재고가 추가되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.stock.quickCreated"));
         return buildPanelResponse(form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(), username, model);
     }
 
@@ -435,7 +442,7 @@ public class StockController {
         UUID spaceExternalId = form.getSourceSpaceExternalId();
         String spaceName = spaceService.findByExternalId(spaceExternalId, username).getName();
         options.add(new MoveLocationOption(
-                spaceName + "에 대충 던져놓은 물건들",
+                getMsg("view.stock.breadcrumb.loose", spaceName),
                 spaceExternalId,
                 null,
                 null,

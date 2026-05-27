@@ -21,6 +21,11 @@ public class ShelfController {
 
     private final ShelfService shelfService;
     private final BoxService boxService;
+    private final org.springframework.context.MessageSource messageSource;
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, org.springframework.context.i18n.LocaleContextHolder.getLocale());
+    }
 
     @GetMapping("/spaces/{spaceExternalId}/shelves/{shelfExternalId}/boxes")
     public String boxList(@PathVariable UUID spaceExternalId,
@@ -64,7 +69,7 @@ public class ShelfController {
         shelfService.rename(spaceExternalId, shelfExternalId, form, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
-        HtmxResponse.success(response, "선반이 변경되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.shelf.updated"));
         return "spaces/fragments/shelf-list-response :: shelf-list-response";
     }
 
@@ -90,7 +95,7 @@ public class ShelfController {
         shelfService.create(spaceExternalId, form, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
-        HtmxResponse.success(response, "선반이 추가되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.shelf.created"));
         return "spaces/fragments/shelf-list-response :: shelf-list-response";
     }
 
@@ -104,7 +109,7 @@ public class ShelfController {
         shelfService.delete(spaceExternalId, shelfExternalId, username);
         model.addAttribute("spaceExternalId", spaceExternalId);
         model.addAttribute("shelves", shelfService.findAllBySpaceId(spaceExternalId, username));
-        HtmxResponse.success(response, "선반이 삭제되었습니다.");
+        HtmxResponse.success(response, getMsg("toast.shelf.deleted"));
         return "spaces/detail :: shelf-list";
     }
 }

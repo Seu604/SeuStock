@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <body>
 
 <!-- 읽기 모드 카드 -->
@@ -26,10 +26,10 @@
         <a th:if="${item.stockCount > 0}"
            th:href="@{/stocks(itemExternalId=${item.externalId})}"
            class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 font-medium hover:bg-blue-100 transition"
-           th:text="|#{view.item.list.table.stock} ${item.stockCount}#{view.item.card.unit}|"></a>
+           th:text="#{view.item.card.stockCount(${item.stockCount})}"></a>
         <span th:if="${item.stockCount == 0}"
               class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-slate-500 font-medium"
-              th:text="|#{view.item.list.table.stock} ${item.stockCount}#{view.item.card.unit}|"></span>
+              th:text="#{view.item.card.stockCount(${item.stockCount})}"></span>
     </div>
 
     <div class="text-xs">
@@ -38,10 +38,10 @@
                 hx-target="#modal"
                 hx-swap="outerHTML"
                 class="text-slate-500 underline-offset-2 hover:text-blue-600 hover:underline transition"
-                th:text="|${item.spaceCount}#{view.item.card.spaceCount}|"></button>
+                th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></button>
         <span th:if="${item.spaceCount == 0}"
               class="text-slate-500"
-              th:text="|${item.spaceCount}#{view.item.card.spaceCount}|"></span>
+              th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></span>
     </div>
 
     <div class="flex items-center gap-2 md:justify-end">
@@ -119,14 +119,14 @@
         <a th:if="${item.stockCount > 0}"
            th:href="@{/stocks(itemExternalId=${item.externalId})}"
            class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-blue-700 font-medium hover:bg-blue-100 transition"
-           th:text="|#{view.item.list.table.stock} ${item.stockCount}#{view.item.card.unit}|"></a>
+           th:text="#{view.item.card.stockCount(${item.stockCount})}"></a>
         <span th:if="${item.stockCount == 0}"
               class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-slate-500 font-medium"
-              th:text="|#{view.item.list.table.stock} ${item.stockCount}#{view.item.card.unit}|"></span>
+              th:text="#{view.item.card.stockCount(${item.stockCount})}"></span>
     </div>
 
     <p class="text-sm text-slate-500"
-       th:text="|${item.spaceCount}#{view.item.card.spaceCount}|"></p>
+       th:text="#{view.item.card.spaceCount(${item.spaceCount})}"></p>
 
     <div class="flex flex-wrap gap-2 items-center md:justify-end">
         <button class="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition md:order-last"
@@ -197,7 +197,11 @@
                 }
 
                 try {
-                    var res = await fetch(endpoint, { method: 'POST', body: fd });
+                    var res = await fetch(endpoint, {
+                        method: 'POST',
+                        body: fd,
+                        headers: getCsrfHeaders()
+                    });
                     if (!res.ok) {
                         var errorMessage = '이미지 AI 분석에 실패했습니다.';
                         try {
