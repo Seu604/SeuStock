@@ -20,6 +20,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
@@ -161,5 +162,90 @@ class ItemServiceTest {
         verify(itemImageMapper).unsetPrimaryByItemId(item.getId());
         verify(itemImageMapper).updateItemImage(item.getId(), image.getId(), 0, true);
         verify(itemImageMapper, never()).insertItemImage(any(), any(), anyInt(), anyBoolean());
+    }
+
+    // ── create ────────────────────────────────────────────────────────────────
+
+    @Test
+    void create_insertsItemWithoutImage() {
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+        ItemDTO created = new ItemDTO();
+        created.setId(10L);
+        created.setUserId(1L);
+        created.setName("테스트 품목");
+
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(imageStorageService.store(null, user, null)).thenReturn(null);
+        when(itemMapper.findById(any())).thenReturn(Optional.of(created));
+
+        ItemForm form = new ItemForm();
+        form.setName("테스트 품목");
+
+        ItemDTO result = itemService.create(USERNAME, form);
+
+        verify(itemMapper).insertItem(any());
+        verify(itemImageMapper, never()).insertItemImage(any(), any(), anyInt(), anyBoolean());
+        assertThat(result).isSameAs(created);
+    }
+
+    @Test
+    void create_attachesPrimaryImageWhenProvided() {
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+        ItemDTO created = new ItemDTO();
+        created.setId(10L);
+        ImageDTO image = new ImageDTO();
+        image.setId(20L);
+        MultipartFile imageFile = mock(MultipartFile.class);
+
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(imageStorageService.store(imageFile, user, "hash123")).thenReturn(image);
+        when(itemImageMapper.countByItemIdAndImageId(any(), eq(20L))).thenReturn(0);
+        when(itemMapper.findById(any())).thenReturn(Optional.of(created));
+
+        ItemForm form = new ItemForm();
+        form.setName("이미지 품목");
+        form.setImageFile(imageFile);
+        form.setImageHash("hash123");
+
+        itemService.create(USERNAME, form);
+
+        verify(itemImageMapper).insertItemImage(any(), eq(20L), eq(0), eq(true));
+    }
+
+    // ── findByExternalId ──────────────────────────────────────────────────────
+
+    @Test
+    void findByExternalId_throwsWhenAccessDenied() {
+        ItemDTO item = new ItemDTO();
+        item.setId(10L);
+        item.setExternalId(ITEM_EXTERNAL_ID);
+        item.setUserId(99L); // 타 사용자 소유
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> itemService.findByExternalId(ITEM_EXTERNAL_ID, USERNAME))
+                .isInstanceOf(SecurityException.class);
+    }
+
+    @Test
+    void findByExternalId_returnsOwnedItem() {
+        ItemDTO item = new ItemDTO();
+        item.setId(10L);
+        item.setExternalId(ITEM_EXTERNAL_ID);
+        item.setUserId(1L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+
+        when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+
+        ItemDTO result = itemService.findByExternalId(ITEM_EXTERNAL_ID, USERNAME);
+
+        assertThat(result).isSameAs(item);
     }
 }

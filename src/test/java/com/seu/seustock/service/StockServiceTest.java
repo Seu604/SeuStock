@@ -3,8 +3,10 @@ package com.seu.seustock.service;
 import com.seu.seustock.mapper.*;
 import com.seu.seustock.model.enumeration.StockStatus;
 import com.seu.seustock.model.enumeration.TransactionType;
+import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.StockTransactionDTO;
 import com.seu.seustock.model.dto.*;
+import com.seu.seustock.model.form.QuickStockForm;
 import com.seu.seustock.model.form.StockForm;
 import com.seu.seustock.model.form.StockInOutForm;
 import com.seu.seustock.model.form.StockMoveForm;
@@ -48,6 +50,8 @@ class StockServiceTest {
     @Mock
     private ItemMapper itemMapper;
     @Mock
+    private ItemImageMapper itemImageMapper;
+    @Mock
     private SpaceMapper spaceMapper;
     @Mock
     private ShelfMapper shelfMapper;
@@ -55,6 +59,8 @@ class StockServiceTest {
     private BoxMapper boxMapper;
     @Mock
     private UserMapper userMapper;
+    @Mock
+    private ImageStorageService imageStorageService;
 
     @InjectMocks
     private StockService stockService;
@@ -494,5 +500,65 @@ class StockServiceTest {
         dto.setExternalId(externalId);
         dto.setShelfId(shelfId);
         return dto;
+    }
+
+    // ── createWithNewItem ─────────────────────────────────────────────────────
+
+    @Test
+    void createWithNewItem_insertsItemAndStocksAndTransactions() {
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(imageStorageService.store(null, user, null)).thenReturn(null);
+
+        QuickStockForm form = new QuickStockForm();
+        form.setName("빠른 품목");
+        form.setSpaceExternalId(SPACE_EXTERNAL_ID);
+        form.setCount(2);
+
+        stockService.createWithNewItem(form, USERNAME);
+
+        verify(itemMapper).insertItem(any());
+        ArgumentCaptor<List<StockDTO>> stockCaptor = ArgumentCaptor.forClass(List.class);
+        verify(stockMapper).insertStocks(stockCaptor.capture());
+        assertThat(stockCaptor.getValue()).hasSize(2);
+        verify(transactionMapper).insertTransactions(any());
+    }
+
+    @Test
+    void createWithNewItem_usesDefaultMemoWhenNoneProvided() {
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(imageStorageService.store(null, user, null)).thenReturn(null);
+
+        QuickStockForm form = new QuickStockForm();
+        form.setName("빠른 품목");
+        form.setSpaceExternalId(SPACE_EXTERNAL_ID);
+        form.setCount(1);
+        // memo 미설정 → 기본값 "빠른 등록"
+
+        stockService.createWithNewItem(form, USERNAME);
+
+        ArgumentCaptor<List<StockTransactionDTO>> txCaptor = ArgumentCaptor.forClass(List.class);
+        verify(transactionMapper).insertTransactions(txCaptor.capture());
+        assertThat(txCaptor.getValue()).hasSize(1);
+        assertThat(txCaptor.getValue().get(0).getMemo()).isEqualTo("빠른 등록");
+    }
+
+    @Test
+    void createWithNewItem_throwsWhenSpaceNotFound() {
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.empty());
+        when(imageStorageService.store(null, user, null)).thenReturn(null);
+
+        QuickStockForm form = new QuickStockForm();
+        form.setName("빠른 품목");
+        form.setSpaceExternalId(SPACE_EXTERNAL_ID);
+        form.setCount(1);
+
+        assertThatThrownBy(() -> stockService.createWithNewItem(form, USERNAME))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verify(stockMapper, never()).insertStocks(any());
+        verify(transactionMapper, never()).insertTransactions(any());
     }
 }

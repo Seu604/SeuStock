@@ -6,8 +6,10 @@ import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.UserDTO;
+import com.seu.seustock.model.form.SpaceForm;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,6 +19,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
@@ -100,5 +103,132 @@ class SpaceServiceTest {
         spaceService.delete(SPACE_EXTERNAL_ID, USERNAME);
 
         verify(spaceMapper).deleteById(space.getId());
+    }
+
+    // ── create ────────────────────────────────────────────────────────────────
+
+    @Test
+    void create_throwsWhenUserNotFound() {
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.empty());
+
+        SpaceForm form = new SpaceForm();
+        form.setName("새 공간");
+
+        assertThatThrownBy(() -> spaceService.create(USERNAME, form))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verify(spaceMapper, never()).insertSpace(any());
+    }
+
+    @Test
+    void create_insertsSpaceForUser() {
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+
+        SpaceForm form = new SpaceForm();
+        form.setName("새 공간");
+
+        spaceService.create(USERNAME, form);
+
+        ArgumentCaptor<SpaceDTO> captor = ArgumentCaptor.forClass(SpaceDTO.class);
+        verify(spaceMapper).insertSpace(captor.capture());
+        assertThat(captor.getValue().getUserId()).isEqualTo(1L);
+        assertThat(captor.getValue().getName()).isEqualTo("새 공간");
+    }
+
+    // ── update ────────────────────────────────────────────────────────────────
+
+    @Test
+    void update_throwsWhenSpaceNotFound() {
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.empty());
+
+        SpaceForm form = new SpaceForm();
+        form.setName("변경명");
+
+        assertThatThrownBy(() -> spaceService.update(SPACE_EXTERNAL_ID, form, USERNAME))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verify(spaceMapper, never()).updateSpace(any());
+    }
+
+    @Test
+    void update_throwsWhenAccessDenied() {
+        SpaceDTO space = new SpaceDTO();
+        space.setId(10L);
+        space.setUserId(99L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+
+        SpaceForm form = new SpaceForm();
+        form.setName("변경명");
+
+        assertThatThrownBy(() -> spaceService.update(SPACE_EXTERNAL_ID, form, USERNAME))
+                .isInstanceOf(SecurityException.class);
+
+        verify(spaceMapper, never()).updateSpace(any());
+    }
+
+    @Test
+    void update_updatesSpaceName() {
+        SpaceDTO space = new SpaceDTO();
+        space.setId(10L);
+        space.setExternalId(SPACE_EXTERNAL_ID);
+        space.setUserId(1L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+        SpaceDTO updated = new SpaceDTO();
+        updated.setId(10L);
+        updated.setName("변경명");
+
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space))
+                .thenReturn(Optional.of(updated));
+
+        SpaceForm form = new SpaceForm();
+        form.setName("변경명");
+
+        spaceService.update(SPACE_EXTERNAL_ID, form, USERNAME);
+
+        verify(spaceMapper).updateSpace(space);
+        assertThat(space.getName()).isEqualTo("변경명");
+    }
+
+    // ── findByExternalId ──────────────────────────────────────────────────────
+
+    @Test
+    void findByExternalId_throwsWhenAccessDenied() {
+        SpaceDTO space = new SpaceDTO();
+        space.setId(10L);
+        space.setUserId(99L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> spaceService.findByExternalId(SPACE_EXTERNAL_ID, USERNAME))
+                .isInstanceOf(SecurityException.class);
+    }
+
+    @Test
+    void findByExternalId_returnsOwnedSpace() {
+        SpaceDTO space = new SpaceDTO();
+        space.setId(10L);
+        space.setUserId(1L);
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+
+        when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
+        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+
+        SpaceDTO result = spaceService.findByExternalId(SPACE_EXTERNAL_ID, USERNAME);
+
+        assertThat(result).isSameAs(space);
     }
 }
