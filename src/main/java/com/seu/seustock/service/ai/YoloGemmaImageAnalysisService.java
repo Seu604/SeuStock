@@ -44,12 +44,17 @@ public class YoloGemmaImageAnalysisService implements ImageAnalysisService {
             ImageResizeService.ResizedImage resized =
                     imageResizeService.resizeForAnalysis(imageFile.getBytes(), imageFile.getContentType());
             List<YoloDetection> detections = yoloDetectionClient.detect(resized.bytes(), resized.mimeType());
-            return gemmaVisionClient.analyze(resized.bytes(),
-                    resized.mimeType(),
-                    retryAttempt,
-                    previousName,
-                    previousDescription,
-                    detections);
+            try {
+                return gemmaVisionClient.analyze(resized.bytes(),
+                        resized.mimeType(),
+                        retryAttempt,
+                        previousName,
+                        previousDescription,
+                        detections);
+            } catch (RuntimeException e) {
+                log.error("[YoloGemmaImageAnalysisService] LLM 이미지 분석 실패", e);
+                throw new AiServiceUnavailableException("현재 AI 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요.", e);
+            }
         } catch (IOException e) {
             log.error("[YoloGemmaImageAnalysisService] 이미지 파일 읽기 실패", e);
             throw new IllegalStateException("이미지 파일을 읽을 수 없습니다.", e);

@@ -15,6 +15,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 
 class YoloDetectionClientTest {
 
@@ -84,6 +85,23 @@ class YoloDetectionClientTest {
                           "count": 0
                         }
                         """, MediaType.APPLICATION_JSON));
+
+        YoloDetectionClient client = new YoloDetectionClient(
+                builder, "http://localhost:8000", true);
+
+        List<YoloDetection> detections = client.detect(new byte[]{1, 2, 3}, "image/jpeg");
+
+        assertThat(detections).isEmpty();
+        server.verify();
+    }
+
+    @Test
+    void enabled_returnsEmptyWhenYoloFails() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(requestTo("http://localhost:8000/detect"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withServerError());
 
         YoloDetectionClient client = new YoloDetectionClient(
                 builder, "http://localhost:8000", true);

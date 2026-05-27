@@ -227,7 +227,14 @@ function createImageAnalysisHandler(config, root) {
                 headers: fetchHeaders,
                 signal: requestCtrl.signal
             });
-            if (!res.ok) throw new Error('Image analysis request failed');
+            if (!res.ok) {
+                var errorMessage = '이미지 AI 분석에 실패했습니다.';
+                try {
+                    var errorData = await res.json();
+                    if (errorData && errorData.message) errorMessage = errorData.message;
+                } catch (_) {}
+                throw new Error(errorMessage);
+            }
 
             var data = await res.json();
             if (nameInput && data.name) nameInput.value = data.name;
@@ -238,7 +245,7 @@ function createImageAnalysisHandler(config, root) {
             if (e.name !== 'AbortError') {
                 console.warn('Image analysis failed:', e);
                 if (window.SeuStockToast) {
-                    window.SeuStockToast({ type: 'error', message: '이미지 AI 분석에 실패했습니다.' });
+                    window.SeuStockToast({ type: 'error', message: e.message || '이미지 AI 분석에 실패했습니다.' });
                 }
                 showRetryButton();
             }

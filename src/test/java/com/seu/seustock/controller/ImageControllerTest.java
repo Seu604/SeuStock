@@ -3,6 +3,7 @@ package com.seu.seustock.controller;
 import com.seu.seustock.model.dto.ImageAnalysisDTO;
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.service.ImageStorageService;
+import com.seu.seustock.service.ai.AiServiceUnavailableException;
 import com.seu.seustock.service.ai.ImageAnalysisService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -109,6 +110,29 @@ class ImageControllerTest extends AbstractControllerTest {
                .andExpect(jsonPath("$.description").value("분석된 설명"));
     }
 
+    @Test
+    @DisplayName("POST /images/analyze - AI 서비스 실패 → asyncStarted, 이후 503 + 사용자 메시지")
+    void analyze_whenAiServiceUnavailable_returns503WithMessage() throws Exception {
+        given(imageAnalysisService.analyze(any(), anyInt(), any(), any()))
+                .willThrow(new AiServiceUnavailableException(
+                        "현재 AI 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요.",
+                        new RuntimeException("ollama unavailable")));
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "imageFile", "test.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        MvcResult asyncResult = mockMvc.perform(
+                        multipart("/images/analyze")
+                                .file(imageFile)
+                                .with(user("testuser"))
+                                .with(csrf()))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(asyncResult))
+               .andExpect(status().isServiceUnavailable())
+               .andExpect(jsonPath("$.message").value("현재 AI 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."));
+    }
+
     // ── Response Shape: POST /images/{id}/analyze (저장된 이미지 재분석, 비동기) ─
 
     @Test
@@ -124,6 +148,26 @@ class ImageControllerTest extends AbstractControllerTest {
         mockMvc.perform(asyncDispatch(asyncResult))
                .andExpect(status().isOk())
                .andExpect(jsonPath("$.name").value("분석된 품목"));
+    }
+
+    @Test
+    @DisplayName("POST /images/{id}/analyze - 저장 이미지 AI 서비스 실패 → asyncStarted, 이후 503 + 사용자 메시지")
+    void analyzeStored_whenAiServiceUnavailable_returns503WithMessage() throws Exception {
+        given(imageAnalysisService.analyze(any(), anyInt(), any(), any()))
+                .willThrow(new AiServiceUnavailableException(
+                        "현재 AI 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요.",
+                        new RuntimeException("ollama unavailable")));
+
+        MvcResult asyncResult = mockMvc.perform(
+                        post(IMAGE_PATH + "/analyze")
+                                .with(user("testuser"))
+                                .with(csrf()))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(asyncResult))
+               .andExpect(status().isServiceUnavailable())
+               .andExpect(jsonPath("$.message").value("현재 AI 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요."));
     }
 
     // ── 헬퍼 ─────────────────────────────────────────────────────────────

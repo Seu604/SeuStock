@@ -4,6 +4,7 @@ import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.ImageAnalysisDTO;
 import com.seu.seustock.service.ai.ImageAnalysisService;
 import com.seu.seustock.service.ImageStorageService;
+import com.seu.seustock.service.ai.AiServiceUnavailableException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -63,7 +65,7 @@ public class ImageController {
     }
 
     @PostMapping("/images/{externalId}/analyze")
-    public CompletableFuture<ResponseEntity<ImageAnalysisDTO>> analyzeStored(
+    public CompletableFuture<ResponseEntity<Object>> analyzeStored(
             @PathVariable UUID externalId,
             @RequestParam(defaultValue = "0") int retryAttempt,
             @RequestParam(required = false) String previousName,
@@ -80,15 +82,15 @@ public class ImageController {
             log.info("[analyzeStored] 완료 — name={}, description={}", result.getName(), result.getDescription());
             return result;
         }, aiAnalysisExecutor)
-        .thenApply(ResponseEntity::ok)
+        .thenApply(result -> ResponseEntity.ok((Object) result))
         .exceptionally(ex -> {
             log.error("[analyzeStored] 오류", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return errorResponse(ex);
         });
     }
 
     @PostMapping("/images/analyze")
-    public CompletableFuture<ResponseEntity<ImageAnalysisDTO>> analyze(
+    public CompletableFuture<ResponseEntity<Object>> analyze(
             @RequestParam("imageFile") MultipartFile imageFile,
             @RequestParam(defaultValue = "0") int retryAttempt,
             @RequestParam(required = false) String previousName,
@@ -102,11 +104,34 @@ public class ImageController {
                     result.getName(), result.getDescription());
             return result;
         }, aiAnalysisExecutor)
-        .thenApply(ResponseEntity::ok)
+        .thenApply(result -> ResponseEntity.ok((Object) result))
         .exceptionally(ex -> {
             log.error("[analyze] 분석 중 오류 발생", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return errorResponse(ex);
         });
+    }
+
+    private ResponseEntity<Object> errorResponse(Throwable ex) {
+        Throwable cause = unwrap(ex);
+        if (cause instanceof AiServiceUnavailableException) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body((Object) new ErrorResponse(cause.getMessage()));
+        }
+        if (cause instanceof IllegalArgumentException) {
+            return ResponseEntity.badRequest().body((Object) new ErrorResponse(cause.getMessage()));
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body((Object) new ErrorResponse("이미지 AI 분석에 실패했습니다."));
+    }
+
+    private Throwable unwrap(Throwable ex) {
+        if (ex instanceof CompletionException && ex.getCause() != null) {
+            return ex.getCause();
+        }
+        return ex;
+    }
+
+    private record ErrorResponse(String message) {
     }
 
     private record StoredImageMultipartFile(ImageDTO image, Resource resource) implements MultipartFile {
