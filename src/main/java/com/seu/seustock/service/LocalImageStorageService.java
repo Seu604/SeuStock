@@ -6,6 +6,7 @@ import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,6 +24,10 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@ConditionalOnProperty(
+        name = "seustock.image-storage.type",
+        havingValue = "local"
+)
 @RequiredArgsConstructor
 public class LocalImageStorageService implements ImageStorageService {
 

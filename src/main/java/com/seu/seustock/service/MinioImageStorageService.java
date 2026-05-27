@@ -11,7 +11,7 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,8 +26,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-@Primary
 @Service
+@ConditionalOnProperty(
+        name = "seustock.image-storage.type",
+        havingValue = "minio",
+        matchIfMissing = true
+)
 @RequiredArgsConstructor
 public class MinioImageStorageService implements ImageStorageService {
 
