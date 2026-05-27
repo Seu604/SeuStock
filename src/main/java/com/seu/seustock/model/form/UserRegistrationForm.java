@@ -10,15 +10,15 @@ import lombok.Setter;
 @Setter
 public class UserRegistrationForm {
 
-    @NotBlank(message = "아이디를 입력해주세요.")
-    @Size(min = 4, max = 20, message = "아이디는 4~20자 사이여야 합니다.")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "아이디는 영문자, 숫자, 밑줄(_)만 사용할 수 있습니다.")
+    @NotBlank(message = "{valid.userRegistration.username.notBlank}")
+    @Size(min = 4, max = 20, message = "{valid.userRegistration.username.size}")
+    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "{valid.userRegistration.username.pattern}")
     private String username;
 
-    @NotBlank(message = "비밀번호를 입력해주세요.")
-    @Size(min = 8, max = 50, message = "비밀번호는 8자 이상이어야 합니다.")
+    @NotBlank(message = "{valid.userRegistration.password.notBlank}")
+    @Size(min = 8, max = 50, message = "{valid.userRegistration.password.size}")
     private String password;
 
-    @NotBlank(message = "비밀번호 확인을 입력해주세요.")
+    @NotBlank(message = "{valid.userRegistration.passwordConfirm.notBlank}")
     private String passwordConfirm;
 }

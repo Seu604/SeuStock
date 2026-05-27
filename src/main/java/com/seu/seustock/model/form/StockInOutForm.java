@@ -11,17 +11,17 @@ import java.util.UUID;
 @Setter
 public class StockInOutForm {
 
-    @NotNull(message = "품목 정보가 누락되었습니다.")
+    @NotNull(message = "{valid.stockInOut.itemExternalId.notNull}")
     private UUID itemExternalId;
 
-    @NotNull(message = "공간 정보가 누락되었습니다.")
+    @NotNull(message = "{valid.stockInOut.spaceExternalId.notNull}")
     private UUID spaceExternalId;
 
     private UUID shelfExternalId;
 
     private UUID boxExternalId;
 
-    @Min(value = 1, message = "수량은 1 이상이어야 합니다.")
+    @Min(value = 1, message = "{valid.stockInOut.count.min}")
     private int count = 1;
 
     private String memo;

@@ -9,7 +9,7 @@
 
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-slate-800">
-                <span th:text="${itemName}"></span>의 변경기록
+                <span th:text="#{view.item.history.title(${itemName})}"></span>
             </h2>
             <button type="button"
                     hx-get="/empty"
@@ -25,7 +25,7 @@
 
         <div class="overflow-y-auto flex-1">
             <p th:if="${history.empty}"
-               class="py-8 text-center text-sm text-slate-400">거래 기록이 없습니다.</p>
+               class="py-8 text-center text-sm text-slate-400" th:text="#{view.item.history.empty}">거래 기록이 없습니다.</p>
 
             <div th:unless="${history.empty}">
                 <div th:each="tx : ${history}"
@@ -43,7 +43,7 @@
 
                     <!-- 장소 -->
                     <div class="mt-1.5 flex items-start gap-2 text-sm">
-                        <span class="shrink-0 w-20 text-xs font-medium text-slate-400">장소</span>
+                        <span class="shrink-0 w-20 text-xs font-medium text-slate-400" th:text="#{view.item.history.location}">장소</span>
                         <span th:if="${tx.transactionType.name() == 'MOVE' and tx.fromSpaceName != null and tx.toSpaceName != null}"
                               class="text-slate-700">
                             <span th:text="${tx.fromSpaceName}"></span>
@@ -76,7 +76,7 @@
 
                     <!-- 상태 / 유형 -->
                     <div class="mt-1 flex items-start gap-2 text-sm">
-                        <span class="shrink-0 w-20 text-xs font-medium text-slate-400">상태</span>
+                        <span class="shrink-0 w-20 text-xs font-medium text-slate-400" th:text="#{view.item.history.status}">상태</span>
                         <span class="text-slate-700" th:text="${tx.status.label}"></span>
                         <span class="text-slate-300">/</span>
                         <span class="text-slate-500" th:text="${tx.transactionType.label}"></span>
@@ -85,7 +85,7 @@
                     <!-- 시리얼 / 로트 -->
                     <div th:if="${tx.serialNumber != null or tx.lotNumber != null}"
                          class="mt-1 flex items-start gap-2 text-sm">
-                        <span class="shrink-0 w-20 text-xs font-medium text-slate-400">시리얼/로트</span>
+                        <span class="shrink-0 w-20 text-xs font-medium text-slate-400" th:text="#{view.item.history.serialLot}">시리얼/로트</span>
                         <span class="text-slate-600">
                             <span th:if="${tx.serialNumber != null}" th:text="${tx.serialNumber}"></span>
                             <span th:if="${tx.serialNumber != null and tx.lotNumber != null}"> / </span>
@@ -96,7 +96,7 @@
                     <!-- 메모 -->
                     <div th:if="${tx.memo != null and !tx.memo.isEmpty()}"
                          class="mt-1 flex items-start gap-2 text-sm">
-                        <span class="shrink-0 w-20 text-xs font-medium text-slate-400">메모</span>
+                        <span class="shrink-0 w-20 text-xs font-medium text-slate-400" th:text="#{view.item.history.memo}">메모</span>
                         <span class="text-slate-500" th:text="${tx.memo}"></span>
                     </div>
                 </div>
@@ -109,7 +109,8 @@
                     hx-target="#modal"
                     hx-swap="outerHTML"
                     class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600
-                           hover:bg-slate-50 transition">
+                           hover:bg-slate-50 transition"
+                    th:text="#{view.common.close}">
                 닫기
             </button>
         </div>

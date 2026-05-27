@@ -15,14 +15,14 @@ import java.util.UUID;
 @Setter
 public class StockMoveForm {
 
-    @NotNull(message = "출발 공간 정보가 누락되었습니다.")
+    @NotNull(message = "{valid.stockMove.sourceSpaceExternalId.notNull}")
     private UUID sourceSpaceExternalId;
 
     private UUID sourceShelfExternalId;
 
     private UUID sourceBoxExternalId;
 
-    @NotNull(message = "도착 공간 정보가 누락되었습니다.")
+    @NotNull(message = "{valid.stockMove.targetSpaceExternalId.notNull}")
     private UUID targetSpaceExternalId;
 
     private UUID targetShelfExternalId;
@@ -30,7 +30,7 @@ public class StockMoveForm {
     private UUID targetBoxExternalId;
 
     @Valid
-    @NotEmpty(message = "이동할 물품을 선택해주세요.")
+    @NotEmpty(message = "{valid.stockMove.items.notEmpty}")
     private List<Item> items = new ArrayList<>();
 
     private String memo;
@@ -38,10 +38,10 @@ public class StockMoveForm {
     @Getter
     @Setter
     public static class Item {
-        @NotNull(message = "품목 정보가 누락되었습니다.")
+        @NotNull(message = "{valid.stockMove.item.itemExternalId.notNull}")
         private UUID itemExternalId;
 
-        @Min(value = 1, message = "수량은 1 이상이어야 합니다.")
+        @Min(value = 1, message = "{valid.stockMove.item.count.min}")
         private int count = 1;
     }
 }

@@ -14,6 +14,8 @@ import com.seu.seustock.model.form.ItemForm;
 import com.seu.seustock.model.pagination.PageRequest;
 import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,11 @@ public class ItemService {
     private final ItemImageMapper itemImageMapper;
     private final ImageStorageService imageStorageService;
     private final StockTransactionMapper transactionMapper;
+    private final MessageSource messageSource;
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+    }
 
     public List<ItemDTO> findAllByUsername(String username) {
         UserDTO user = getUser(username);
@@ -99,7 +106,7 @@ public class ItemService {
         ItemDTO item = getItem(externalId);
         verifyOwner(item, username);
         if (stockMapper.countInStockByItemId(item.getId()) > 0) {
-            throw new IllegalStateException("재고가 있는 품목은 삭제할 수 없습니다.");
+            throw new IllegalStateException(getMsg("error.item.hasStock"));
         }
         if (stockMapper.countByItemId(item.getId()) > 0) {
             itemMapper.deactivateById(item.getId());
@@ -110,7 +117,7 @@ public class ItemService {
 
     private UserDTO getUser(String username) {
         return userMapper.findByUsername(username)
-                .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.user.notFound")));
     }
 
     private String normalizeKeyword(String keyword) {
@@ -123,13 +130,13 @@ public class ItemService {
 
     private ItemDTO getItem(UUID externalId) {
         return itemMapper.findByExternalId(externalId)
-                .orElseThrow(() -> new NoSuchElementException("품목을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.item.notFound")));
     }
 
     private void verifyOwner(ItemDTO item, String username) {
         UserDTO user = getUser(username);
         if (!item.getUserId().equals(user.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
     }
 

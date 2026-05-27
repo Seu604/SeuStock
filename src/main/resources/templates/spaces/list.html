@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head th:replace="~{fragments/layout :: head(~{::title})}">
-    <title>내 공간 · SeuStock</title>
+    <title th:text="|#{view.space.list.title} · SeuStock|">내 공간 · SeuStock</title>
 </head>
 <body class="min-h-screen bg-slate-50 flex flex-col">
 
@@ -10,7 +10,7 @@
 <main class="mx-auto w-full max-w-3xl px-4 py-10">
 
     <div class="mb-6 flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-slate-800">내 공간</h1>
+        <h1 class="text-2xl font-bold text-slate-800" th:text="#{view.space.list.title}">내 공간</h1>
     </div>
 
     <!-- 공간 추가 폼 -->
@@ -22,14 +22,15 @@
                    class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                           transition"
-                   placeholder="새 공간 이름">
+                   th:placeholder="#{view.space.list.addPlaceholder}">
             <span th:if="${#fields.hasErrors('name')}"
                   th:errors="*{name}"
                   class="mt-1 block text-xs text-red-500"></span>
         </div>
         <button type="submit"
                 class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white
-                       hover:bg-blue-700 transition whitespace-nowrap">
+                       hover:bg-blue-700 transition whitespace-nowrap"
+                th:text="|+#{view.common.add}|">
             + 추가
         </button>
     </form>
@@ -45,14 +46,15 @@
                   class="flex items-center gap-2">
                 <input type="hidden" name="sortBy" th:value="${sortBy}">
                 <input type="hidden" name="page" value="1">
-                <span class="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500">공간명</span>
+                <span class="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500" th:text="#{view.space.list.searchLabel}">공간명</span>
                 <input type="text"
                        name="keyword"
                        th:value="${keyword}"
-                       placeholder="공간명으로 검색..."
+                       th:placeholder="#{view.space.list.searchPlaceholder}"
                        class="flex-1 min-w-0 rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400">
                 <button type="submit"
-                        class="shrink-0 rounded-md bg-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 transition">
+                        class="shrink-0 rounded-md bg-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 transition"
+                        th:text="#{view.common.search}">
                     검색
                 </button>
             </form>
@@ -60,19 +62,22 @@
                 <button th:attr="hx-get=@{/spaces(sortBy='newest',keyword=${keyword})}"
                         hx-target="#space-list-section" hx-select="#space-list-section" hx-swap="outerHTML" hx-push-url="true"
                         th:classappend="${sortBy == 'newest'} ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
-                        class="rounded-full px-2.5 py-0.5 text-xs font-medium transition">
+                        class="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
+                        th:text="#{view.common.sort.newest}">
                     가장 최신 순
                 </button>
                 <button th:attr="hx-get=@{/spaces(sortBy='oldest',keyword=${keyword})}"
                         hx-target="#space-list-section" hx-select="#space-list-section" hx-swap="outerHTML" hx-push-url="true"
                         th:classappend="${sortBy == 'oldest'} ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
-                        class="rounded-full px-2.5 py-0.5 text-xs font-medium transition">
+                        class="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
+                        th:text="#{view.common.sort.oldest}">
                     가장 오래된 순
                 </button>
                 <button th:attr="hx-get=@{/spaces(sortBy='name',keyword=${keyword})}"
                         hx-target="#space-list-section" hx-select="#space-list-section" hx-swap="outerHTML" hx-push-url="true"
                         th:classappend="${sortBy == 'name'} ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
-                        class="rounded-full px-2.5 py-0.5 text-xs font-medium transition">
+                        class="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
+                        th:text="#{view.common.sort.name}">
                     공간명 순
                 </button>
             </div>
@@ -82,13 +87,14 @@
              th:fragment="space-list"
              class="overflow-hidden rounded-lg border border-slate-200 bg-white">
             <div class="hidden md:grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_14rem] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <div>공간</div>
-                <div>등록일</div>
-                <div class="text-right">관리</div>
+                <div th:text="#{view.space.list.table.space}">공간</div>
+                <div th:text="#{view.space.list.table.registeredAt}">등록일</div>
+                <div class="text-right" th:text="#{view.space.list.table.manage}">관리</div>
             </div>
 
             <div th:if="${spaces.empty}"
-                 class="px-4 py-10 text-center text-sm text-slate-400">
+                 class="px-4 py-10 text-center text-sm text-slate-400"
+                 th:text="#{view.space.list.empty}">
                 등록된 공간이 없습니다. 위에서 추가해보세요.
             </div>
 
@@ -106,7 +112,8 @@
                     th:attr="hx-get=@{/spaces(page=${page.nextPage()},sortBy=${sortBy},keyword=${keyword},append=true)}"
                     hx-target="#space-list-more"
                     hx-swap="outerHTML"
-                    class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                    class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                    th:text="#{view.space.list.more}">
                 더 보기
             </button>
         </div>

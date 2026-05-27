@@ -17,7 +17,7 @@
     <div class="flex items-center gap-2 md:justify-end">
         <button class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 th:attr="hx-get=@{/spaces/{id}/edit(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
-                hx-swap="outerHTML">수정</button>
+                hx-swap="outerHTML" th:text="#{view.common.edit}">수정</button>
     </div>
 </div>
 
@@ -33,14 +33,14 @@
         <button class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
                 th:attr="hx-put=@{/spaces/{id}(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
                 hx-swap="outerHTML"
-                hx-include="closest div[id]">저장</button>
+                hx-include="closest div[id]" th:text="#{view.common.save}">저장</button>
         <button class="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition"
-                th:attr="hx-delete=@{/spaces/{id}(id=${space.externalId},page=${page != null ? page.page() : 1},sortBy=${sortBy},keyword=${keyword})},hx-confirm=|'${space.name}' 공간을 삭제하시겠습니까?|"
+                th:attr="hx-delete=@{/spaces/{id}(id=${space.externalId},page=${page != null ? page.page() : 1},sortBy=${sortBy},keyword=${keyword})},hx-confirm=#{view.space.list.deleteConfirm(${space.name})}"
                 hx-target="#space-list-section"
-                hx-swap="outerHTML">삭제</button>
+                hx-swap="outerHTML" th:text="#{view.common.delete}">삭제</button>
         <button class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 th:attr="hx-get=@{/spaces/{id}/cancel(id=${space.externalId})},hx-target='#space-' + ${space.externalId}"
-                hx-swap="outerHTML">취소</button>
+                hx-swap="outerHTML" th:text="#{view.common.cancel}">취소</button>
     </div>
 </div>
 

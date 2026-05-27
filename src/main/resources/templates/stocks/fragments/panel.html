@@ -31,19 +31,22 @@
         <div class="flex gap-2">
             <button type="button"
                     onclick="startStockMoveMode()"
-                    class="stock-default-only rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                    class="stock-default-only rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                    th:text="#{view.stock.modal.move.title}">
                 물품 이동
             </button>
             <button th:attr="hx-get=@{/stocks/quick(spaceId=${spaceExternalId},shelfId=${shelfExternalId},boxId=${boxExternalId})}"
                     hx-target="#modal"
                     hx-swap="outerHTML"
-                    class="stock-default-only rounded-md bg-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 transition">
+                    class="stock-default-only rounded-md bg-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 transition"
+                    th:text="|+#{view.stock.list.quickAdd}|">
                 + 빠른 등록
             </button>
             <button th:attr="hx-get=@{/stocks/new(spaceId=${spaceExternalId},shelfId=${shelfExternalId},boxId=${boxExternalId})}"
                     hx-target="#modal"
                     hx-swap="outerHTML"
-                    class="stock-default-only rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                    class="stock-default-only rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
+                    th:text="|+#{view.item.list.table.stock}|">
                 + 재고 추가
             </button>
         </div>
@@ -57,14 +60,15 @@
               class="flex items-center gap-2">
             <input type="hidden" name="sortBy" th:value="${sortBy}">
             <input type="hidden" name="page" value="1">
-            <span class="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500">물품명</span>
+            <span class="shrink-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500" th:text="#{view.item.list.table.item}">물품명</span>
             <input type="text"
                    name="keyword"
                    th:value="${keyword}"
-                   placeholder="물품명으로 검색..."
+                   th:placeholder="#{view.item.list.search.placeholder}"
                    class="flex-1 min-w-0 rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400">
             <button type="submit"
-                    class="shrink-0 rounded-md bg-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 transition">
+                    class="shrink-0 rounded-md bg-slate-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-700 transition"
+                    th:text="#{view.common.search}">
                 검색
             </button>
         </form>
@@ -72,25 +76,29 @@
             <button th:attr="hx-get=@{/spaces/{id}/stocks/all(id=${spaceExternalId},sortBy='newest',keyword=${keyword})}"
                     hx-target="#stock-panel" hx-swap="outerHTML"
                     th:classappend="${sortBy == 'newest'} ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
-                    class="rounded-full px-2.5 py-0.5 text-xs font-medium transition">
+                    class="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
+                    th:text="#{view.common.sort.newest}">
                 가장 최신 순
             </button>
             <button th:attr="hx-get=@{/spaces/{id}/stocks/all(id=${spaceExternalId},sortBy='oldest',keyword=${keyword})}"
                     hx-target="#stock-panel" hx-swap="outerHTML"
                     th:classappend="${sortBy == 'oldest'} ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
-                    class="rounded-full px-2.5 py-0.5 text-xs font-medium transition">
+                    class="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
+                    th:text="#{view.common.sort.oldest}">
                 가장 오래된 순
             </button>
             <button th:attr="hx-get=@{/spaces/{id}/stocks/all(id=${spaceExternalId},sortBy='inFreq',keyword=${keyword})}"
                     hx-target="#stock-panel" hx-swap="outerHTML"
                     th:classappend="${sortBy == 'inFreq'} ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
-                    class="rounded-full px-2.5 py-0.5 text-xs font-medium transition">
+                    class="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
+                    th:text="#{view.stock.list.sort.inFreq}">
                 입고 빈도 순
             </button>
             <button th:attr="hx-get=@{/spaces/{id}/stocks/all(id=${spaceExternalId},sortBy='outFreq',keyword=${keyword})}"
                     hx-target="#stock-panel" hx-swap="outerHTML"
                     th:classappend="${sortBy == 'outFreq'} ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
-                    class="rounded-full px-2.5 py-0.5 text-xs font-medium transition">
+                    class="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
+                    th:text="#{view.stock.list.sort.outFreq}">
                 출고 빈도 순
             </button>
         </div>
@@ -107,17 +115,19 @@
         <input type="hidden" name="sourceBoxExternalId" th:value="${boxExternalId}">
         <div id="move-selection-fields"></div>
         <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="text-sm text-blue-700">이동할 물품을 선택하고 수량을 조정하세요.</p>
+            <p class="text-sm text-blue-700" th:text="#{view.stock.modal.move.instruction}">이동할 물품을 선택하고 수량을 조정하세요.</p>
             <div class="flex gap-2">
                 <button type="button"
                         onclick="cancelStockMoveMode()"
-                        class="rounded-md border border-blue-200 bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition">
+                        class="rounded-md border border-blue-200 bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition"
+                        th:text="#{view.common.cancel}">
                     취소
                 </button>
                 <button type="submit"
                         id="stock-move-submit"
                         disabled
-                        class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300">
+                        class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-300"
+                        th:text="#{view.stock.modal.move.button.submit}">
                     이동하기
                 </button>
             </div>
@@ -126,7 +136,7 @@
 
     <div id="stock-panel-rows" class="divide-y divide-slate-100">
 
-        <div th:if="${stocks.empty}" class="px-4 py-8 text-center text-sm text-slate-400">
+        <div th:if="${stocks.empty}" class="px-4 py-8 text-center text-sm text-slate-400" th:text="#{view.stock.panel.empty}">
             이 위치에 등록된 재고가 없습니다.
         </div>
 
@@ -139,28 +149,32 @@
                 th:attr="hx-get=@{/spaces/{id}/stocks/all(id=${spaceExternalId},page=${page.nextPage()},sortBy=${sortBy},keyword=${keyword},append=true)}"
                 hx-target="#stock-panel-more"
                 hx-swap="outerHTML"
-                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                th:text="#{view.space.list.more}">
             더 보기
         </button>
         <button th:if="${page.hasNext() and isAllView == false and shelfExternalId == null}"
                 th:attr="hx-get=@{/spaces/{id}/stocks(id=${spaceExternalId},page=${page.nextPage()},append=true)}"
                 hx-target="#stock-panel-more"
                 hx-swap="outerHTML"
-                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                th:text="#{view.space.list.more}">
             더 보기
         </button>
         <button th:if="${page.hasNext() and isAllView == false and shelfExternalId != null and boxExternalId == null}"
-                th:attr="hx-get=@{/spaces/{sid}/shelves/{id}/stocks(sid=${spaceExternalId},id=${shelfExternalId},page=${page.nextPage()},append=true)}"
+                th:attr="hx-get=@{/spaces/{id}/shelves/{id}/stocks(sid=${spaceExternalId},id=${shelfExternalId},page=${page.nextPage()},append=true)}"
                 hx-target="#stock-panel-more"
                 hx-swap="outerHTML"
-                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                th:text="#{view.space.list.more}">
             더 보기
         </button>
         <button th:if="${page.hasNext() and isAllView == false and shelfExternalId != null and boxExternalId != null}"
                 th:attr="hx-get=@{/spaces/{sid}/shelves/{shelfId}/boxes/{boxId}/stocks(sid=${spaceExternalId},shelfId=${shelfExternalId},boxId=${boxExternalId},page=${page.nextPage()},append=true)}"
                 hx-target="#stock-panel-more"
                 hx-swap="outerHTML"
-                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                th:text="#{view.space.list.more}">
             더 보기
         </button>
     </div>

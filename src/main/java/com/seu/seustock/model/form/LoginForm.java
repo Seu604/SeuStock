@@ -8,9 +8,9 @@ import lombok.Setter;
 @Setter
 public class LoginForm {
 
-    @NotBlank(message = "아이디를 입력해주세요.")
+    @NotBlank(message = "{valid.login.username.notBlank}")
     private String username;
 
-    @NotBlank(message = "비밀번호를 입력해주세요.")
+    @NotBlank(message = "{valid.login.password.notBlank}")
     private String password;
 }

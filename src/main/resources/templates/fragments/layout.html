@@ -53,7 +53,7 @@
             }
 
             function showToast(detail) {
-                var message = detail && detail.message ? detail.message : '요청을 처리했습니다.';
+                var message = detail && detail.message ? detail.message : /*[[#{toast.default.success}]]*/ '요청을 처리했습니다.';
                 var type = detail && detail.type ? detail.type : 'success';
                 var isError = type === 'error';
                 var toast = document.createElement('div');
@@ -100,7 +100,7 @@
 
             document.addEventListener('htmx:responseError', function (event) {
                 if (!replaceModalFromResponse(event.detail && event.detail.xhr)) {
-                    showToast({ type: 'error', message: '요청을 처리하지 못했습니다.' });
+                    showToast({ type: 'error', message: /*[[#{toast.default.error}]]*/ '요청을 처리하지 못했습니다.' });
                 }
             });
         })();
@@ -109,7 +109,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             window.SeuStockToast({
                 type: /*[[${toastType}]]*/ 'success' || 'success',
-                message: /*[[${toastMessage}]]*/ '요청을 처리했습니다.'
+                message: /*[[${toastMessage}]]*/ /*[[#{toast.default.success}]]*/ '요청을 처리했습니다.'
             });
         });
     </script>
@@ -124,33 +124,33 @@
         <div class="hidden md:flex items-center gap-x-4 text-sm">
             <th:block th:if="${currentUsername != null}">
                 <a href="/spaces"
-                   class="text-slate-600 hover:text-slate-900 transition">내 공간</a>
+                   class="text-slate-600 hover:text-slate-900 transition" th:text="#{view.nav.mySpaces}">내 공간</a>
                 <span class="text-slate-300">|</span>
                 <a href="/items"
-                   class="text-slate-600 hover:text-slate-900 transition">내 품목</a>
+                   class="text-slate-600 hover:text-slate-900 transition" th:text="#{view.nav.myItems}">내 품목</a>
                 <span class="text-slate-300">|</span>
                 <a href="/stocks"
-                   class="text-slate-600 hover:text-slate-900 transition">내 재고</a>
+                   class="text-slate-600 hover:text-slate-900 transition" th:text="#{view.nav.myStocks}">내 재고</a>
                 <span class="text-slate-300">|</span>
                 <span class="text-slate-500" th:text="${currentUsername}"></span>
                 <form th:action="@{/logout}" method="post" class="inline">
                     <button type="submit"
-                            class="text-slate-600 hover:text-slate-900 transition cursor-pointer bg-transparent border-0 p-0">로그아웃</button>
+                            class="text-slate-600 hover:text-slate-900 transition cursor-pointer bg-transparent border-0 p-0" th:text="#{view.nav.logout}">로그아웃</button>
                 </form>
             </th:block>
             <th:block th:if="${currentUsername == null}">
                 <a href="/login"
-                   class="text-slate-600 hover:text-slate-900 transition">로그인</a>
+                   class="text-slate-600 hover:text-slate-900 transition" th:text="#{view.nav.login}">로그인</a>
                 <a href="/register"
                    class="rounded-md bg-blue-600 px-3 py-1.5 font-medium text-white
-                          hover:bg-blue-700 transition">회원가입</a>
+                          hover:bg-blue-700 transition" th:text="#{view.nav.register}">회원가입</a>
             </th:block>
         </div>
 
         <!--/* 모바일: md 미만에서 드롭다운 */-->
         <details class="relative md:hidden text-sm">
             <summary class="list-none cursor-pointer select-none rounded px-3 py-1.5
-                            text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+                            text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition" th:text="|#{view.nav.menu} ▾|">
                 메뉴 ▾
             </summary>
             <div class="absolute right-0 top-full mt-1 min-w-[120px] rounded-md
@@ -160,22 +160,22 @@
                          th:text="${currentUsername}"></div>
                     <hr class="border-slate-100 mx-2 my-1"/>
                     <a href="/spaces"
-                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">내 공간</a>
+                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition" th:text="#{view.nav.mySpaces}">내 공간</a>
                     <a href="/items"
-                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">내 품목</a>
+                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition" th:text="#{view.nav.myItems}">내 품목</a>
                     <a href="/stocks"
-                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">내 재고</a>
+                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition" th:text="#{view.nav.myStocks}">내 재고</a>
                     <hr class="border-slate-100 mx-2 my-1"/>
                     <form th:action="@{/logout}" method="post">
                         <button type="submit"
-                                class="block w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 transition bg-transparent border-0 cursor-pointer">로그아웃</button>
+                                class="block w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 transition bg-transparent border-0 cursor-pointer" th:text="#{view.nav.logout}">로그아웃</button>
                     </form>
                 </th:block>
                 <th:block th:if="${currentUsername == null}">
                     <a href="/login"
-                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition">로그인</a>
+                       class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition" th:text="#{view.nav.login}">로그인</a>
                     <a href="/register"
-                       class="block px-3 py-2 text-blue-600 font-medium hover:bg-slate-50 transition">회원가입</a>
+                       class="block px-3 py-2 text-blue-600 font-medium hover:bg-slate-50 transition" th:text="#{view.nav.register}">회원가입</a>
                 </th:block>
             </div>
         </details>

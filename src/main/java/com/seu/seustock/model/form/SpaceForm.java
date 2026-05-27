@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class SpaceForm {
 
-    @NotBlank(message = "공간 이름을 입력해주세요.")
-    @Size(max = 100, message = "공간 이름은 100자 이하여야 합니다.")
+    @NotBlank(message = "{valid.space.name.notBlank}")
+    @Size(max = 100, message = "{valid.space.name.size}")
     private String name;
 }

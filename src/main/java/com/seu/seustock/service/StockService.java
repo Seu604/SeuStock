@@ -13,6 +13,8 @@ import com.seu.seustock.model.form.StockUpdateForm;
 import com.seu.seustock.model.pagination.PageRequest;
 import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public class StockService {
     private final BoxMapper boxMapper;
     private final UserMapper userMapper;
     private final ImageStorageService imageStorageService;
+    private final MessageSource messageSource;
     private static final int MEMO_SUGGESTION_LIMIT = 4;
 
     private record VerifiedLocation(SpaceDTO space, ShelfDTO shelf, BoxDTO box) {
@@ -46,6 +49,10 @@ public class StockService {
         Long boxId() {
             return box == null ? null : box.getId();
         }
+    }
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
     }
 
     public List<StockPanelDTO> findPanelBySpace(UUID spaceExternalId, String username) {
@@ -87,9 +94,9 @@ public class StockService {
         UserDTO user = getUser(username);
         SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)
-                .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.shelf.notFound")));
         if (!shelf.getSpaceId().equals(space.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
         int totalCount = stockMapper.countPanelByShelfDirectOnly(shelf.getId());
         PageRequest pageRequest = PageRequest.of(page, totalCount);
@@ -107,14 +114,14 @@ public class StockService {
         UserDTO user = getUser(username);
         SpaceDTO space = getVerifiedSpace(spaceExternalId, user);
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)
-                .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.shelf.notFound")));
         if (!shelf.getSpaceId().equals(space.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
         BoxDTO box = boxMapper.findByExternalId(boxExternalId)
-                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
         if (!box.getShelfId().equals(shelf.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
         int totalCount = stockMapper.countPanelByBoxId(box.getId());
         PageRequest pageRequest = PageRequest.of(page, totalCount);
@@ -156,7 +163,7 @@ public class StockService {
     public StockDetailDTO findDetailByExternalId(UUID externalId, String username) {
         UserDTO user = getUser(username);
         return stockMapper.findDetailByExternalId(externalId, user.getId())
-                .orElseThrow(() -> new NoSuchElementException("재고를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
     }
 
     public List<String> findMemoSuggestions(TransactionType transactionType, String username) {
@@ -175,10 +182,10 @@ public class StockService {
         normalize(form);
         int updated = stockMapper.updateDetails(externalId, user.getId(), form);
         if (updated != 1) {
-            throw new NoSuchElementException("수정 가능한 재고를 찾을 수 없습니다.");
+            throw new NoSuchElementException(getMsg("error.stock.notFound"));
         }
         return stockMapper.findDetailByExternalId(externalId, user.getId())
-                .orElseThrow(() -> new NoSuchElementException("재고를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
     }
 
     @Transactional
@@ -306,13 +313,13 @@ public class StockService {
         }
 
         if (units.size() < form.getCount()) {
-            throw new IllegalArgumentException("재고가 부족합니다. (현재: " + units.size() + "개)");
+            throw new IllegalArgumentException(getMsg("error.stock.insufficient", units.size()));
         }
 
         for (StockDTO unit : units.subList(0, form.getCount())) {
             int updated = stockMapper.updateStatusIfInStock(unit.getId(), StockStatus.DISPATCHED);
             if (updated != 1) {
-                throw new IllegalStateException("재고 상태가 변경되어 출고할 수 없습니다.");
+                throw new IllegalStateException(getMsg("error.stock.statusChanged"));
             }
 
             StockTransactionDTO tx = new StockTransactionDTO();
@@ -338,7 +345,7 @@ public class StockService {
                 user);
 
         if (isSameLocation(source, target)) {
-            throw new IllegalArgumentException("같은 위치로는 이동할 수 없습니다.");
+            throw new IllegalArgumentException(getMsg("error.stock.move.sameLocation"));
         }
 
         for (StockMoveForm.Item moveItem : form.getItems()) {
@@ -346,7 +353,7 @@ public class StockService {
             List<StockDTO> candidates = findInStockUnits(item.getId(), source);
             if (candidates.size() < moveItem.getCount()) {
                 throw new IllegalArgumentException(
-                        item.getName() + " 재고가 부족합니다. (현재: " + candidates.size() + "개)");
+                        item.getName() + " " + getMsg("error.stock.insufficient", candidates.size()));
             }
 
             List<StockDTO> selected = candidates.subList(0, moveItem.getCount());
@@ -354,7 +361,7 @@ public class StockService {
             int updated = stockMapper.updateLocationIfInStock(
                     stockIds, target.space().getId(), target.shelfId(), target.boxId());
             if (updated != stockIds.size()) {
-                throw new IllegalStateException("재고 상태가 변경되어 이동할 수 없습니다.");
+                throw new IllegalStateException(getMsg("error.stock.statusChanged"));
             }
 
             for (StockDTO unit : selected) {
@@ -393,23 +400,23 @@ public class StockService {
         UserDTO user = getUser(username);
         int deleted = stockMapper.deleteInStockByExternalIdAndUserId(stockExternalId, user.getId());
         if (deleted != 1) {
-            throw new NoSuchElementException("삭제 가능한 재고를 찾을 수 없습니다.");
+            throw new NoSuchElementException(getMsg("error.stock.notFound"));
         }
     }
 
     private ItemDTO getVerifiedItem(UUID itemExternalId, UserDTO user) {
         ItemDTO item = itemMapper.findByExternalId(itemExternalId)
-                .orElseThrow(() -> new NoSuchElementException("품목을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.item.notFound")));
         verifyItemOwner(item, user);
         if (!item.isActive()) {
-            throw new IllegalStateException("비활성화된 품목은 재고 작업을 할 수 없습니다.");
+            throw new IllegalStateException(getMsg("error.item.inactive"));
         }
         return item;
     }
 
     private void verifyItemOwner(ItemDTO item, UserDTO user) {
         if (!item.getUserId().equals(user.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
     }
 
@@ -422,22 +429,22 @@ public class StockService {
         BoxDTO box = null;
 
         if (boxExternalId != null && shelfExternalId == null) {
-            throw new IllegalArgumentException("박스 재고는 선반 정보가 필요합니다.");
+            throw new IllegalArgumentException(getMsg("error.box.requiresShelf"));
         }
 
         if (shelfExternalId != null) {
             shelf = shelfMapper.findByExternalId(shelfExternalId)
-                    .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
+                    .orElseThrow(() -> new NoSuchElementException(getMsg("error.shelf.notFound")));
             if (!shelf.getSpaceId().equals(space.getId())) {
-                throw new SecurityException("접근 권한이 없습니다.");
+                throw new SecurityException(getMsg("error.403.title"));
             }
         }
 
         if (boxExternalId != null) {
             box = boxMapper.findByExternalId(boxExternalId)
-                    .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+                    .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
             if (!box.getShelfId().equals(shelf.getId())) {
-                throw new SecurityException("접근 권한이 없습니다.");
+                throw new SecurityException(getMsg("error.403.title"));
             }
         }
 
@@ -462,16 +469,16 @@ public class StockService {
 
     private SpaceDTO getVerifiedSpace(UUID spaceExternalId, UserDTO user) {
         SpaceDTO space = spaceMapper.findByExternalId(spaceExternalId)
-                .orElseThrow(() -> new NoSuchElementException("공간을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.space.notFound")));
         if (!space.getUserId().equals(user.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
         return space;
     }
 
     private UserDTO getUser(String username) {
         return userMapper.findByUsername(username)
-                .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.user.notFound")));
     }
 
     private String normalizeKeyword(String keyword) {

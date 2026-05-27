@@ -9,6 +9,8 @@ import com.seu.seustock.model.form.SpaceForm;
 import com.seu.seustock.model.pagination.PageRequest;
 import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +24,11 @@ public class SpaceService {
     private final SpaceMapper spaceMapper;
     private final UserMapper userMapper;
     private final StockMapper stockMapper;
+    private final MessageSource messageSource;
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+    }
 
     public List<SpaceDTO> findAllByUsername(String username) {
         UserDTO user = getUser(username);
@@ -50,7 +57,7 @@ public class SpaceService {
 
     public SpaceDTO findById(Long id) {
         return spaceMapper.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("공간을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.space.notFound")));
     }
 
     public Long getUserIdByUsername(String username) {
@@ -77,14 +84,14 @@ public class SpaceService {
         SpaceDTO space = getSpace(externalId);
         verifyOwner(space, username);
         if (!stockMapper.findBySpaceId(space.getId()).isEmpty()) {
-            throw new IllegalStateException("재고가 있는 공간은 삭제할 수 없습니다.");
+            throw new IllegalStateException(getMsg("error.space.hasStock"));
         }
         spaceMapper.deleteById(space.getId());
     }
 
     private UserDTO getUser(String username) {
         return userMapper.findByUsername(username)
-                .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.user.notFound")));
     }
 
     private String normalizeKeyword(String keyword) {
@@ -97,13 +104,13 @@ public class SpaceService {
 
     private SpaceDTO getSpace(UUID externalId) {
         return spaceMapper.findByExternalId(externalId)
-                .orElseThrow(() -> new NoSuchElementException("공간을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.space.notFound")));
     }
 
     private void verifyOwner(SpaceDTO space, String username) {
         UserDTO user = getUser(username);
         if (!space.getUserId().equals(user.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
     }
 }

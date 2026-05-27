@@ -7,12 +7,14 @@ import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.StockDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.SpaceForm;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -21,6 +23,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,9 +39,17 @@ class SpaceServiceTest {
     private UserMapper userMapper;
     @Mock
     private StockMapper stockMapper;
+    @Mock
+    private MessageSource messageSource;
 
     @InjectMocks
     private SpaceService spaceService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(messageSource.getMessage(anyString(), any(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+    }
 
     @Test
     void delete_rejectsSpaceWithStock() {
@@ -54,7 +66,7 @@ class SpaceServiceTest {
 
         assertThatThrownBy(() -> spaceService.delete(SPACE_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("재고");
+                .hasMessageContaining("error.space.hasStock");
 
         verify(spaceMapper, never()).deleteById(any());
     }

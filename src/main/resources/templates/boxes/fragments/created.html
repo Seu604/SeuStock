@@ -17,22 +17,21 @@
             hx-swap="outerHTML"></button>
 
     <span class="hidden group-hover:flex items-center gap-1 shrink-0">
-        <button type="button"
-                class="inline-flex h-6 w-6 items-center justify-center rounded text-xs text-blue-500 hover:text-blue-700"
-                th:attr="hx-get=@{/stocks/new(spaceId=${spaceExternalId},shelfId=${shelfExternalId},boxId=${box.externalId})}"
-                hx-target="#modal"
-                hx-swap="outerHTML"
-                title="재고 추가">📦</button>
+    <button type="button"
+            class="inline-flex h-6 w-6 items-center justify-center rounded text-xs text-blue-500 hover:text-blue-700"
+            th:attr="hx-get=@{/stocks/new(spaceId=${spaceExternalId},shelfId=${shelfExternalId},boxId=${box.externalId})}"
+            hx-target="#modal"
+            hx-swap="outerHTML"
+            th:title="#{view.box.created.addStock}">📦</button>
 
-        <button type="button"
-                class="inline-flex h-6 w-6 items-center justify-center rounded text-xs text-red-400 hover:text-red-600"
-                th:attr="hx-delete=@{/spaces/{sid}/shelves/{shid}/boxes/{id}(sid=${spaceExternalId},shid=${shelfExternalId},id=${box.externalId})},
-                         hx-confirm='박스를 삭제하면 포함된 재고도 함께 삭제됩니다. 계속하시겠습니까?',
-                         hx-target='#box-list-' + ${shelfExternalId}"
-                hx-swap="outerHTML"
-                title="삭제">×</button>
+    <button type="button"
+            class="inline-flex h-6 w-6 items-center justify-center rounded text-xs text-red-400 hover:text-red-600"
+            th:attr="hx-delete=@{/spaces/{sid}/shelves/{shid}/boxes/{id}(sid=${spaceExternalId},shid=${shelfExternalId},id=${box.externalId})},
+                     hx-confirm=#{view.box.created.deleteConfirm},
+                     hx-target='#box-list-' + ${shelfExternalId}"
+            hx-swap="outerHTML"
+            th:title="#{view.box.created.delete}">×</button>
     </span>
-
 </li>
 
 <!-- OOB: 모달 닫기 -->

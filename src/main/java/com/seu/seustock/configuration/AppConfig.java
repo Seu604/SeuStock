@@ -1,8 +1,10 @@
 package com.seu.seustock.configuration;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -48,5 +50,12 @@ public class AppConfig {
         exec.setThreadNamePrefix("ai-analysis-");
         exec.initialize();
         return exec;
+    }
+
+    @Bean
+    public LocalValidatorFactoryBean getValidator(MessageSource messageSource) {
+        LocalValidatorFactoryBean bean = new LocalValidatorFactoryBean();
+        bean.setValidationMessageSource(messageSource);
+        return bean;
     }
 }

@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class ShelfForm {
 
-    @NotBlank(message = "선반 이름을 입력해주세요.")
-    @Size(max = 100, message = "선반 이름은 100자 이하여야 합니다.")
+    @NotBlank(message = "{valid.shelf.name.notBlank}")
+    @Size(max = 100, message = "{valid.shelf.name.size}")
     private String name;
 }

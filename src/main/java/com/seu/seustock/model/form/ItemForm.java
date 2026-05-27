@@ -10,11 +10,11 @@ import org.springframework.web.multipart.MultipartFile;
 @Setter
 public class ItemForm {
 
-    @NotBlank(message = "품목 이름을 입력해주세요.")
-    @Size(max = 100, message = "품목 이름은 100자 이하여야 합니다.")
+    @NotBlank(message = "{valid.item.name.notBlank}")
+    @Size(max = 100, message = "{valid.item.name.size}")
     private String name;
 
-    @Size(max = 500, message = "설명은 500자 이하여야 합니다.")
+    @Size(max = 500, message = "{valid.item.description.size}")
     private String description;
 
     private MultipartFile imageFile;

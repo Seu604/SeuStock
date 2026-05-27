@@ -9,6 +9,8 @@ import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.form.BoxForm;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,25 +25,30 @@ public class BoxService {
     private final ShelfMapper shelfMapper;
     private final SpaceMapper spaceMapper;
     private final UserMapper userMapper;
+    private final MessageSource messageSource;
+
+    private String getMsg(String key, Object... args) {
+        return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+    }
 
     public BoxDTO findByExternalId(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
         ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
         BoxDTO box = boxMapper.findByExternalId(boxExternalId)
-                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
         if (!box.getShelfId().equals(shelf.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
         return box;
     }
 
     public BoxDTO findById(Long id) {
         return boxMapper.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
     }
 
     public BoxDTO findByExternalIdOnly(UUID externalId) {
         return boxMapper.findByExternalId(externalId)
-                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
     }
 
     public List<BoxDTO> findAllByShelfId(UUID spaceExternalId, UUID shelfExternalId, String username) {
@@ -61,9 +68,9 @@ public class BoxService {
     public void rename(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, BoxForm form, String username) {
         ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
         BoxDTO box = boxMapper.findByExternalId(boxExternalId)
-                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
         if (!box.getShelfId().equals(shelf.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
         box.setName(form.getName());
         boxMapper.updateBox(box);
@@ -72,23 +79,23 @@ public class BoxService {
     public void delete(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
         ShelfDTO shelf = getVerifiedShelf(spaceExternalId, shelfExternalId, username);
         BoxDTO box = boxMapper.findByExternalId(boxExternalId)
-                .orElseThrow(() -> new NoSuchElementException("박스를 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
         if (!box.getShelfId().equals(shelf.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
         boxMapper.deleteById(box.getId());
     }
 
     private ShelfDTO getVerifiedShelf(UUID spaceExternalId, UUID shelfExternalId, String username) {
         SpaceDTO space = spaceMapper.findByExternalId(spaceExternalId)
-                .orElseThrow(() -> new NoSuchElementException("공간을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.space.notFound")));
         userMapper.findByUsername(username)
                 .filter(u -> u.getId().equals(space.getUserId()))
-                .orElseThrow(() -> new SecurityException("접근 권한이 없습니다."));
+                .orElseThrow(() -> new SecurityException(getMsg("error.403.title")));
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)
-                .orElseThrow(() -> new NoSuchElementException("선반을 찾을 수 없습니다."));
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.shelf.notFound")));
         if (!shelf.getSpaceId().equals(space.getId())) {
-            throw new SecurityException("접근 권한이 없습니다.");
+            throw new SecurityException(getMsg("error.403.title"));
         }
         return shelf;
     }

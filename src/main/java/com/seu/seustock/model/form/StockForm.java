@@ -13,18 +13,18 @@ import java.util.UUID;
 @Setter
 public class StockForm {
 
-    @NotNull(message = "품목을 선택해주세요.")
+    @NotNull(message = "{valid.stock.itemExternalId.notNull}")
     private UUID itemExternalId;
 
-    @NotNull(message = "공간 정보가 누락되었습니다.")
+    @NotNull(message = "{valid.stock.spaceExternalId.notNull}")
     private UUID spaceExternalId;
 
     private UUID shelfExternalId;
 
     private UUID boxExternalId;
 
-    @Min(value = 1, message = "수량은 1 이상이어야 합니다.")
-    @Max(value = 50, message = "한 번에 최대 50개까지 등록할 수 있습니다.")
+    @Min(value = 1, message = "{valid.stock.count.min}")
+    @Max(value = 50, message = "{valid.stock.count.max}")
     private int count = 1;
 
     private String serialNumber;

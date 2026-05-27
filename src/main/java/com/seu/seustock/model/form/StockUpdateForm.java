@@ -10,10 +10,10 @@ import java.time.LocalDate;
 @Setter
 public class StockUpdateForm {
 
-    @Size(max = 255, message = "시리얼 번호는 255자 이하여야 합니다.")
+    @Size(max = 255, message = "{valid.stockUpdate.serialNumber.size}")
     private String serialNumber;
 
-    @Size(max = 255, message = "로트 번호는 255자 이하여야 합니다.")
+    @Size(max = 255, message = "{valid.stockUpdate.lotNumber.size}")
     private String lotNumber;
 
     private LocalDate expirationDate;

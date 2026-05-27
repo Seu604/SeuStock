@@ -9,7 +9,7 @@
 
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-semibold text-slate-800">
-                <span th:text="${itemName}"></span>의 공간별 재고
+                <span th:text="#{view.item.spaceStock.title(${itemName})}"></span>
             </h2>
             <button type="button"
                     hx-get="/empty"
@@ -30,7 +30,7 @@
                 <span class="text-sm text-slate-700" th:text="${ss.spaceName}"></span>
                 <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5
                              text-xs font-semibold text-blue-700"
-                      th:text="${ss.count} + '개'"></span>
+                      th:text="|${ss.count}#{view.item.card.unit}|"></span>
             </a>
         </div>
 
@@ -40,7 +40,8 @@
                     hx-target="#modal"
                     hx-swap="outerHTML"
                     class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600
-                           hover:bg-slate-50 transition">
+                           hover:bg-slate-50 transition"
+                    th:text="#{view.common.close}">
                 닫기
             </button>
         </div>

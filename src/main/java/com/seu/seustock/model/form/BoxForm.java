@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class BoxForm {
 
-    @NotBlank(message = "박스 이름을 입력해주세요.")
-    @Size(max = 100, message = "박스 이름은 100자 이하여야 합니다.")
+    @NotBlank(message = "{valid.box.name.notBlank}")
+    @Size(max = 100, message = "{valid.box.name.size}")
     private String name;
 }

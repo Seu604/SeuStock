@@ -1,13 +1,20 @@
 package com.seu.seustock.configuration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.MessageSource;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
+import java.util.Locale;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * GlobalExceptionHandler 순수 단위 테스트.
@@ -24,8 +31,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class GlobalExceptionHandlerTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private MessageSource messageSource;
+    private GlobalExceptionHandler handler;
     private final Model model = new ExtendedModelMap();
+
+    @BeforeEach
+    void setUp() {
+        messageSource = mock(MessageSource.class);
+        handler = new GlobalExceptionHandler(messageSource);
+
+        when(messageSource.getMessage(eq("error.404.title"), any(), any(Locale.class)))
+                .thenReturn("항목을 찾을 수 없습니다");
+        when(messageSource.getMessage(eq("error.403.title"), any(), any(Locale.class)))
+                .thenReturn("접근할 수 없습니다");
+        when(messageSource.getMessage(eq("error.400.title"), any(), any(Locale.class)))
+                .thenReturn("요청을 처리할 수 없습니다");
+    }
 
     // ── NoSuchElementException (404) ──────────────────────────────────────
 
@@ -37,7 +58,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(view).isEqualTo("fragments/error-modal :: modal");
         assertThat(model.asMap().get("statusCode")).isEqualTo(404);
-        assertThat(model.asMap().get("errorTitle")).isNotNull();
+        assertThat(model.asMap().get("errorTitle")).isEqualTo("항목을 찾을 수 없습니다");
         assertThat(model.asMap().get("errorMessage")).isEqualTo("공간을 찾을 수 없습니다.");
     }
 
@@ -69,7 +90,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(view).isEqualTo("fragments/error-modal :: modal");
         assertThat(model.asMap().get("statusCode")).isEqualTo(403);
-        assertThat(model.asMap().get("errorTitle")).isNotNull();
+        assertThat(model.asMap().get("errorTitle")).isEqualTo("접근할 수 없습니다");
     }
 
     @Test
@@ -91,6 +112,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(view).isEqualTo("fragments/error-modal :: modal");
         assertThat(model.asMap().get("statusCode")).isEqualTo(400);
+        assertThat(model.asMap().get("errorTitle")).isEqualTo("요청을 처리할 수 없습니다");
     }
 
     @Test

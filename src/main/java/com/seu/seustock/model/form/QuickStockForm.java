@@ -11,18 +11,19 @@ import java.util.UUID;
 @Setter
 public class QuickStockForm {
 
-    @NotBlank(message = "품목명을 입력해주세요.")
-    @Size(max = 100)
+    @NotBlank(message = "{valid.quickStock.name.notBlank}")
+    @Size(max = 100, message = "{valid.quickStock.name.size}")
     private String name;
 
-    @Size(max = 500)
+    @Size(max = 500, message = "{valid.quickStock.description.size}")
     private String description;
 
-    @NotNull(message = "공간 정보가 없습니다.")
+    @NotNull(message = "{valid.quickStock.spaceExternalId.notNull}")
     private UUID spaceExternalId;
     private UUID shelfExternalId;
     private UUID boxExternalId;
-    @Min(1) @Max(50)
+    @Min(value = 1, message = "{valid.quickStock.count.min}") 
+    @Max(value = 50, message = "{valid.quickStock.count.max}")
     private int count = 1;
 
     private String memo;

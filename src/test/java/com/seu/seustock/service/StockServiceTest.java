@@ -18,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -27,6 +28,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,6 +63,8 @@ class StockServiceTest {
     private UserMapper userMapper;
     @Mock
     private ImageStorageService imageStorageService;
+    @Mock
+    private MessageSource messageSource;
 
     @InjectMocks
     private StockService stockService;
@@ -77,6 +81,9 @@ class StockServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(messageSource.getMessage(anyString(), any(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
         user = user(1L);
         item = item(10L, ITEM_EXTERNAL_ID, user.getId());
         otherUserItem = item(20L, OTHER_ITEM_EXTERNAL_ID, 2L);
@@ -97,7 +104,7 @@ class StockServiceTest {
         assertThatThrownBy(() -> stockService.create(stockForm(OTHER_ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME))
                 .isInstanceOf(SecurityException.class);
 
-        verify(stockMapper, never()).insertStock(any());
+        verify(stockMapper, never()).insertStocks(any());
     }
 
     @Test
@@ -107,9 +114,9 @@ class StockServiceTest {
 
         assertThatThrownBy(() -> stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, null), USERNAME))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("비활성화");
+                .hasMessageContaining("error.item.inactive");
 
-        verify(stockMapper, never()).insertStock(any());
+        verify(stockMapper, never()).insertStocks(any());
     }
 
     @Test
@@ -121,7 +128,7 @@ class StockServiceTest {
         assertThatThrownBy(() -> stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, OTHER_SHELF_EXTERNAL_ID, null), USERNAME))
                 .isInstanceOf(SecurityException.class);
 
-        verify(stockMapper, never()).insertStock(any());
+        verify(stockMapper, never()).insertStocks(any());
     }
 
     @Test
@@ -131,9 +138,9 @@ class StockServiceTest {
 
         assertThatThrownBy(() -> stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, null, BOX_EXTERNAL_ID), USERNAME))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("선반 정보");
+                .hasMessageContaining("error.box.requiresShelf");
 
-        verify(stockMapper, never()).insertStock(any());
+        verify(stockMapper, never()).insertStocks(any());
     }
 
     @Test
@@ -146,7 +153,7 @@ class StockServiceTest {
         assertThatThrownBy(() -> stockService.create(stockForm(ITEM_EXTERNAL_ID, SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, OTHER_BOX_EXTERNAL_ID), USERNAME))
                 .isInstanceOf(SecurityException.class);
 
-        verify(stockMapper, never()).insertStock(any());
+        verify(stockMapper, never()).insertStocks(any());
     }
 
     @Test
@@ -187,7 +194,7 @@ class StockServiceTest {
 
         assertThatThrownBy(() -> stockService.dispatchUnits(form, USERNAME))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("상태");
+                .hasMessageContaining("error.stock.statusChanged");
 
         verify(transactionMapper, never()).insertTransaction(any());
     }
@@ -219,7 +226,7 @@ class StockServiceTest {
 
         assertThatThrownBy(() -> stockService.deleteUnit(STOCK_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(NoSuchElementException.class)
-                .hasMessageContaining("삭제 가능한 재고");
+                .hasMessageContaining("error.stock.notFound");
     }
 
     @Test
@@ -289,7 +296,7 @@ class StockServiceTest {
         assertThatThrownBy(() -> stockService.addUnits(form, USERNAME))
                 .isInstanceOf(SecurityException.class);
 
-        verify(stockMapper, never()).insertStock(any());
+        verify(stockMapper, never()).insertStocks(any());
     }
 
     @Test
@@ -317,7 +324,7 @@ class StockServiceTest {
 
         assertThatThrownBy(() -> stockService.dispatchUnits(stockInOutForm(SPACE_EXTERNAL_ID, null, null), USERNAME))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("재고가 부족");
+                .hasMessageContaining("error.stock.insufficient");
 
         verify(transactionMapper, never()).insertTransaction(any());
     }
@@ -360,7 +367,7 @@ class StockServiceTest {
         assertThatThrownBy(() -> stockService.moveUnits(
                 stockMoveForm(SPACE_EXTERNAL_ID, null, null, SPACE_EXTERNAL_ID, null, null, 1), USERNAME))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("같은 위치");
+                .hasMessageContaining("error.stock.move.sameLocation");
 
         verify(stockMapper, never()).updateLocationIfInStock(any(), any(), any(), any());
     }
@@ -376,7 +383,7 @@ class StockServiceTest {
         assertThatThrownBy(() -> stockService.moveUnits(
                 stockMoveForm(SPACE_EXTERNAL_ID, null, null, SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, null, 2), USERNAME))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("재고가 부족");
+                .hasMessageContaining("error.stock.insufficient");
 
         verify(stockMapper, never()).updateLocationIfInStock(any(), any(), any(), any());
         verify(transactionMapper, never()).insertTransaction(any());
@@ -412,7 +419,7 @@ class StockServiceTest {
 
         assertThatThrownBy(() -> stockService.updateDetails(STOCK_EXTERNAL_ID, form, USERNAME))
                 .isInstanceOf(NoSuchElementException.class)
-                .hasMessageContaining("수정 가능한 재고");
+                .hasMessageContaining("error.stock.notFound");
     }
 
     private StockForm stockForm(UUID itemExternalId, UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId) {

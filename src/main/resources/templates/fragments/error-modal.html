@@ -12,9 +12,9 @@
                  th:text="${statusCode}">400</div>
             <div class="min-w-0">
                 <h2 class="text-base font-semibold text-slate-800"
-                    th:text="${errorTitle}">요청을 처리할 수 없습니다</h2>
+                    th:text="${errorTitle} ?: #{view.error.modal.defaultTitle}">요청을 처리할 수 없습니다</h2>
                 <p class="mt-1 text-sm text-slate-500"
-                   th:text="${errorMessage}">잠시 후 다시 시도해주세요.</p>
+                   th:text="${errorMessage} ?: #{view.error.modal.defaultMessage}">잠시 후 다시 시도해주세요.</p>
             </div>
         </div>
         <div class="flex justify-end">
@@ -22,7 +22,8 @@
                     hx-get="/empty"
                     hx-target="#modal"
                     hx-swap="outerHTML"
-                    class="rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition">
+                    class="rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                    th:text="#{view.common.confirm}">
                 확인
             </button>
         </div>
