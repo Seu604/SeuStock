@@ -5,6 +5,7 @@ import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.service.ImageStorageService;
 import com.seu.seustock.service.ai.AiServiceUnavailableException;
 import com.seu.seustock.service.ai.ImageAnalysisService;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -101,6 +103,33 @@ class ImageControllerTest extends AbstractControllerTest {
                                 .file(imageFile)
                                 .with(user("testuser"))
                                 .with(csrf()))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(asyncResult))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.name").value("분석된 품목"))
+               .andExpect(jsonPath("$.description").value("분석된 설명"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    @DisplayName("POST /images/analyze - XSRF 쿠키와 헤더 조합 → asyncStarted, 이후 200 + JSON 분석 결과")
+    void analyze_withXsrfCookieAndHeader_returns200WithAnalysisResult() throws Exception {
+        MvcResult pageResult = mockMvc.perform(get("/login"))
+               .andExpect(status().isOk())
+               .andExpect(cookie().exists("XSRF-TOKEN"))
+               .andReturn();
+        Cookie xsrfCookie = pageResult.getResponse().getCookie("XSRF-TOKEN");
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "imageFile", "test.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        MvcResult asyncResult = mockMvc.perform(
+                        multipart("/images/analyze")
+                                .file(imageFile)
+                                .with(user("testuser"))
+                                .cookie(xsrfCookie)
+                                .header("X-XSRF-TOKEN", xsrfCookie.getValue()))
                 .andExpect(request().asyncStarted())
                 .andReturn();
 

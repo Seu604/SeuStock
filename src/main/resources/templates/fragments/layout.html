@@ -12,16 +12,8 @@
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="/js/csrf.js"></script>
     <script src="/js/image-upload.js"></script>
-    <script>
-        document.addEventListener('htmx:configRequest', function(evt) {
-            var csrfToken = document.querySelector('meta[name="_csrf"]');
-            var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
-            if (csrfToken && csrfHeader) {
-                evt.detail.headers[csrfHeader.getAttribute('content')] = csrfToken.getAttribute('content');
-            }
-        });
-    </script>
     <script>
         tailwind.config = {
             theme: {

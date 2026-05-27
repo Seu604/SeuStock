@@ -3,6 +3,10 @@ var ANALYSIS_IMAGE_WEBP_THRESHOLD_BYTES = 1024 * 1024;
 var ANALYSIS_IMAGE_QUALITY = 0.85;
 
 function getCsrfHeaders() {
+    if (window.SeuStockCsrf && typeof window.SeuStockCsrf.headers === 'function') {
+        return window.SeuStockCsrf.headers();
+    }
+
     var csrfTokenEl = document.querySelector('meta[name="_csrf"]');
     var csrfHeaderEl = document.querySelector('meta[name="_csrf_header"]');
     var headers = {};

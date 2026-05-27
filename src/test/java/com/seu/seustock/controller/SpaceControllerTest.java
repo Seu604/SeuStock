@@ -5,6 +5,7 @@ import com.seu.seustock.model.pagination.PageResult;
 import com.seu.seustock.service.ShelfService;
 import com.seu.seustock.service.SpaceService;
 import com.seu.seustock.service.StockService;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.http.HttpMethod;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -147,6 +150,25 @@ class SpaceControllerTest extends AbstractControllerTest {
         mockMvc.perform(post("/spaces")
                         .with(user("testuser"))
                         .with(csrf())
+                        .param("name", "새 창고"))
+               .andExpect(status().is3xxRedirection())
+               .andExpect(redirectedUrl("/spaces"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    @DisplayName("POST /spaces - XSRF 쿠키와 헤더 조합 → /spaces 리다이렉트")
+    void create_withXsrfCookieAndHeader_redirectsToSpaces() throws Exception {
+        MvcResult pageResult = mockMvc.perform(get("/spaces").with(user("testuser")))
+               .andExpect(status().isOk())
+               .andExpect(cookie().exists("XSRF-TOKEN"))
+               .andReturn();
+        Cookie xsrfCookie = pageResult.getResponse().getCookie("XSRF-TOKEN");
+
+        mockMvc.perform(post("/spaces")
+                        .with(user("testuser"))
+                        .cookie(xsrfCookie)
+                        .header("X-XSRF-TOKEN", xsrfCookie.getValue())
                         .param("name", "새 창고"))
                .andExpect(status().is3xxRedirection())
                .andExpect(redirectedUrl("/spaces"));
