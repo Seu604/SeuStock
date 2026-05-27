@@ -151,7 +151,7 @@ docker compose up -d
 
 ## 주요 설정
 
-공통 설정은 `src/main/resources/application.properties`, 로컬 개발 설정은 `src/main/resources/application-local.properties`에 있습니다.
+공통 설정은 `src/main/resources/application.properties`, 로컬 개발 설정은 `src/main/resources/application-local.properties`, 운영 설정은 `src/main/resources/application-prod.properties`에 있습니다.
 
 ```properties
 server.port=8080
@@ -179,6 +179,14 @@ spring.ai.ollama.chat.model=gemma3:4b
 seustock.ai.yolo.enabled=true
 seustock.ai.yolo.base-url=http://localhost:8000
 ```
+
+운영 환경은 `prod` 프로필을 활성화하고, 비밀번호와 외부 서비스 주소는 환경변수로 주입합니다.
+
+```bash
+SPRING_PROFILES_ACTIVE=prod java -jar build/libs/SeuStock-*.jar
+```
+
+필수 운영 환경변수는 `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `APP_BASE_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `REDIS_HOST`, `OLLAMA_BASE_URL`입니다. `APP_QR_BASE_URL`, `MINIO_BUCKET`, `REDIS_PORT`, `REDIS_PASSWORD`, `YOLO_ENABLED`, `YOLO_BASE_URL`은 필요할 때만 지정하면 됩니다.
 
 AI 이미지 분석을 사용하려면 로컬 Ollama 서버와 설정된 Gemma 모델이 준비되어 있어야 합니다. YOLO 전처리를 사용하려면 `/detect` 엔드포인트를 제공하는 로컬 YOLO HTTP 서비스를 실행해야 합니다.
 

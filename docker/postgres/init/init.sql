@@ -1,2 +1,0 @@
--- 이 파일은 더 이상 사용되지 않습니다.
--- 스키마는 Flyway가 관리합니다: src/main/resources/db/migration/

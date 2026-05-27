@@ -2,32 +2,29 @@
 
 ## Project Structure & Module Organization
 
-SeuStock is a Spring Boot 4 Java application using Thymeleaf, HTMX, MyBatis, PostgreSQL, and H2 for tests. Main Java code lives under `src/main/java/com/seu/seustock`, organized by role: `controller`, `service`, `mapper`, `model/dto`, `model/form`, and `configuration`. Thymeleaf pages and fragments are in `src/main/resources/templates`; MyBatis XML mappings are in `src/main/resources/mapper`. Database assets are split between `schema/`, `query/`, `docker/postgres/init/`, and `src/test/resources/schema-test.sql`. Tests live in `src/test/java/com/seu/seustock`.
+SeuStock is a Java 25 Spring Boot 4 application using Thymeleaf, HTMX, MyBatis, Flyway, PostgreSQL, Redis, MinIO, and H2 for tests. Main Java code lives under `src/main/java/com/seu/seustock`: `controller` handles web requests, `service` contains business logic, `mapper` contains MyBatis interfaces, `configuration` holds framework setup, and `model` contains DTOs, forms, enums, and pagination types. Resource files are in `src/main/resources`: `templates` for Thymeleaf pages/fragments, `static` for JavaScript and images, `mapper` for MyBatis XML, and `db/migration` for Flyway SQL. Tests mirror the package structure under `src/test/java`; test configuration and schema are in `src/test/resources`.
 
 ## Build, Test, and Development Commands
 
-- `./gradlew bootRun`: run the application locally.
-- `docker compose up -d postgres`: start the local PostgreSQL database on host port `5433`.
-- `./gradlew test`: run JUnit 5 tests, including mapper integration tests against H2.
-- `./gradlew build`: compile, test, and package the application.
-- `./gradlew clean`: remove generated build output.
+- `./gradlew test` runs the JUnit 5 test suite with H2 and `schema-test.sql`.
+- `./gradlew bootRun --args='--spring.profiles.active=local'` starts the app locally at `http://localhost:8080`.
+- `docker compose up -d` starts PostgreSQL on `5433`, MinIO on `9000/9001`, and Redis on `6379`.
+- `./gradlew build` compiles, tests, and packages the application.
 
-Use the Gradle wrapper instead of a system Gradle install. The project targets Java 25 via the Gradle toolchain.
+Use the Gradle wrapper rather than a system Gradle install.
 
 ## Coding Style & Naming Conventions
 
-Use 4-space indentation for Java and keep packages under `com.seu.seustock`. Follow the existing suffix conventions: `*Controller`, `*Service`, `*Mapper`, `*DTO`, and `*Form`. Keep MyBatis Java mapper interfaces and XML files paired by entity name, for example `StockMapper.java` and `StockMapper.xml`. Prefer constructor injection or established Spring patterns already present in the codebase. Keep Thymeleaf reusable markup in `templates/**/fragments/`.
+Use 4-space indentation for Java and keep package names under `com.seu.seustock`. Follow existing Spring naming: `*Controller`, `*Service`, `*Mapper`, `*DTO`, and `*Form`. Keep Thymeleaf reusable fragments under feature-specific `templates/<feature>/fragments/` directories. Add new MyBatis XML statements beside existing mapper XML files and keep interface method names aligned with SQL statement ids. Store user-facing text in `messages.properties` and `messages_en.properties` instead of hardcoding template labels.
 
 ## Testing Guidelines
 
-Tests use JUnit Platform with Spring Boot test dependencies and MyBatis test support. Name mapper tests as `EntityMapperTest` and place them beside the existing tests in `src/test/java/com/seu/seustock/mapper`. When changing persistence behavior, update both the production schema/init SQL and `src/test/resources/schema-test.sql` as needed. Run `./gradlew test` before opening a PR.
+Tests use JUnit 5, Spring Boot Test, Spring Security Test, and MyBatis Test. Name test classes with the `*Test` suffix, or `*IntegrationTest` when exercising broader request/database flows. When persistence changes, update both Flyway migrations and `src/test/resources/schema-test.sql`, then add or adjust mapper tests. Controller changes should cover validation, security, response fragments, and error handling where applicable.
 
 ## Commit & Pull Request Guidelines
 
-Recent commit messages use imperative, descriptive sentences such as `Add persistence layer implementation...` or `Implement user authentication...`. Keep commits focused on one logical change and mention affected areas when useful.
-
-Pull requests should include a brief summary, testing performed, and any database or configuration changes. For UI changes, include screenshots or short notes describing affected Thymeleaf pages/fragments. Link related issues when available and call out any required local setup changes.
+Recent commits use concise imperative summaries, often with a scope and detail, for example: `Add comprehensive controller test suite` or `Internationalize stock-related messages`. Keep commits focused and mention tests or configuration updates when relevant. Pull requests should include a short behavior summary, linked issues if any, test commands run, and screenshots or screen recordings for visible UI changes.
 
 ## Security & Configuration Tips
 
-Do not commit real credentials. Local PostgreSQL defaults are defined in `compose.yaml` for development only. Keep environment-specific settings in properties files or external configuration, and review changes to authentication, password handling, and database initialization carefully.
+Do not commit production secrets. Local defaults live in `application-local.properties`; production values should come from environment variables such as `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `MINIO_*`, `REDIS_*`, and `OLLAMA_BASE_URL`. Keep uploaded/generated files out of source unless they are intentional test or sample assets.
