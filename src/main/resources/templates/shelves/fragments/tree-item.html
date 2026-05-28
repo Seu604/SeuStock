@@ -33,7 +33,7 @@
                     hx-target="#modal"
                     hx-swap="outerHTML"
                     onclick="event.stopPropagation()"
-                    title="QR 코드">📷</button>
+                    th:title="#{view.box.tree.qrTitle}">📷</button>
             <!-- Shelf 수정 버튼 -->
             <button type="button"
                     class="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-600"
@@ -41,7 +41,7 @@
                     hx-target="#modal"
                     hx-swap="outerHTML"
                     onclick="event.stopPropagation()"
-                    title="이름 수정">✏</button>
+                    th:title="#{view.box.tree.editTitle}">✏</button>
 
             <!-- Box 추가 버튼 -->
             <button type="button"
@@ -50,17 +50,17 @@
                     hx-target="#modal"
                     hx-swap="outerHTML"
                     onclick="event.stopPropagation()"
-                    title="박스 추가">+</button>
+                    th:title="#{view.shelf.created.addBox}">+</button>
 
             <!-- Shelf 삭제 버튼 -->
             <button type="button"
                     class="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-slate-400 hover:bg-red-50 hover:text-red-500"
                     th:attr="hx-delete=@{/spaces/{sid}/shelves/{id}(sid=${spaceExternalId},id=${shelf.externalId})},
-                             hx-confirm='선반을 삭제하면 하위 박스와 재고도 함께 삭제됩니다. 계속하시겠습니까?'"
+                             hx-confirm=#{view.shelf.created.deleteConfirm}"
                     hx-target="#shelf-list"
                     hx-swap="outerHTML"
                     onclick="event.stopPropagation()"
-                    title="삭제">×</button>
+                    th:title="#{view.common.delete}">×</button>
         </span>
     </div>
 

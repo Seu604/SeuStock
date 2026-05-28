@@ -5,7 +5,7 @@
 <div th:fragment="modal"
      id="modal"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 max-h-[90vh] overflow-y-auto flex flex-col">
 
         <!-- 헤더 -->
         <div class="mb-4">
@@ -185,7 +185,13 @@
     </div>
 
     <!-- fragment 안에 있어야 HTMX swap 시 함께 전달됨 -->
-    <script>
+    <script th:inline="javascript">
+    const minCountMsg = /*[[#{view.stock.modal.js.minCount}]]*/ '1개 이상 입력해주세요';
+    const maxCountMsg = /*[[#{view.stock.modal.js.maxCount}]]*/ '50개 초과 입력할 수 없습니다';
+    const addMsgTemplate = /*[[#{view.stock.modal.js.addMessage}]]*/ '{0}개가 추가되어 총 {1}개가 됩니다';
+    const outMsgTemplate = /*[[#{view.stock.modal.js.outMessage}]]*/ '{0}개가 출고되어 총 {1}개가 됩니다';
+    const minTotalErrorMsg = /*[[#{view.stock.modal.js.minTotalError}]]*/ '재고의 총 수량은 0개 이하가 될 수 없습니다';
+
     function switchActionTab(tab) {
         const tabColors = { in: 'text-blue-600', out: 'text-orange-600', del: 'text-red-600' };
         ['in', 'out', 'del'].forEach(function(t) {
@@ -213,11 +219,11 @@
         if (isNaN(count)) {
             msg.textContent = '';
         } else if (count <= 0) {
-            msg.textContent = '1개 이상 입력해주세요';
+            msg.textContent = minCountMsg;
         } else if (count > 50) {
-            msg.textContent = '50개 이상 입력할 수 없습니다';
+            msg.textContent = maxCountMsg;
         } else {
-            msg.textContent = count + '개가 추가되어 총 ' + (current + count) + '개가 됩니다';
+            msg.textContent = addMsgTemplate.replace('{0}', count).replace('{1}', current + count);
         }
     }
 
@@ -229,13 +235,13 @@
         if (isNaN(count)) {
             msg.textContent = '';
         } else if (count <= 0) {
-            msg.textContent = '1개 이상 입력해주세요';
+            msg.textContent = minCountMsg;
         } else if (count > 50) {
-            msg.textContent = '50개 이상 입력할 수 없습니다';
+            msg.textContent = maxCountMsg;
         } else if (current - count <= 0) {
-            msg.textContent = '재고의 총 수량은 0개 이하가 될 수 없습니다';
+            msg.textContent = minTotalErrorMsg;
         } else {
-            msg.textContent = count + '개가 출고되어 총 ' + (current - count) + '개가 됩니다';
+            msg.textContent = outMsgTemplate.replace('{0}', count).replace('{1}', current - count);
         }
     }
 

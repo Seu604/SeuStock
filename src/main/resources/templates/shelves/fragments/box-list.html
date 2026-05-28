@@ -9,7 +9,8 @@
 
 <th:block th:fragment="box-list-content">
     <li th:if="${boxes.empty}"
-        class="px-3 py-2 text-xs text-slate-400">
+        class="px-3 py-2 text-xs text-slate-400"
+        th:text="#{view.shelf.list.empty}">
         박스가 없습니다.
     </li>
 
