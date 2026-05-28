@@ -41,3 +41,9 @@ out/
 /.codex/
 /.gemini/
 /.antigravitycli/
+
+### Environment Variables ###
+.env
+.env.local
+.env.*.local
+
