@@ -5,7 +5,7 @@
 <div th:fragment="modal"
      id="modal"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 max-h-[90vh] overflow-y-auto flex flex-col">
 
         <h2 class="text-lg font-semibold text-slate-800 mb-4" th:text="#{view.stock.modal.add.title}">재고 추가</h2>
 
@@ -68,7 +68,7 @@
                 <input type="text" th:field="*{serialNumber}"
                        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                       placeholder="예: SN-001234">
+                       th:placeholder="#{view.stock.form.serial.placeholder}">
             </div>
 
             <div class="mb-3">

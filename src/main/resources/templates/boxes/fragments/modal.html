@@ -5,7 +5,7 @@
 <div th:fragment="modal"
      id="modal"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 max-h-[90vh] overflow-y-auto flex flex-col">
 
         <h2 class="text-lg font-semibold text-slate-800 mb-4" th:text="#{view.box.modal.add.title}">박스 추가</h2>
 
@@ -52,7 +52,7 @@
 <div th:fragment="edit-modal"
      id="modal"
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 max-h-[90vh] overflow-y-auto flex flex-col">
 
         <h2 class="text-lg font-semibold text-slate-800 mb-4" th:text="#{view.box.modal.edit.title}">박스 이름 수정</h2>
 
