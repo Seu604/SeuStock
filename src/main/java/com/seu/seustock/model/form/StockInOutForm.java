@@ -25,4 +25,6 @@ public class StockInOutForm {
     private int count = 1;
 
     private String memo;
+
+    private boolean includeKept = false;
 }

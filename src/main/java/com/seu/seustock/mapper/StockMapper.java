@@ -42,6 +42,20 @@ public interface StockMapper {
     List<StockDTO> findInStockByItemAndShelf(@Param("itemId") Long itemId, @Param("shelfId") Long shelfId);
     List<StockDTO> findInStockByItemAndSpace(@Param("itemId") Long itemId, @Param("spaceId") Long spaceId);
 
+    List<StockDTO> findDispatchableByItemAndBox(@Param("itemId") Long itemId,
+                                                @Param("boxId") Long boxId,
+                                                @Param("includeKept") boolean includeKept);
+    List<StockDTO> findDispatchableByItemAndShelf(@Param("itemId") Long itemId,
+                                                  @Param("shelfId") Long shelfId,
+                                                  @Param("includeKept") boolean includeKept);
+    List<StockDTO> findDispatchableByItemAndSpace(@Param("itemId") Long itemId,
+                                                  @Param("spaceId") Long spaceId,
+                                                  @Param("includeKept") boolean includeKept);
+
+    int updateIsKept(@Param("externalId") UUID externalId,
+                     @Param("userId") Long userId,
+                     @Param("kept") boolean kept);
+
     List<StockPanelDTO> findPanelByBoxId(Long boxId);
     List<StockPanelDTO> findPanelByBoxIdPaged(@Param("boxId") Long boxId,
                                               @Param("limit") int limit,

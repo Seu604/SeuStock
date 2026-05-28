@@ -308,11 +308,11 @@ public class StockService {
 
         List<StockDTO> units;
         if (location.box() != null) {
-            units = stockMapper.findInStockByItemAndBox(item.getId(), location.box().getId());
+            units = stockMapper.findDispatchableByItemAndBox(item.getId(), location.box().getId(), form.isIncludeKept());
         } else if (location.shelf() != null) {
-            units = stockMapper.findInStockByItemAndShelf(item.getId(), location.shelf().getId());
+            units = stockMapper.findDispatchableByItemAndShelf(item.getId(), location.shelf().getId(), form.isIncludeKept());
         } else {
-            units = stockMapper.findInStockByItemAndSpace(item.getId(), location.space().getId());
+            units = stockMapper.findDispatchableByItemAndSpace(item.getId(), location.space().getId(), form.isIncludeKept());
         }
 
         if (units.size() < form.getCount()) {
@@ -331,6 +331,17 @@ public class StockService {
             tx.setMemo(form.getMemo());
             transactionMapper.insertTransaction(tx);
         }
+    }
+
+    @Transactional
+    public StockDetailDTO setKeepStatus(UUID stockExternalId, boolean kept, String username) {
+        UserDTO user = getUser(username);
+        int updated = stockMapper.updateIsKept(stockExternalId, user.getId(), kept);
+        if (updated != 1) {
+            throw new NoSuchElementException(getMsg("error.stock.notFound"));
+        }
+        return stockMapper.findDetailByExternalId(stockExternalId, user.getId())
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
     }
 
     @Transactional
