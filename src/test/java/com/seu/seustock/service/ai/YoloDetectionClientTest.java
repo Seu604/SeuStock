@@ -24,7 +24,7 @@ class YoloDetectionClientTest {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         YoloDetectionClient client = new YoloDetectionClient(
-                builder, "http://localhost:8000", false, 5, 30);
+                builder.baseUrl("http://localhost:8000").build(), false);
 
         List<YoloDetection> detections = client.detect(new byte[]{1, 2, 3}, "image/jpeg");
 
@@ -60,7 +60,7 @@ class YoloDetectionClientTest {
                         """, MediaType.APPLICATION_JSON));
 
         YoloDetectionClient client = new YoloDetectionClient(
-                builder, "http://localhost:8000", true, 5, 30);
+                builder.baseUrl("http://localhost:8000").build(), true);
 
         List<YoloDetection> detections = client.detect(new byte[]{1, 2, 3}, "image/jpeg");
 
@@ -87,7 +87,7 @@ class YoloDetectionClientTest {
                         """, MediaType.APPLICATION_JSON));
 
         YoloDetectionClient client = new YoloDetectionClient(
-                builder, "http://localhost:8000", true, 5, 30);
+                builder.baseUrl("http://localhost:8000").build(), true);
 
         List<YoloDetection> detections = client.detect(new byte[]{1, 2, 3}, "image/jpeg");
 
@@ -104,7 +104,7 @@ class YoloDetectionClientTest {
                 .andRespond(withServerError());
 
         YoloDetectionClient client = new YoloDetectionClient(
-                builder, "http://localhost:8000", true, 5, 30);
+                builder.baseUrl("http://localhost:8000").build(), true);
 
         List<YoloDetection> detections = client.detect(new byte[]{1, 2, 3}, "image/jpeg");
 

@@ -76,6 +76,23 @@ public class AppConfig {
         return exec;
     }
 
+    @Value("${seustock.ai.yolo.base-url:http://localhost:8000}")
+    private String yoloBaseUrl;
+
+    @Value("${seustock.ai.yolo.connect-timeout-seconds:5}")
+    private int yoloConnectTimeoutSeconds;
+
+    @Value("${seustock.ai.yolo.read-timeout-seconds:30}")
+    private int yoloReadTimeoutSeconds;
+
+    @Bean("yoloRestClient")
+    public RestClient yoloRestClient(RestClient.Builder restClientBuilder) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(yoloConnectTimeoutSeconds));
+        factory.setReadTimeout(Duration.ofSeconds(yoloReadTimeoutSeconds));
+        return restClientBuilder.clone().requestFactory(factory).baseUrl(yoloBaseUrl).build();
+    }
+
     @Bean
     public OllamaApi ollamaApi() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
