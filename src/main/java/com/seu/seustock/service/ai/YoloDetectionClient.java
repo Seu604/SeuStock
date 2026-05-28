@@ -3,6 +3,7 @@ package com.seu.seustock.service.ai;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
@@ -21,10 +22,9 @@ public class YoloDetectionClient {
     private final RestClient restClient;
     private final boolean enabled;
 
-    public YoloDetectionClient(RestClient.Builder restClientBuilder,
-                               @Value("${seustock.ai.yolo.base-url:http://localhost:8000}") String baseUrl,
+    public YoloDetectionClient(@Qualifier("yoloRestClient") RestClient restClient,
                                @Value("${seustock.ai.yolo.enabled:false}") boolean enabled) {
-        this.restClient = restClientBuilder.baseUrl(baseUrl).build();
+        this.restClient = restClient;
         this.enabled = enabled;
     }
 

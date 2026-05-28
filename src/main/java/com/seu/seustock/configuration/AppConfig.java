@@ -1,9 +1,11 @@
 package com.seu.seustock.configuration;
 
+import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +15,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -32,6 +36,15 @@ public class AppConfig {
 
     @Value("${seustock.ai.executor.queue-capacity:10}")
     private int aiExecutorQueueCapacity;
+
+    @Value("${spring.ai.ollama.base-url:http://localhost:11434}")
+    private String ollamaBaseUrl;
+
+    @Value("${seustock.ai.ollama.connect-timeout-seconds:10}")
+    private int ollamaConnectTimeoutSeconds;
+
+    @Value("${seustock.ai.ollama.read-timeout-seconds:120}")
+    private int ollamaReadTimeoutSeconds;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -61,6 +74,34 @@ public class AppConfig {
         exec.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
         exec.initialize();
         return exec;
+    }
+
+    @Value("${seustock.ai.yolo.base-url:http://localhost:8000}")
+    private String yoloBaseUrl;
+
+    @Value("${seustock.ai.yolo.connect-timeout-seconds:5}")
+    private int yoloConnectTimeoutSeconds;
+
+    @Value("${seustock.ai.yolo.read-timeout-seconds:30}")
+    private int yoloReadTimeoutSeconds;
+
+    @Bean("yoloRestClient")
+    public RestClient yoloRestClient(RestClient.Builder restClientBuilder) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(yoloConnectTimeoutSeconds));
+        factory.setReadTimeout(Duration.ofSeconds(yoloReadTimeoutSeconds));
+        return restClientBuilder.clone().requestFactory(factory).baseUrl(yoloBaseUrl).build();
+    }
+
+    @Bean
+    public OllamaApi ollamaApi() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(ollamaConnectTimeoutSeconds));
+        factory.setReadTimeout(Duration.ofSeconds(ollamaReadTimeoutSeconds));
+        return OllamaApi.builder()
+                .baseUrl(ollamaBaseUrl)
+                .restClientBuilder(RestClient.builder().requestFactory(factory))
+                .build();
     }
 
     @Bean
