@@ -30,7 +30,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 @Controller
 @RequiredArgsConstructor
@@ -76,16 +78,11 @@ public class ImageController {
         Resource resource = imageStorageService.load(image);
         MultipartFile multipartFile = new StoredImageMultipartFile(image, resource);
         log.info("[analyzeStored] externalId={}, retryAttempt={}", externalId, retryAttempt);
-        return CompletableFuture.supplyAsync(() -> {
+        return submitAnalysis("analyzeStored", () -> {
             ImageAnalysisDTO result = imageAnalysisService.analyze(
                     multipartFile, retryAttempt, previousName, previousDescription);
             log.info("[analyzeStored] 완료 — name={}, description={}", result.getName(), result.getDescription());
             return result;
-        }, aiAnalysisExecutor)
-        .thenApply(result -> ResponseEntity.ok((Object) result))
-        .exceptionally(ex -> {
-            log.error("[analyzeStored] 오류", ex);
-            return errorResponse(ex);
         });
     }
 
@@ -97,18 +94,30 @@ public class ImageController {
             @RequestParam(required = false) String previousDescription) {
         log.info("[analyze] 요청 수신 — filename={}, contentType={}, size={}, retryAttempt={}",
                 imageFile.getOriginalFilename(), imageFile.getContentType(), imageFile.getSize(), retryAttempt);
-        return CompletableFuture.supplyAsync(() -> {
+        return submitAnalysis("analyze", () -> {
             ImageAnalysisDTO result = imageAnalysisService.analyze(
                     imageFile, retryAttempt, previousName, previousDescription);
             log.info("[analyze] 분석 완료 — name={}, description={}",
                     result.getName(), result.getDescription());
             return result;
-        }, aiAnalysisExecutor)
-        .thenApply(result -> ResponseEntity.ok((Object) result))
-        .exceptionally(ex -> {
-            log.error("[analyze] 분석 중 오류 발생", ex);
-            return errorResponse(ex);
         });
+    }
+
+    private CompletableFuture<ResponseEntity<Object>> submitAnalysis(String operation,
+                                                                     Supplier<ImageAnalysisDTO> supplier) {
+        try {
+            return CompletableFuture.supplyAsync(supplier, aiAnalysisExecutor)
+                    .thenApply(result -> ResponseEntity.ok((Object) result))
+                    .exceptionally(ex -> {
+                        log.error("[{}] 분석 중 오류 발생", operation, ex);
+                        return errorResponse(ex);
+                    });
+        } catch (RejectedExecutionException ex) {
+            log.warn("[{}] AI 분석 executor 포화로 요청 거절", operation, ex);
+            return CompletableFuture.completedFuture(
+                    ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                            .body((Object) new ErrorResponse("이미지 AI 분석 요청이 많습니다. 잠시 후 다시 시도해주세요.")));
+        }
     }
 
     private ResponseEntity<Object> errorResponse(Throwable ex) {

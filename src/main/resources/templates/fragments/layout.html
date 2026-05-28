@@ -8,8 +8,10 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:replace="${titleContent}">SeuStock</title>
-    <link rel="stylesheet" as="style" crossorigin
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Sans+KR:wght@100..900&family=Noto+Sans+JP:wght@100..900&family=Noto+Sans+SC:wght@100..900&display=swap">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="/js/csrf.js"></script>
@@ -19,7 +21,7 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['"Pretendard Variable"', 'Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+                        sans: ['"Noto Sans KR"', '"Noto Sans JP"', '"Noto Sans SC"', '"Noto Sans"', 'sans-serif'],
                     },
                     colors: {
                         primary: {
@@ -176,24 +178,24 @@
 
 <!--/* 공통 푸터 */-->
 <footer th:fragment="footer" class="border-t border-slate-200 bg-white mt-auto">
-    <div class="mx-auto max-w-5xl px-4 py-8 md:flex md:items-center md:justify-between">
-        <div class="flex flex-col gap-1">
+    <div class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-2">
             <p class="text-sm text-slate-500">
                 &copy; 2026 <span class="font-medium text-slate-700">Team Ugui</span>. All rights reserved.
             </p>
-            <div class="flex items-center gap-3 text-xs text-slate-400">
-                <span>Released under the <a href="https://opensource.org/licenses/MIT" target="_blank" class="hover:text-slate-600 underline decoration-slate-300">MIT License</a>.</span>
-                <span class="text-slate-200">|</span>
-                <div class="flex gap-2">
+            <div class="flex flex-col gap-2 text-xs text-slate-400 sm:flex-row sm:items-center sm:gap-3">
+                <div class="flex flex-wrap gap-x-2 gap-y-1">
                     <a th:href="@{''(lang='ko')}" class="hover:text-slate-600 transition" th:classappend="${#locale.language == 'ko'} ? 'font-bold text-slate-600' : ''">한국어</a>
                     <a th:href="@{''(lang='en')}" class="hover:text-slate-600 transition" th:classappend="${#locale.language == 'en'} ? 'font-bold text-slate-600' : ''">English</a>
                     <a th:href="@{''(lang='ja')}" class="hover:text-slate-600 transition" th:classappend="${#locale.language == 'ja'} ? 'font-bold text-slate-600' : ''">日本語</a>
                     <a th:href="@{''(lang='zh-CN')}" class="hover:text-slate-600 transition" th:classappend="${#locale.language == 'zh' && #locale.country == 'CN'} ? 'font-bold text-slate-600' : ''">简体中文</a>
                     <a th:href="@{''(lang='mn')}" class="hover:text-slate-600 transition" th:classappend="${#locale.language == 'mn'} ? 'font-bold text-slate-600' : ''">Монгол</a>
                 </div>
+                <span class="hidden text-slate-200 sm:inline">|</span>
+                <span>Released under the <a href="https://opensource.org/licenses/MIT" target="_blank" class="hover:text-slate-600 underline decoration-slate-300">MIT License</a>.</span>
             </div>
         </div>
-        <div class="mt-4 flex items-center gap-6 md:mt-0">
+        <div class="flex items-center gap-6">
             <a href="https://github.com/TeamUgui/SeuStock" target="_blank" class="text-slate-400 hover:text-slate-600 transition" aria-label="GitHub">
                 <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                     <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />

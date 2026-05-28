@@ -97,7 +97,7 @@
                     <div th:if="${tx.memo != null and !tx.memo.isEmpty()}"
                          class="mt-1 flex items-start gap-2 text-sm">
                         <span class="shrink-0 w-20 text-xs font-medium text-slate-400" th:text="#{view.item.history.memo}">메모</span>
-                        <span class="text-slate-500" th:text="${tx.memo}"></span>
+                        <span class="text-slate-500" th:text="${#messages.msgOrNull(tx.memo) ?: tx.memo}"></span>
                     </div>
                 </div>
             </div>

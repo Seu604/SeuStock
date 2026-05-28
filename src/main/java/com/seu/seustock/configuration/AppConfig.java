@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableAsync
@@ -22,6 +23,15 @@ public class AppConfig {
 
     @Value("${security.bcrypt.strength:10}")
     private int bcryptStrength;
+
+    @Value("${seustock.ai.executor.core-pool-size:2}")
+    private int aiExecutorCorePoolSize;
+
+    @Value("${seustock.ai.executor.max-pool-size:4}")
+    private int aiExecutorMaxPoolSize;
+
+    @Value("${seustock.ai.executor.queue-capacity:10}")
+    private int aiExecutorQueueCapacity;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -44,10 +54,11 @@ public class AppConfig {
     @Bean(name = "aiAnalysisExecutor")
     public Executor aiAnalysisExecutor() {
         ThreadPoolTaskExecutor exec = new ThreadPoolTaskExecutor();
-        exec.setCorePoolSize(2);
-        exec.setMaxPoolSize(4);
-        exec.setQueueCapacity(10);
+        exec.setCorePoolSize(aiExecutorCorePoolSize);
+        exec.setMaxPoolSize(aiExecutorMaxPoolSize);
+        exec.setQueueCapacity(aiExecutorQueueCapacity);
         exec.setThreadNamePrefix("ai-analysis-");
+        exec.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
         exec.initialize();
         return exec;
     }
