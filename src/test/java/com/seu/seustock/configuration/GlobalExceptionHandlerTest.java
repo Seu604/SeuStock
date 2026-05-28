@@ -7,6 +7,8 @@ import org.springframework.context.MessageSource;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
 import java.util.Locale;
 import java.util.NoSuchElementException;
 
@@ -46,6 +48,8 @@ class GlobalExceptionHandlerTest {
                 .thenReturn("접근할 수 없습니다");
         when(messageSource.getMessage(eq("error.400.title"), any(), any(Locale.class)))
                 .thenReturn("요청을 처리할 수 없습니다");
+        when(messageSource.getMessage(eq("error.image.sizeExceeded"), any(), any(), any(Locale.class)))
+                .thenReturn("업로드 파일 크기 제한(10MB)을 초과했습니다.");
     }
 
     // ── NoSuchElementException (404) ──────────────────────────────────────
@@ -132,5 +136,29 @@ class GlobalExceptionHandlerTest {
                 new IllegalArgumentException("bad"), null, model);
 
         assertThat(view).isEqualTo("error/400");
+    }
+
+    // ── MaxUploadSizeExceededException (400) ──────────────────────────────────
+
+    @Test
+    @DisplayName("MaxUploadSizeExceededException + HX-Request:true → 에러 모달 프래그먼트 반환")
+    void handleMaxUploadSizeExceeded_withHxRequest_returnsErrorModalFragment() {
+        String view = handler.handleMaxUploadSizeExceeded(
+                new MaxUploadSizeExceededException(10 * 1024 * 1024), "true", model);
+
+        assertThat(view).isEqualTo("fragments/error-modal :: modal");
+        assertThat(model.asMap().get("statusCode")).isEqualTo(400);
+        assertThat(model.asMap().get("errorTitle")).isEqualTo("요청을 처리할 수 없습니다");
+        assertThat(model.asMap().get("errorMessage")).isEqualTo("업로드 파일 크기 제한(10MB)을 초과했습니다.");
+    }
+
+    @Test
+    @DisplayName("MaxUploadSizeExceededException, HX-Request 없음 → error/400 전체 페이지 반환")
+    void handleMaxUploadSizeExceeded_withoutHxRequest_returnsFullErrorPage() {
+        String view = handler.handleMaxUploadSizeExceeded(
+                new MaxUploadSizeExceededException(10 * 1024 * 1024), null, model);
+
+        assertThat(view).isEqualTo("error/400");
+        assertThat(model.asMap().get("errorMessage")).isEqualTo("업로드 파일 크기 제한(10MB)을 초과했습니다.");
     }
 }
