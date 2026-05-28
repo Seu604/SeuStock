@@ -127,6 +127,46 @@ public class StockController {
         return "stocks/fragments/detail-row :: view";
     }
 
+    @GetMapping("/stocks/{stockExternalId}/memo")
+    public String viewMemo(@PathVariable UUID stockExternalId,
+                           Principal principal, Model model) {
+        String username = principal.getName();
+        var stock = stockService.findDetailByExternalId(stockExternalId, username);
+        model.addAttribute("stock", stock);
+        return "stocks/fragments/memo-modal :: view";
+    }
+
+    @GetMapping("/stocks/{stockExternalId}/memo/edit")
+    public String editMemo(@PathVariable UUID stockExternalId,
+                           Principal principal, Model model) {
+        String username = principal.getName();
+        var stock = stockService.findDetailByExternalId(stockExternalId, username);
+        model.addAttribute("stock", stock);
+        return "stocks/fragments/memo-modal :: edit";
+    }
+
+    @PutMapping("/stocks/{stockExternalId}/memo")
+    public String updateMemo(@PathVariable UUID stockExternalId,
+                             @RequestParam(required = false) String memo,
+                             Principal principal,
+                             Model model,
+                             HttpServletResponse response) {
+        String username = principal.getName();
+        var stock = stockService.findDetailByExternalId(stockExternalId, username);
+
+        StockUpdateForm form = new StockUpdateForm();
+        form.setSerialNumber(stock.getSerialNumber());
+        form.setLotNumber(stock.getLotNumber());
+        form.setExpirationDate(stock.getExpirationDate());
+        form.setMemo(memo);
+
+        var updated = stockService.updateDetails(stockExternalId, form, username);
+        model.addAttribute("stock", updated);
+
+        HtmxResponse.success(response, getMsg("toast.stock.updated"));
+        return "stocks/fragments/detail-row :: view-with-modal-close";
+    }
+
     /* ── 재고 패널 조회 ── */
 
     @GetMapping("/spaces/{spaceExternalId}/stocks/all")

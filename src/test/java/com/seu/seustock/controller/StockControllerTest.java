@@ -120,6 +120,9 @@ class StockControllerTest extends AbstractControllerTest {
                 Arguments.of("GET",    "/stocks/" + STOCK_ID + "/edit"),
                 Arguments.of("PUT",    "/stocks/" + STOCK_ID),
                 Arguments.of("GET",    "/stocks/" + STOCK_ID + "/cancel"),
+                Arguments.of("GET",    "/stocks/" + STOCK_ID + "/memo"),
+                Arguments.of("GET",    "/stocks/" + STOCK_ID + "/memo/edit"),
+                Arguments.of("PUT",    "/stocks/" + STOCK_ID + "/memo"),
                 Arguments.of("GET",    "/spaces/" + SPACE_ID + "/stocks/all"),
                 Arguments.of("GET",    "/spaces/" + SPACE_ID + "/stocks"),
                 Arguments.of("GET",    "/spaces/" + SPACE_ID + "/shelves/" + SHELF_ID + "/stocks"),
@@ -195,6 +198,39 @@ class StockControllerTest extends AbstractControllerTest {
                .andExpect(status().isOk())
                .andExpect(view().name("stocks/fragments/detail-row :: edit"))
                .andExpect(header().doesNotExist("HX-Trigger"));
+    }
+
+    // ── Response Shape: 재고 메모 모달 ─────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /stocks/{id}/memo → memo-modal :: view 프래그먼트")
+    void viewMemo_returnsViewFragment() throws Exception {
+        mockMvc.perform(get(STOCK_PATH + "/memo").with(user("testuser")))
+               .andExpect(status().isOk())
+               .andExpect(view().name("stocks/fragments/memo-modal :: view"))
+               .andExpect(model().attributeExists("stock"));
+    }
+
+    @Test
+    @DisplayName("GET /stocks/{id}/memo/edit → memo-modal :: edit 프래그먼트")
+    void editMemo_returnsEditFragment() throws Exception {
+        mockMvc.perform(get(STOCK_PATH + "/memo/edit").with(user("testuser")))
+               .andExpect(status().isOk())
+               .andExpect(view().name("stocks/fragments/memo-modal :: edit"))
+               .andExpect(model().attributeExists("stock"));
+    }
+
+    @Test
+    @DisplayName("PUT /stocks/{id}/memo - 정상 → detail-row :: view-with-modal-close + HX-Trigger")
+    void updateMemo_withValidParam_returnsViewWithModalCloseFragmentWithToast() throws Exception {
+        mockMvc.perform(put(STOCK_PATH + "/memo")
+                        .with(user("testuser"))
+                        .with(csrf())
+                        .param("memo", "새 메모 내용"))
+               .andExpect(status().isOk())
+               .andExpect(view().name("stocks/fragments/detail-row :: view-with-modal-close"))
+               .andExpect(model().attributeExists("stock"))
+               .andExpect(hasToastTrigger());
     }
 
     // ── Response Shape: 패널 조회 ──────────────────────────────────────────
