@@ -122,6 +122,20 @@ function initImageUpload(config, root) {
 
     fileInput.addEventListener('change', async function () {
         var file = this.files[0];
+        if (file && file.size > 10 * 1024 * 1024) { // 10MB limit
+            var errorMsg = '업로드 가능한 최대 파일 크기는 10MB입니다. (Max file size limit is 10MB)';
+            if (window.SeuStockToast) {
+                window.SeuStockToast({ type: 'error', message: errorMsg });
+            } else {
+                alert(errorMsg);
+            }
+            this.value = '';
+            if (existingImg) existingImg.classList.remove('hidden');
+            if (previewImg)  previewImg.classList.add('hidden');
+            if (hashInput)   hashInput.value = '';
+            if (labelText)   labelText.textContent = '사진을 선택하세요';
+            return;
+        }
         if (existingImg) existingImg.classList.add('hidden');
         if (previewImg)  previewImg.classList.add('hidden');
         if (hashInput)   hashInput.value = '';
