@@ -6,10 +6,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+
+import java.time.Duration;
 
 import java.util.List;
 
@@ -23,8 +26,13 @@ public class YoloDetectionClient {
 
     public YoloDetectionClient(RestClient.Builder restClientBuilder,
                                @Value("${seustock.ai.yolo.base-url:http://localhost:8000}") String baseUrl,
-                               @Value("${seustock.ai.yolo.enabled:false}") boolean enabled) {
-        this.restClient = restClientBuilder.baseUrl(baseUrl).build();
+                               @Value("${seustock.ai.yolo.enabled:false}") boolean enabled,
+                               @Value("${seustock.ai.yolo.connect-timeout-seconds:5}") int connectTimeoutSeconds,
+                               @Value("${seustock.ai.yolo.read-timeout-seconds:30}") int readTimeoutSeconds) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
+        factory.setReadTimeout(Duration.ofSeconds(readTimeoutSeconds));
+        this.restClient = restClientBuilder.requestFactory(factory).baseUrl(baseUrl).build();
         this.enabled = enabled;
     }
 
