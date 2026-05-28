@@ -41,6 +41,9 @@
     <div class="text-sm">
         <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700"
               th:text="#{${'enum.StockStatus.' + stock.status.name()}}">재고중</span>
+        <span th:if="${stock.kept}"
+              class="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ml-1"
+              th:text="#{stock.badge.kept}">보관</span>
         <p class="mt-1 text-xs text-slate-400"
            th:text="${stock.expirationDate != null ? #messages.msg('view.stock.form.expiration.format', #temporals.format(stock.expirationDate, 'yyyy-MM-dd')) : #messages.msg('view.stock.form.expiration.none')}"></p>
     </div>
@@ -51,6 +54,14 @@
     </div>
 
     <div class="flex justify-end gap-2">
+        <button type="button"
+                th:attr="hx-post=@{/stocks/{id}/keep(id=${stock.externalId},kept=${!stock.kept})},hx-target='#stock-' + ${stock.externalId}"
+                hx-swap="outerHTML"
+                th:classappend="${stock.kept} ? 'border-amber-300 text-amber-600 hover:bg-amber-50' : 'border-slate-300 text-slate-500 hover:bg-slate-50'"
+                class="rounded-md border px-3 py-1.5 text-sm font-semibold transition"
+                th:text="${stock.kept} ? #{view.stock.action.unkeep} : #{view.stock.action.keep}">
+            보관
+        </button>
         <button type="button"
                 th:attr="hx-get=@{/stocks/{id}/edit(id=${stock.externalId})},hx-target='#stock-' + ${stock.externalId}"
                 hx-swap="outerHTML"

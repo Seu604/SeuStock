@@ -1,6 +1,7 @@
 package com.seu.seustock.controller;
 
 import com.seu.seustock.configuration.HtmxResponse;
+import com.seu.seustock.model.dto.StockDetailDTO;
 import com.seu.seustock.model.dto.StockPanelDTO;
 import com.seu.seustock.model.enumeration.TransactionType;
 import com.seu.seustock.model.form.QuickStockForm;
@@ -110,6 +111,19 @@ public class StockController {
                              Principal principal, Model model) {
         String username = principal.getName();
         model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
+        return "stocks/fragments/detail-row :: view";
+    }
+
+    @PostMapping("/stocks/{stockExternalId}/keep")
+    public String toggleKeep(@PathVariable UUID stockExternalId,
+                             @RequestParam boolean kept,
+                             Principal principal,
+                             Model model,
+                             HttpServletResponse response) {
+        String username = principal.getName();
+        StockDetailDTO stock = stockService.setKeepStatus(stockExternalId, kept, username);
+        model.addAttribute("stock", stock);
+        HtmxResponse.success(response, getMsg(kept ? "toast.stock.kept" : "toast.stock.unkept"));
         return "stocks/fragments/detail-row :: view";
     }
 
