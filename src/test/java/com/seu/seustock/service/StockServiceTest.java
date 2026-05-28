@@ -200,7 +200,7 @@ class StockServiceTest {
         stock.setId(700L);
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of(stock));
+        when(stockMapper.findDispatchableByItemAndSpace(item.getId(), space.getId(), false)).thenReturn(List.of(stock));
         when(stockMapper.updateStatusIfInStock(stock.getId(), StockStatus.DISPATCHED)).thenReturn(0);
 
         assertThatThrownBy(() -> stockService.dispatchUnits(form, USERNAME))
@@ -316,7 +316,7 @@ class StockServiceTest {
         unit.setId(700L);
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of(unit));
+        when(stockMapper.findDispatchableByItemAndSpace(item.getId(), space.getId(), false)).thenReturn(List.of(unit));
         when(stockMapper.updateStatusIfInStock(unit.getId(), StockStatus.DISPATCHED)).thenReturn(1);
 
         stockService.dispatchUnits(stockInOutForm(SPACE_EXTERNAL_ID, null, null), USERNAME);
@@ -331,7 +331,7 @@ class StockServiceTest {
     void dispatchUnits_rejectsInsufficientStock() {
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(stockMapper.findInStockByItemAndSpace(item.getId(), space.getId())).thenReturn(List.of());
+        when(stockMapper.findDispatchableByItemAndSpace(item.getId(), space.getId(), false)).thenReturn(List.of());
 
         assertThatThrownBy(() -> stockService.dispatchUnits(stockInOutForm(SPACE_EXTERNAL_ID, null, null), USERNAME))
                 .isInstanceOf(IllegalArgumentException.class)

@@ -129,6 +129,16 @@
                         </button>
                     </div>
                 </div>
+                <div class="mb-3 flex items-center gap-2">
+                    <input type="checkbox"
+                           id="out-include-kept"
+                           name="includeKept"
+                           value="true"
+                           class="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500">
+                    <label for="out-include-kept"
+                           class="text-sm text-slate-600"
+                           th:text="#{view.stock.modal.out.includeKept}">보관 품목 포함</label>
+                </div>
                 <div class="flex gap-2 justify-end">
                     <button type="button"
                             hx-get="/empty" hx-target="#modal" hx-swap="outerHTML"

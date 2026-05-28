@@ -24,5 +24,6 @@ public class StockDTO {
     private LocalDate expirationDate;
     private String memo;
     private StockStatus status;
+    private boolean kept;
     private LocalDateTime createdAt;
 }
