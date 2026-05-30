@@ -14,6 +14,13 @@
 
         <form th:action="@{/login}" th:object="${form}" method="post" class="space-y-4">
 
+            <!-- 비밀번호 변경 완료 -->
+            <div th:if="${param.reset}"
+                 class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700"
+                 th:text="#{view.login.resetSuccess}">
+                비밀번호가 변경되었습니다. 다시 로그인해주세요.
+            </div>
+
             <!-- 인증 오류 -->
             <div th:if="${param.error}"
                  class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600"
@@ -63,7 +70,11 @@
 
         </form>
 
-        <p class="mt-5 text-center text-sm text-slate-500">
+        <p class="mt-4 text-center text-sm">
+            <a href="/password/forgot" class="font-medium text-blue-600 hover:text-blue-700" th:text="#{view.login.forgotPassword}">비밀번호를 잊으셨나요?</a>
+        </p>
+
+        <p class="mt-3 text-center text-sm text-slate-500">
             <span th:text="#{view.login.noAccount}">계정이 없으신가요?</span>
             <a href="/register" class="font-medium text-blue-600 hover:text-blue-700" th:text="#{view.login.register}">회원가입</a>
         </p>
