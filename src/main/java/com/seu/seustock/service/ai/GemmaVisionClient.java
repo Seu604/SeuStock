@@ -57,7 +57,7 @@ public class GemmaVisionClient {
                 .call()
                 .entity(outputConverter);
 
-        log.info("[GemmaVisionClient] Ollama 응답 수신 - result={}", result);
+        log.info("[GemmaVisionClient] Ollama 응답 수신 - resultPresent={}", result != null);
         if (result == null) {
             throw new IllegalStateException("이미지 분석 결과가 비어 있습니다.");
         }

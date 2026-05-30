@@ -5,6 +5,7 @@ import com.seu.seustock.model.form.UserRegistrationForm;
 import com.seu.seustock.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +18,7 @@ import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
 
     private final UserService userService;
@@ -32,14 +34,18 @@ public class UserController {
     public String register(@Valid @ModelAttribute("form") UserRegistrationForm form,
                            BindingResult result) {
         if (!form.getPassword().equals(form.getPasswordConfirm())) {
+            log.warn("registration rejected reason=password_mismatch");
             result.rejectValue("passwordConfirm", "match", "비밀번호가 일치하지 않습니다.");
         }
 
         if (!result.hasFieldErrors("email") && userService.existsByEmail(form.getEmail())) {
+            log.warn("registration rejected reason=email_duplicate");
             result.rejectValue("email", "duplicate", "이미 사용 중인 이메일입니다.");
         }
 
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=user.register errorCount={} fields={}",
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             return "register";
         }
 

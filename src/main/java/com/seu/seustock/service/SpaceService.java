@@ -9,6 +9,7 @@ import com.seu.seustock.model.form.SpaceForm;
 import com.seu.seustock.model.pagination.PageRequest;
 import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SpaceService {
 
     private final SpaceMapper spaceMapper;
@@ -70,6 +72,7 @@ public class SpaceService {
         space.setUserId(user.getId());
         space.setName(form.getName());
         spaceMapper.insertSpace(space);
+        log.info("space created userId={} spaceId={}", user.getId(), space.getId());
     }
 
     public SpaceDTO update(UUID externalId, SpaceForm form, String username) {
@@ -77,6 +80,7 @@ public class SpaceService {
         verifyOwner(space, username);
         space.setName(form.getName());
         spaceMapper.updateSpace(space);
+        log.info("space updated userId={} spaceId={}", getUser(username).getId(), space.getId());
         return spaceMapper.findByExternalId(externalId).orElseThrow();
     }
 
@@ -84,9 +88,12 @@ public class SpaceService {
         SpaceDTO space = getSpace(externalId);
         verifyOwner(space, username);
         if (!stockMapper.findBySpaceId(space.getId()).isEmpty()) {
+            log.warn("space delete rejected userId={} spaceId={} reason=has_stock",
+                    getUser(username).getId(), space.getId());
             throw new IllegalStateException(getMsg("error.space.hasStock"));
         }
         spaceMapper.deleteById(space.getId());
+        log.info("space deleted userId={} spaceId={}", getUser(username).getId(), space.getId());
     }
 
     private UserDTO getUser(String username) {
@@ -110,6 +117,7 @@ public class SpaceService {
     private void verifyOwner(SpaceDTO space, String username) {
         UserDTO user = getUser(username);
         if (!space.getUserId().equals(user.getId())) {
+            log.warn("access denied userId={} resource=space resourceId={}", user.getId(), space.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
     }

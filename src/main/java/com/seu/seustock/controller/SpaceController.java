@@ -9,6 +9,7 @@ import com.seu.seustock.service.StockService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @Controller
 @RequestMapping("/spaces")
 @RequiredArgsConstructor
+@Slf4j
 public class SpaceController {
 
     private final SpaceService spaceService;
@@ -74,6 +76,8 @@ public class SpaceController {
                          RedirectAttributes redirectAttributes) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=space.create errorCount={} fields={}",
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             var spacesPage = spaceService.findPageByUsername(username, keyword, sortBy, page);
             model.addAttribute("spaces", spacesPage.content());
             model.addAttribute("page", spacesPage);
@@ -105,6 +109,8 @@ public class SpaceController {
                             HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=space.update spaceExternalId={} errorCount={} fields={}",
+                    externalId, result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("space", spaceService.findByExternalId(externalId, username));
             return "spaces/fragments/row :: edit";
         }

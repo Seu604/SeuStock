@@ -8,6 +8,7 @@ import com.seu.seustock.model.dto.SpaceDTO;
 import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.ShelfForm;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ShelfService {
 
     private final ShelfMapper shelfMapper;
@@ -56,6 +58,8 @@ public class ShelfService {
         shelf.setSpaceId(space.getId());
         shelf.setName(form.getName());
         shelfMapper.insertShelf(shelf);
+        log.info("shelf created userId={} spaceId={} shelfId={}",
+                getUser(username).getId(), space.getId(), shelf.getId());
         return shelfMapper.findById(shelf.getId()).orElseThrow();
     }
 
@@ -65,6 +69,8 @@ public class ShelfService {
         verifyShelfOwnership(shelf, space);
         shelf.setName(form.getName());
         shelfMapper.updateShelf(shelf);
+        log.info("shelf renamed userId={} spaceId={} shelfId={}",
+                getUser(username).getId(), space.getId(), shelf.getId());
         return shelfMapper.findById(shelf.getId()).orElseThrow();
     }
 
@@ -73,6 +79,8 @@ public class ShelfService {
         ShelfDTO shelf = getShelf(shelfExternalId);
         verifyShelfOwnership(shelf, space);
         shelfMapper.deleteById(shelf.getId());
+        log.info("shelf deleted userId={} spaceId={} shelfId={}",
+                getUser(username).getId(), space.getId(), shelf.getId());
     }
 
     SpaceDTO getVerifiedSpace(UUID spaceExternalId, String username) {
@@ -81,6 +89,7 @@ public class ShelfService {
         UserDTO user = userMapper.findByEmail(username)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.user.notFound")));
         if (!space.getUserId().equals(user.getId())) {
+            log.warn("access denied userId={} resource=space resourceId={}", user.getId(), space.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
         return space;
@@ -93,7 +102,13 @@ public class ShelfService {
 
     private void verifyShelfOwnership(ShelfDTO shelf, SpaceDTO space) {
         if (!shelf.getSpaceId().equals(space.getId())) {
+            log.warn("access denied resource=shelf resourceId={} spaceId={}", shelf.getId(), space.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
+    }
+
+    private UserDTO getUser(String username) {
+        return userMapper.findByEmail(username)
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.user.notFound")));
     }
 }

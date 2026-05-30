@@ -5,6 +5,7 @@ import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.LoginForm;
 import com.seu.seustock.model.form.UserRegistrationForm;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserMapper userMapper;
@@ -27,6 +29,7 @@ public class UserService {
         user.setNickname(form.getNickname());
         user.setPassword(passwordEncoder.encode(form.getPassword()));
         userMapper.insertUser(user);
+        log.info("user registered userId={}", user.getId());
     }
 
     public Optional<UserDTO> authenticate(LoginForm form) {

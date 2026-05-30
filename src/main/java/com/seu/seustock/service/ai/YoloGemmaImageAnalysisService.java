@@ -35,8 +35,8 @@ public class YoloGemmaImageAnalysisService implements ImageAnalysisService {
         String contentType = validate(imageFile);
 
         try {
-            log.info("[YoloGemmaImageAnalysisService] 분석 시작 - filename={}, contentType={}, size={}",
-                    imageFile.getOriginalFilename(), contentType, imageFile.getSize());
+            log.info("[YoloGemmaImageAnalysisService] 분석 시작 - contentType={}, size={}, retryAttempt={}",
+                    contentType, imageFile.getSize(), retryAttempt);
             ImageResizeService.ResizedImage resized =
                     imageResizeService.resizeForAnalysis(imageFile.getBytes(), contentType);
             List<YoloDetection> detections = yoloDetectionClient.detect(resized.bytes(), resized.mimeType());

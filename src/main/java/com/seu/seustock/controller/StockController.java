@@ -19,6 +19,7 @@ import com.seu.seustock.service.StockService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
@@ -33,6 +34,7 @@ import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class StockController {
 
     private final StockService stockService;
@@ -98,6 +100,8 @@ public class StockController {
                             HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=stock.update stockExternalId={} errorCount={} fields={}",
+                    stockExternalId, result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("stock", stockService.findDetailByExternalId(stockExternalId, username));
             return "stocks/fragments/detail-row :: edit";
         }
@@ -278,6 +282,9 @@ public class StockController {
                          HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=stock.create spaceExternalId={} shelfExternalId={} boxExternalId={} errorCount={} fields={}",
+                    form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("items", itemService.findAllByUsername(username));
             model.addAttribute("spaceId", form.getSpaceExternalId());
             model.addAttribute("shelfId", form.getShelfExternalId());
@@ -311,6 +318,9 @@ public class StockController {
                               HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=stock.quickCreate spaceExternalId={} shelfExternalId={} boxExternalId={} errorCount={} fields={}",
+                    form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("spaceId", form.getSpaceExternalId());
             model.addAttribute("shelfId", form.getShelfExternalId());
             model.addAttribute("boxId", form.getBoxExternalId());
@@ -395,6 +405,9 @@ public class StockController {
                             Model model,
                             HttpServletResponse response) {
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=stock.in itemExternalId={} spaceExternalId={} shelfExternalId={} boxExternalId={} errorCount={} fields={}",
+                    form.getItemExternalId(), form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             return "stocks/fragments/in-modal :: modal";
         }
         String username = principal.getName();
@@ -428,6 +441,9 @@ public class StockController {
                              Model model,
                              HttpServletResponse response) {
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=stock.out itemExternalId={} spaceExternalId={} shelfExternalId={} boxExternalId={} errorCount={} fields={}",
+                    form.getItemExternalId(), form.getSpaceExternalId(), form.getShelfExternalId(), form.getBoxExternalId(),
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             return "stocks/fragments/out-modal :: modal";
         }
         String username = principal.getName();
@@ -456,6 +472,10 @@ public class StockController {
                               HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=stock.move sourceSpaceExternalId={} sourceShelfExternalId={} sourceBoxExternalId={} targetSpaceExternalId={} targetShelfExternalId={} targetBoxExternalId={} errorCount={} fields={}",
+                    form.getSourceSpaceExternalId(), form.getSourceShelfExternalId(), form.getSourceBoxExternalId(),
+                    form.getTargetSpaceExternalId(), form.getTargetShelfExternalId(), form.getTargetBoxExternalId(),
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("locationOptions", buildMoveLocationOptions(form, username));
             return "stocks/fragments/move-modal :: modal";
         }

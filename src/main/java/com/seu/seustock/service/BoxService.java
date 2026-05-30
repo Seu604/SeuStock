@@ -7,8 +7,10 @@ import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.BoxDTO;
 import com.seu.seustock.model.dto.ShelfDTO;
 import com.seu.seustock.model.dto.SpaceDTO;
+import com.seu.seustock.model.dto.UserDTO;
 import com.seu.seustock.model.form.BoxForm;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BoxService {
 
     private final BoxMapper boxMapper;
@@ -36,6 +39,7 @@ public class BoxService {
         BoxDTO box = boxMapper.findByExternalId(boxExternalId)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
         if (!box.getShelfId().equals(shelf.getId())) {
+            log.warn("access denied resource=box resourceId={} shelfId={}", box.getId(), shelf.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
         return box;
@@ -62,6 +66,8 @@ public class BoxService {
         box.setShelfId(shelf.getId());
         box.setName(form.getName());
         boxMapper.insertBox(box);
+        log.info("box created userId={} shelfId={} boxId={}",
+                getUser(username).getId(), shelf.getId(), box.getId());
         return boxMapper.findById(box.getId()).orElseThrow();
     }
 
@@ -70,10 +76,13 @@ public class BoxService {
         BoxDTO box = boxMapper.findByExternalId(boxExternalId)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
         if (!box.getShelfId().equals(shelf.getId())) {
+            log.warn("access denied resource=box resourceId={} shelfId={}", box.getId(), shelf.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
         box.setName(form.getName());
         boxMapper.updateBox(box);
+        log.info("box renamed userId={} shelfId={} boxId={}",
+                getUser(username).getId(), shelf.getId(), box.getId());
     }
 
     public void delete(UUID spaceExternalId, UUID shelfExternalId, UUID boxExternalId, String username) {
@@ -81,22 +90,32 @@ public class BoxService {
         BoxDTO box = boxMapper.findByExternalId(boxExternalId)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
         if (!box.getShelfId().equals(shelf.getId())) {
+            log.warn("access denied resource=box resourceId={} shelfId={}", box.getId(), shelf.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
         boxMapper.deleteById(box.getId());
+        log.info("box deleted userId={} shelfId={} boxId={}",
+                getUser(username).getId(), shelf.getId(), box.getId());
     }
 
     private ShelfDTO getVerifiedShelf(UUID spaceExternalId, UUID shelfExternalId, String username) {
         SpaceDTO space = spaceMapper.findByExternalId(spaceExternalId)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.space.notFound")));
-        userMapper.findByEmail(username)
+        UserDTO user = userMapper.findByEmail(username)
                 .filter(u -> u.getId().equals(space.getUserId()))
                 .orElseThrow(() -> new SecurityException(getMsg("error.403.title")));
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.shelf.notFound")));
         if (!shelf.getSpaceId().equals(space.getId())) {
+            log.warn("access denied userId={} resource=shelf resourceId={} spaceId={}",
+                    user.getId(), shelf.getId(), space.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
         return shelf;
+    }
+
+    private UserDTO getUser(String username) {
+        return userMapper.findByEmail(username)
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.user.notFound")));
     }
 }

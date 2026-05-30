@@ -5,6 +5,7 @@ import com.seu.seustock.model.form.ResetPasswordForm;
 import com.seu.seustock.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class PasswordResetController {
 
     private final PasswordResetService passwordResetService;
@@ -35,6 +37,8 @@ public class PasswordResetController {
                          BindingResult result,
                          RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=password.forgot errorCount={} fields={}",
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             return "forgot-password";
         }
         passwordResetService.requestReset(form.getEmail());
@@ -48,6 +52,9 @@ public class PasswordResetController {
     @GetMapping("/password/reset")
     public String resetForm(@RequestParam(required = false) String token, Model model) {
         boolean valid = token != null && passwordResetService.validateToken(token);
+        if (!valid) {
+            log.warn("password reset form rejected reason=invalid_token tokenPresent={}", token != null);
+        }
         model.addAttribute("valid", valid);
         if (valid) {
             ResetPasswordForm form = new ResetPasswordForm();
@@ -62,9 +69,12 @@ public class PasswordResetController {
                         BindingResult result,
                         Model model) {
         if (!form.getPassword().equals(form.getPasswordConfirm())) {
+            log.warn("password reset rejected reason=password_mismatch");
             result.rejectValue("passwordConfirm", "match", "비밀번호가 일치하지 않습니다.");
         }
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=password.reset errorCount={} fields={}",
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("valid", true);
             return "reset-password";
         }

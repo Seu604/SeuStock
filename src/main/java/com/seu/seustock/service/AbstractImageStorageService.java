@@ -4,6 +4,8 @@ import com.seu.seustock.mapper.ImageMapper;
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.ImageDTO;
 import com.seu.seustock.model.dto.UserDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.util.StringUtils;
@@ -15,6 +17,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public abstract class AbstractImageStorageService implements ImageStorageService {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractImageStorageService.class);
 
     protected final ImageMapper imageMapper;
     protected final UserMapper userMapper;
@@ -52,6 +56,8 @@ public abstract class AbstractImageStorageService implements ImageStorageService
         if (normalizedHash != null) {
             Optional<ImageDTO> existing = imageMapper.findByUserIdAndContentHash(owner.getId(), normalizedHash);
             if (existing.isPresent()) {
+                log.info("image reused userId={} imageId={} contentType={} sizeBytes={}",
+                        owner.getId(), existing.get().getId(), existing.get().getContentType(), existing.get().getSizeBytes());
                 return existing.get();
             }
         }
@@ -65,8 +71,12 @@ public abstract class AbstractImageStorageService implements ImageStorageService
         try {
             storagePath = writeToPhysicalStorage(file, owner, contentType, originalFilename, extension);
         } catch (RuntimeException e) {
+            log.error("image storage failed userId={} contentType={} sizeBytes={}",
+                    owner.getId(), contentType, file.getSize(), e);
             throw e;
         } catch (Exception e) {
+            log.error("image storage failed userId={} contentType={} sizeBytes={}",
+                    owner.getId(), contentType, file.getSize(), e);
             throw new IllegalStateException("이미지 파일을 저장할 수 없습니다.", e);
         }
 
@@ -81,12 +91,18 @@ public abstract class AbstractImageStorageService implements ImageStorageService
             imageMapper.insertImage(image);
         } catch (DataIntegrityViolationException e) {
             if (normalizedHash != null) {
-                return imageMapper.findByUserIdAndContentHash(owner.getId(), normalizedHash)
+                ImageDTO existing = imageMapper.findByUserIdAndContentHash(owner.getId(), normalizedHash)
                         .orElseThrow(() -> e);
+                log.warn("image duplicate detected userId={} imageId={} contentType={} sizeBytes={}",
+                        owner.getId(), existing.getId(), existing.getContentType(), existing.getSizeBytes());
+                return existing;
             }
             throw e;
         }
-        return imageMapper.findById(image.getId()).orElseThrow();
+        ImageDTO stored = imageMapper.findById(image.getId()).orElseThrow();
+        log.info("image stored userId={} imageId={} contentType={} sizeBytes={}",
+                owner.getId(), stored.getId(), stored.getContentType(), stored.getSizeBytes());
+        return stored;
     }
 
     protected String extensionOf(String filename) {

@@ -2,6 +2,8 @@ package com.seu.seustock.service;
 
 import com.seu.seustock.mapper.UserMapper;
 import com.seu.seustock.model.dto.UserDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class PasswordResetService {
+
+    private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
 
     private final UserMapper userMapper;
     private final PasswordResetTokenStore tokenStore;
@@ -36,12 +40,24 @@ public class PasswordResetService {
      * 메일을 보낸다. 그 외에는 아무 동작도 하지 않는다(계정 존재 여부 비노출).
      */
     public void requestReset(String email) {
-        if (userMapper.findByEmail(email).isEmpty() || tokenStore.onCooldown(email)) {
+        UserDTO user = userMapper.findByEmail(email).orElse(null);
+        if (user == null) {
+            log.info("password reset request skipped reason=user_not_found");
+            return;
+        }
+        if (tokenStore.onCooldown(email)) {
+            log.info("password reset request skipped userId={} reason=cooldown", user.getId());
             return;
         }
         String token = tokenStore.issue(email);
         tokenStore.startCooldown(email);
-        mailSender.send(email, baseUrl + "/password/reset?token=" + token);
+        try {
+            mailSender.send(email, baseUrl + "/password/reset?token=" + token);
+            log.info("password reset requested userId={}", user.getId());
+        } catch (RuntimeException e) {
+            log.error("password reset mail failed userId={}", user.getId(), e);
+            throw e;
+        }
     }
 
     /** 토큰이 유효한지(만료/미존재가 아닌지) 확인한다. */
@@ -62,5 +78,6 @@ public class PasswordResetService {
         user.setPassword(passwordEncoder.encode(rawPassword));
         userMapper.updatePassword(user);
         tokenStore.consume(token);
+        log.info("password reset completed userId={}", user.getId());
     }
 }

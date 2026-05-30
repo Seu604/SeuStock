@@ -13,6 +13,7 @@ import com.seu.seustock.model.form.StockUpdateForm;
 import com.seu.seustock.model.pagination.PageRequest;
 import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StockService {
 
     private final StockMapper stockMapper;
@@ -185,8 +187,11 @@ public class StockService {
         normalize(form);
         int updated = stockMapper.updateDetails(externalId, user.getId(), form);
         if (updated != 1) {
+            log.warn("stock update rejected userId={} stockExternalId={} reason=not_found",
+                    user.getId(), externalId);
             throw new NoSuchElementException(getMsg("error.stock.notFound"));
         }
+        log.info("stock details updated userId={} stockExternalId={}", user.getId(), externalId);
         return stockMapper.findDetailByExternalId(externalId, user.getId())
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
     }
@@ -225,6 +230,8 @@ public class StockService {
             txs.add(tx);
         }
         transactionMapper.insertTransactions(txs);
+        log.info("stock units created userId={} itemId={} spaceId={} shelfId={} boxId={} count={}",
+                user.getId(), item.getId(), location.space().getId(), location.shelfId(), location.boxId(), units.size());
     }
 
     @Transactional
@@ -262,6 +269,8 @@ public class StockService {
             txs.add(tx);
         }
         transactionMapper.insertTransactions(txs);
+        log.info("quick stock created userId={} itemId={} spaceId={} shelfId={} boxId={} count={}",
+                user.getId(), item.getId(), location.space().getId(), location.shelfId(), location.boxId(), units.size());
     }
 
     @Transactional
@@ -294,6 +303,8 @@ public class StockService {
             txs.add(tx);
         }
         transactionMapper.insertTransactions(txs);
+        log.info("stock units added userId={} itemId={} spaceId={} shelfId={} boxId={} count={}",
+                user.getId(), item.getId(), location.space().getId(), location.shelfId(), location.boxId(), units.size());
     }
 
     @Transactional
@@ -316,12 +327,16 @@ public class StockService {
         }
 
         if (units.size() < form.getCount()) {
+            log.warn("stock dispatch rejected userId={} itemId={} requested={} available={} includeKept={}",
+                    user.getId(), item.getId(), form.getCount(), units.size(), form.isIncludeKept());
             throw new IllegalArgumentException(getMsg("error.stock.insufficient", units.size()));
         }
 
         for (StockDTO unit : units.subList(0, form.getCount())) {
             int updated = stockMapper.updateStatusIfInStock(unit.getId(), StockStatus.DISPATCHED);
             if (updated != 1) {
+                log.warn("stock dispatch rejected userId={} stockId={} reason=status_changed",
+                        user.getId(), unit.getId());
                 throw new IllegalStateException(getMsg("error.stock.statusChanged"));
             }
 
@@ -331,15 +346,41 @@ public class StockService {
             tx.setMemo(form.getMemo());
             transactionMapper.insertTransaction(tx);
         }
+        log.info("stock units dispatched userId={} itemId={} spaceId={} shelfId={} boxId={} count={} includeKept={}",
+                user.getId(), item.getId(), location.space().getId(), location.shelfId(), location.boxId(),
+                form.getCount(), form.isIncludeKept());
     }
 
     @Transactional
     public StockDetailDTO setKeepStatus(UUID stockExternalId, boolean kept, String username) {
         UserDTO user = getUser(username);
+        StockDTO stock = stockMapper.findByExternalId(stockExternalId)
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
+
+        ItemDTO item = itemMapper.findById(stock.getItemId())
+                .orElseThrow(() -> new NoSuchElementException(getMsg("error.item.notFound")));
+        verifyItemOwner(item, user);
+
+        if (stock.isKept() == kept) {
+            return stockMapper.findDetailByExternalId(stockExternalId, user.getId())
+                    .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
+        }
+
         int updated = stockMapper.updateIsKept(stockExternalId, user.getId(), kept);
         if (updated != 1) {
+            log.warn("stock keep status rejected userId={} stockExternalId={} reason=not_found",
+                    user.getId(), stockExternalId);
             throw new NoSuchElementException(getMsg("error.stock.notFound"));
         }
+
+        StockTransactionDTO tx = new StockTransactionDTO();
+        tx.setStockId(stock.getId());
+        tx.setTransactionType(TransactionType.ADJUST);
+        tx.setMemo(kept ? "보관 설정" : "보관 해제");
+        transactionMapper.insertTransaction(tx);
+
+        log.info("stock keep status updated userId={} stockExternalId={} kept={}",
+                user.getId(), stockExternalId, kept);
         return stockMapper.findDetailByExternalId(stockExternalId, user.getId())
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.stock.notFound")));
     }
@@ -359,13 +400,18 @@ public class StockService {
                 user);
 
         if (isSameLocation(source, target)) {
+            log.warn("stock move rejected userId={} reason=same_location spaceId={} shelfId={} boxId={}",
+                    user.getId(), source.space().getId(), source.shelfId(), source.boxId());
             throw new IllegalArgumentException(getMsg("error.stock.move.sameLocation"));
         }
 
+        int movedUnitCount = 0;
         for (StockMoveForm.Item moveItem : form.getItems()) {
             ItemDTO item = getVerifiedItem(moveItem.getItemExternalId(), user);
             List<StockDTO> candidates = findInStockUnits(item.getId(), source);
             if (candidates.size() < moveItem.getCount()) {
+                log.warn("stock move rejected userId={} itemId={} requested={} available={}",
+                        user.getId(), item.getId(), moveItem.getCount(), candidates.size());
                 throw new IllegalArgumentException(
                         item.getName() + " " + getMsg("error.stock.insufficient", candidates.size()));
             }
@@ -375,8 +421,11 @@ public class StockService {
             int updated = stockMapper.updateLocationIfInStock(
                     stockIds, target.space().getId(), target.shelfId(), target.boxId());
             if (updated != stockIds.size()) {
+                log.warn("stock move rejected userId={} itemId={} reason=status_changed requested={} updated={}",
+                        user.getId(), item.getId(), stockIds.size(), updated);
                 throw new IllegalStateException(getMsg("error.stock.statusChanged"));
             }
+            movedUnitCount += updated;
 
             for (StockDTO unit : selected) {
                 StockTransactionDTO tx = new StockTransactionDTO();
@@ -392,6 +441,11 @@ public class StockService {
                 transactionMapper.insertTransaction(tx);
             }
         }
+        log.info("stock units moved userId={} sourceSpaceId={} sourceShelfId={} sourceBoxId={} targetSpaceId={} targetShelfId={} targetBoxId={} itemCount={} unitCount={}",
+                user.getId(),
+                source.space().getId(), source.shelfId(), source.boxId(),
+                target.space().getId(), target.shelfId(), target.boxId(),
+                form.getItems().size(), movedUnitCount);
     }
 
     @Transactional
@@ -407,6 +461,8 @@ public class StockService {
         } else {
             stockMapper.deleteInStockByItemAndSpace(item.getId(), location.space().getId());
         }
+        log.info("stock units deleted userId={} itemId={} spaceId={} shelfId={} boxId={}",
+                user.getId(), item.getId(), location.space().getId(), location.shelfId(), location.boxId());
     }
 
     @Transactional
@@ -414,8 +470,11 @@ public class StockService {
         UserDTO user = getUser(username);
         int deleted = stockMapper.deleteInStockByExternalIdAndUserId(stockExternalId, user.getId());
         if (deleted != 1) {
+            log.warn("stock unit delete rejected userId={} stockExternalId={} reason=not_found",
+                    user.getId(), stockExternalId);
             throw new NoSuchElementException(getMsg("error.stock.notFound"));
         }
+        log.info("stock unit deleted userId={} stockExternalId={}", user.getId(), stockExternalId);
     }
 
     private ItemDTO getVerifiedItem(UUID itemExternalId, UserDTO user) {
@@ -423,6 +482,8 @@ public class StockService {
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.item.notFound")));
         verifyItemOwner(item, user);
         if (!item.isActive()) {
+            log.warn("stock operation rejected userId={} itemId={} reason=item_inactive",
+                    user.getId(), item.getId());
             throw new IllegalStateException(getMsg("error.item.inactive"));
         }
         return item;
@@ -430,6 +491,7 @@ public class StockService {
 
     private void verifyItemOwner(ItemDTO item, UserDTO user) {
         if (!item.getUserId().equals(user.getId())) {
+            log.warn("access denied userId={} resource=item resourceId={}", user.getId(), item.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
     }
@@ -443,6 +505,8 @@ public class StockService {
         BoxDTO box = null;
 
         if (boxExternalId != null && shelfExternalId == null) {
+            log.warn("location rejected userId={} reason=box_requires_shelf boxExternalId={}",
+                    user.getId(), boxExternalId);
             throw new IllegalArgumentException(getMsg("error.box.requiresShelf"));
         }
 
@@ -450,6 +514,8 @@ public class StockService {
             shelf = shelfMapper.findByExternalId(shelfExternalId)
                     .orElseThrow(() -> new NoSuchElementException(getMsg("error.shelf.notFound")));
             if (!shelf.getSpaceId().equals(space.getId())) {
+                log.warn("access denied userId={} resource=shelf resourceId={} spaceId={}",
+                        user.getId(), shelf.getId(), space.getId());
                 throw new SecurityException(getMsg("error.403.title"));
             }
         }
@@ -458,6 +524,8 @@ public class StockService {
             box = boxMapper.findByExternalId(boxExternalId)
                     .orElseThrow(() -> new NoSuchElementException(getMsg("error.box.notFound")));
             if (!box.getShelfId().equals(shelf.getId())) {
+                log.warn("access denied userId={} resource=box resourceId={} shelfId={}",
+                        user.getId(), box.getId(), shelf.getId());
                 throw new SecurityException(getMsg("error.403.title"));
             }
         }
@@ -485,6 +553,7 @@ public class StockService {
         SpaceDTO space = spaceMapper.findByExternalId(spaceExternalId)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.space.notFound")));
         if (!space.getUserId().equals(user.getId())) {
+            log.warn("access denied userId={} resource=space resourceId={}", user.getId(), space.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
         return space;
@@ -509,6 +578,8 @@ public class StockService {
             return;
         }
         itemImageMapper.insertItemImage(itemId, image.getId(), 0, true);
+        log.info("item primary image attached userId={} itemId={} imageId={}",
+                user.getId(), itemId, image.getId());
     }
 
     private void normalize(StockUpdateForm form) {

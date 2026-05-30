@@ -7,6 +7,7 @@ import com.seu.seustock.service.ShelfService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class ShelfController {
 
     private final ShelfService shelfService;
@@ -62,6 +64,8 @@ public class ShelfController {
                          HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=shelf.rename spaceExternalId={} shelfExternalId={} errorCount={} fields={}",
+                    spaceExternalId, shelfExternalId, result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("spaceExternalId", spaceExternalId);
             model.addAttribute("shelfExternalId", shelfExternalId);
             return "shelves/fragments/modal :: edit-modal";
@@ -89,6 +93,8 @@ public class ShelfController {
                          HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=shelf.create spaceExternalId={} errorCount={} fields={}",
+                    spaceExternalId, result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("spaceExternalId", spaceExternalId);
             return "shelves/fragments/modal :: modal";
         }

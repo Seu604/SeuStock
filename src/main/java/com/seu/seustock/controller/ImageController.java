@@ -77,11 +77,12 @@ public class ImageController {
         ImageDTO image = imageStorageService.loadForUser(externalId, username);
         Resource resource = imageStorageService.load(image);
         MultipartFile multipartFile = new StoredImageMultipartFile(image, resource);
-        log.info("[analyzeStored] externalId={}, retryAttempt={}", externalId, retryAttempt);
+        log.info("image analysis requested source=stored imageExternalId={} retryAttempt={}",
+                externalId, retryAttempt);
         return submitAnalysis("analyzeStored", () -> {
             ImageAnalysisDTO result = imageAnalysisService.analyze(
                     multipartFile, retryAttempt, previousName, previousDescription);
-            log.info("[analyzeStored] 완료 — name={}, description={}", result.getName(), result.getDescription());
+            log.info("image analysis completed source=stored imageExternalId={}", externalId);
             return result;
         });
     }
@@ -92,13 +93,12 @@ public class ImageController {
             @RequestParam(defaultValue = "0") int retryAttempt,
             @RequestParam(required = false) String previousName,
             @RequestParam(required = false) String previousDescription) {
-        log.info("[analyze] 요청 수신 — filename={}, contentType={}, size={}, retryAttempt={}",
-                imageFile.getOriginalFilename(), imageFile.getContentType(), imageFile.getSize(), retryAttempt);
+        log.info("image analysis requested source=upload contentType={} sizeBytes={} retryAttempt={}",
+                imageFile.getContentType(), imageFile.getSize(), retryAttempt);
         return submitAnalysis("analyze", () -> {
             ImageAnalysisDTO result = imageAnalysisService.analyze(
                     imageFile, retryAttempt, previousName, previousDescription);
-            log.info("[analyze] 분석 완료 — name={}, description={}",
-                    result.getName(), result.getDescription());
+            log.info("image analysis completed source=upload");
             return result;
         });
     }
@@ -109,11 +109,11 @@ public class ImageController {
             return CompletableFuture.supplyAsync(supplier, aiAnalysisExecutor)
                     .thenApply(result -> ResponseEntity.ok((Object) result))
                     .exceptionally(ex -> {
-                        log.error("[{}] 분석 중 오류 발생", operation, ex);
+                        log.error("image analysis failed operation={}", operation, ex);
                         return errorResponse(ex);
                     });
         } catch (RejectedExecutionException ex) {
-            log.warn("[{}] AI 분석 executor 포화로 요청 거절", operation, ex);
+            log.warn("image analysis rejected operation={} reason=executor_saturated", operation, ex);
             return CompletableFuture.completedFuture(
                     ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                             .body((Object) new ErrorResponse("이미지 AI 분석 요청이 많습니다. 잠시 후 다시 시도해주세요.")));

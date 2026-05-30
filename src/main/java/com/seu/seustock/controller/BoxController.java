@@ -7,6 +7,7 @@ import com.seu.seustock.service.ShelfService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class BoxController {
 
     private final BoxService boxService;
@@ -54,6 +56,9 @@ public class BoxController {
                          HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=box.rename spaceExternalId={} shelfExternalId={} boxExternalId={} errorCount={} fields={}",
+                    spaceExternalId, shelfExternalId, boxExternalId,
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("spaceExternalId", spaceExternalId);
             model.addAttribute("shelfExternalId", shelfExternalId);
             model.addAttribute("boxExternalId", boxExternalId);
@@ -87,6 +92,9 @@ public class BoxController {
                          HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=box.create spaceExternalId={} shelfExternalId={} errorCount={} fields={}",
+                    spaceExternalId, shelfExternalId,
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("spaceExternalId", spaceExternalId);
             model.addAttribute("shelfExternalId", shelfExternalId);
             return "boxes/fragments/modal :: modal";

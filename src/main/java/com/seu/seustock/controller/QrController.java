@@ -9,6 +9,7 @@ import com.seu.seustock.service.QrCodeService;
 import com.seu.seustock.service.ShelfService;
 import com.seu.seustock.service.SpaceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class QrController {
 
     private final QrCodeService qrCodeService;
@@ -57,8 +59,11 @@ public class QrController {
         BoxDTO box = boxService.findByExternalIdOnly(externalId);
         ShelfDTO shelf = shelfService.findById(box.getShelfId());
         SpaceDTO space = spaceService.findById(shelf.getSpaceId());
+        Long userId = spaceService.getUserIdByUsername(username);
 
-        if (!space.getUserId().equals(spaceService.getUserIdByUsername(username))) {
+        if (!space.getUserId().equals(userId)) {
+            log.warn("access denied userId={} resource=box resourceExternalId={} shelfId={} spaceId={}",
+                    userId, externalId, shelf.getId(), space.getId());
             throw new SecurityException("해당 박스에 접근할 권한이 없습니다.");
         }
 
@@ -71,8 +76,11 @@ public class QrController {
         String username = principal.getName();
         ShelfDTO shelf = shelfService.findByExternalIdOnly(externalId);
         SpaceDTO space = spaceService.findById(shelf.getSpaceId());
+        Long userId = spaceService.getUserIdByUsername(username);
 
-        if (!space.getUserId().equals(spaceService.getUserIdByUsername(username))) {
+        if (!space.getUserId().equals(userId)) {
+            log.warn("access denied userId={} resource=shelf resourceExternalId={} spaceId={}",
+                    userId, externalId, space.getId());
             throw new SecurityException("해당 선반에 접근할 권한이 없습니다.");
         }
 

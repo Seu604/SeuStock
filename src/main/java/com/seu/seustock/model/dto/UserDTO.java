@@ -15,6 +15,7 @@ public class UserDTO {
     private UUID externalId;
     private String email;
     private String nickname;
+    @ToString.Exclude
     private String password;
     private LocalDateTime createdAt;
 }

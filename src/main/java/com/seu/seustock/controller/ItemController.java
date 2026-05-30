@@ -7,6 +7,7 @@ import com.seu.seustock.service.ItemService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @Controller
 @RequestMapping("/items")
 @RequiredArgsConstructor
+@Slf4j
 public class ItemController {
 
     private final ItemService itemService;
@@ -54,6 +56,8 @@ public class ItemController {
                          Model model,
                          HttpServletResponse response) {
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=item.create errorCount={} fields={}",
+                    result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             return "items/fragments/modal :: modal";
         }
         String username = principal.getName();
@@ -81,6 +85,8 @@ public class ItemController {
                             HttpServletResponse response) {
         String username = principal.getName();
         if (result.hasErrors()) {
+            log.warn("request validation failed operation=item.update itemExternalId={} errorCount={} fields={}",
+                    externalId, result.getErrorCount(), ControllerLogSupport.invalidFields(result));
             model.addAttribute("item", itemService.findByExternalId(externalId, username));
             return "items/fragments/card :: edit";
         }

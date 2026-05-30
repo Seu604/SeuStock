@@ -14,6 +14,7 @@ import com.seu.seustock.model.form.ItemForm;
 import com.seu.seustock.model.pagination.PageRequest;
 import com.seu.seustock.model.pagination.PageResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ItemService {
 
     private final ItemMapper itemMapper;
@@ -73,6 +75,7 @@ public class ItemService {
         item.setDescription(form.getDescription());
         itemMapper.insertItem(item);
         attachPrimaryImageIfPresent(item.getId(), user, form);
+        log.info("item created userId={} itemId={}", user.getId(), item.getId());
         return itemMapper.findById(item.getId()).orElseThrow();
     }
 
@@ -84,6 +87,7 @@ public class ItemService {
         item.setDescription(form.getDescription());
         itemMapper.updateItem(item);
         attachPrimaryImageIfPresent(item.getId(), getUser(username), form);
+        log.info("item updated userId={} itemId={}", getUser(username).getId(), item.getId());
         return itemMapper.findByExternalId(externalId).orElseThrow();
     }
 
@@ -106,13 +110,17 @@ public class ItemService {
         ItemDTO item = getItem(externalId);
         verifyOwner(item, username);
         if (stockMapper.countInStockByItemId(item.getId()) > 0) {
+            log.warn("item delete rejected userId={} itemId={} reason=has_in_stock",
+                    getUser(username).getId(), item.getId());
             throw new IllegalStateException(getMsg("error.item.hasStock"));
         }
         if (stockMapper.countByItemId(item.getId()) > 0) {
             itemMapper.deactivateById(item.getId());
+            log.info("item deactivated userId={} itemId={}", getUser(username).getId(), item.getId());
             return;
         }
         itemMapper.deleteById(item.getId());
+        log.info("item deleted userId={} itemId={}", getUser(username).getId(), item.getId());
     }
 
     private UserDTO getUser(String username) {
@@ -136,6 +144,7 @@ public class ItemService {
     private void verifyOwner(ItemDTO item, String username) {
         UserDTO user = getUser(username);
         if (!item.getUserId().equals(user.getId())) {
+            log.warn("access denied userId={} resource=item resourceId={}", user.getId(), item.getId());
             throw new SecurityException(getMsg("error.403.title"));
         }
     }
@@ -148,8 +157,12 @@ public class ItemService {
         itemImageMapper.unsetPrimaryByItemId(itemId);
         if (itemImageMapper.countByItemIdAndImageId(itemId, image.getId()) > 0) {
             itemImageMapper.updateItemImage(itemId, image.getId(), 0, true);
+            log.info("item primary image updated userId={} itemId={} imageId={}",
+                    user.getId(), itemId, image.getId());
             return;
         }
         itemImageMapper.insertItemImage(itemId, image.getId(), 0, true);
+        log.info("item primary image attached userId={} itemId={} imageId={}",
+                user.getId(), itemId, image.getId());
     }
 }
