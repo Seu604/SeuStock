@@ -35,8 +35,11 @@ public class MinioImageStorageService extends AbstractImageStorageService {
 
     private volatile boolean bucketReady;
 
-    public MinioImageStorageService(ImageMapper imageMapper, UserMapper userMapper, MinioClient minioClient) {
-        super(imageMapper, userMapper);
+    public MinioImageStorageService(ImageMapper imageMapper,
+                                    UserMapper userMapper,
+                                    ImageFileValidator imageFileValidator,
+                                    MinioClient minioClient) {
+        super(imageMapper, userMapper, imageFileValidator);
         this.minioClient = minioClient;
     }
 

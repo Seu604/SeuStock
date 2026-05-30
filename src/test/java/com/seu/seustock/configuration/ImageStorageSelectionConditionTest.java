@@ -2,6 +2,7 @@ package com.seu.seustock.configuration;
 
 import com.seu.seustock.mapper.ImageMapper;
 import com.seu.seustock.mapper.UserMapper;
+import com.seu.seustock.service.ImageFileValidator;
 import com.seu.seustock.service.ImageStorageService;
 import com.seu.seustock.service.LocalImageStorageService;
 import com.seu.seustock.service.MinioImageStorageService;
@@ -52,5 +53,6 @@ class ImageStorageSelectionConditionTest {
     static class MockDependenciesConfig {
         @Bean ImageMapper imageMapper() { return mock(ImageMapper.class); }
         @Bean UserMapper userMapper() { return mock(UserMapper.class); }
+        @Bean ImageFileValidator imageFileValidator() { return new ImageFileValidator(); }
     }
 }

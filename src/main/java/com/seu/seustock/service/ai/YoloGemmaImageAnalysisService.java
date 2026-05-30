@@ -1,5 +1,6 @@
 package com.seu.seustock.service.ai;
 
+import com.seu.seustock.service.ImageFileValidator;
 import com.seu.seustock.model.dto.ImageAnalysisDTO;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -9,8 +10,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -18,10 +17,7 @@ public class YoloGemmaImageAnalysisService implements ImageAnalysisService {
 
     private static final Logger log = LoggerFactory.getLogger(YoloGemmaImageAnalysisService.class);
 
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "image/jpeg", "image/png", "image/webp", "image/gif"
-    );
-
+    private final ImageFileValidator imageFileValidator;
     private final ImageResizeService imageResizeService;
     private final YoloDetectionClient yoloDetectionClient;
     private final GemmaVisionClient gemmaVisionClient;
@@ -36,13 +32,13 @@ public class YoloGemmaImageAnalysisService implements ImageAnalysisService {
                                     int retryAttempt,
                                     String previousName,
                                     String previousDescription) {
-        validate(imageFile);
+        String contentType = validate(imageFile);
 
         try {
             log.info("[YoloGemmaImageAnalysisService] 분석 시작 - filename={}, contentType={}, size={}",
-                    imageFile.getOriginalFilename(), imageFile.getContentType(), imageFile.getSize());
+                    imageFile.getOriginalFilename(), contentType, imageFile.getSize());
             ImageResizeService.ResizedImage resized =
-                    imageResizeService.resizeForAnalysis(imageFile.getBytes(), imageFile.getContentType());
+                    imageResizeService.resizeForAnalysis(imageFile.getBytes(), contentType);
             List<YoloDetection> detections = yoloDetectionClient.detect(resized.bytes(), resized.mimeType());
             try {
                 return gemmaVisionClient.analyze(resized.bytes(),
@@ -61,14 +57,11 @@ public class YoloGemmaImageAnalysisService implements ImageAnalysisService {
         }
     }
 
-    private void validate(MultipartFile imageFile) {
+    private String validate(MultipartFile imageFile) {
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("분석할 이미지 파일이 없습니다.");
         }
 
-        String contentType = imageFile.getContentType();
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
-            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
-        }
+        return imageFileValidator.validateAndNormalizeContentType(imageFile);
     }
 }

@@ -12,21 +12,20 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 public abstract class AbstractImageStorageService implements ImageStorageService {
 
-    protected static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "image/jpeg", "image/png", "image/webp", "image/gif"
-    );
-
     protected final ImageMapper imageMapper;
     protected final UserMapper userMapper;
+    private final ImageFileValidator imageFileValidator;
 
-    protected AbstractImageStorageService(ImageMapper imageMapper, UserMapper userMapper) {
+    protected AbstractImageStorageService(ImageMapper imageMapper,
+                                          UserMapper userMapper,
+                                          ImageFileValidator imageFileValidator) {
         this.imageMapper = imageMapper;
         this.userMapper = userMapper;
+        this.imageFileValidator = imageFileValidator;
     }
 
     @Override
@@ -47,6 +46,7 @@ public abstract class AbstractImageStorageService implements ImageStorageService
             return null;
         }
 
+        String contentType = imageFileValidator.validateAndNormalizeContentType(file);
         String normalizedHash = (contentHash != null && !contentHash.isBlank()) ? contentHash : null;
 
         if (normalizedHash != null) {
@@ -54,11 +54,6 @@ public abstract class AbstractImageStorageService implements ImageStorageService
             if (existing.isPresent()) {
                 return existing.get();
             }
-        }
-
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
-            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
         }
 
         String originalFilename = StringUtils.cleanPath(

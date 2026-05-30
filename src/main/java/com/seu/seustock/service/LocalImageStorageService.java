@@ -27,8 +27,10 @@ public class LocalImageStorageService extends AbstractImageStorageService {
     @Value("${seustock.upload-dir:uploads/images}")
     private String uploadDir;
 
-    public LocalImageStorageService(ImageMapper imageMapper, UserMapper userMapper) {
-        super(imageMapper, userMapper);
+    public LocalImageStorageService(ImageMapper imageMapper,
+                                    UserMapper userMapper,
+                                    ImageFileValidator imageFileValidator) {
+        super(imageMapper, userMapper, imageFileValidator);
     }
 
     @Override
