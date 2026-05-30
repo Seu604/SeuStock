@@ -30,33 +30,34 @@ class UserServiceTest {
 
     @InjectMocks private UserService userService;
 
-    // ── existsByUsername ──────────────────────────────────────────────────────
+    // ── existsByEmail ─────────────────────────────────────────────────────────
 
     @Test
-    void existsByUsername_returnsTrueWhenPresent() {
+    void existsByEmail_returnsTrueWhenPresent() {
         UserDTO existing = new UserDTO();
-        existing.setUsername("alice");
+        existing.setEmail("alice@test.com");
 
-        when(userMapper.findByUsername("alice")).thenReturn(Optional.of(existing));
+        when(userMapper.findByEmail("alice@test.com")).thenReturn(Optional.of(existing));
 
-        assertThat(userService.existsByUsername("alice")).isTrue();
+        assertThat(userService.existsByEmail("alice@test.com")).isTrue();
     }
 
     @Test
-    void existsByUsername_returnsFalseWhenAbsent() {
-        when(userMapper.findByUsername("ghost")).thenReturn(Optional.empty());
+    void existsByEmail_returnsFalseWhenAbsent() {
+        when(userMapper.findByEmail("ghost@test.com")).thenReturn(Optional.empty());
 
-        assertThat(userService.existsByUsername("ghost")).isFalse();
+        assertThat(userService.existsByEmail("ghost@test.com")).isFalse();
     }
 
     // ── register ──────────────────────────────────────────────────────────────
 
     @Test
-    void register_encodesPasswordBeforeInserting() {
+    void register_encodesPasswordAndStoresEmailAndNickname() {
         when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
 
         UserRegistrationForm form = new UserRegistrationForm();
-        form.setUsername("newuser");
+        form.setEmail("newuser@test.com");
+        form.setNickname("뉴비");
         form.setPassword(RAW_PASSWORD);
 
         userService.register(form);
@@ -64,7 +65,8 @@ class UserServiceTest {
         ArgumentCaptor<UserDTO> captor = ArgumentCaptor.forClass(UserDTO.class);
         verify(userMapper).insertUser(captor.capture());
         assertThat(captor.getValue().getPassword()).isEqualTo(ENCODED_PASSWORD);
-        assertThat(captor.getValue().getUsername()).isEqualTo("newuser");
+        assertThat(captor.getValue().getEmail()).isEqualTo("newuser@test.com");
+        assertThat(captor.getValue().getNickname()).isEqualTo("뉴비");
     }
 
     @Test
@@ -72,7 +74,8 @@ class UserServiceTest {
         when(passwordEncoder.encode(anyString())).thenReturn(ENCODED_PASSWORD);
 
         UserRegistrationForm form = new UserRegistrationForm();
-        form.setUsername("newuser");
+        form.setEmail("newuser@test.com");
+        form.setNickname("뉴비");
         form.setPassword(RAW_PASSWORD);
 
         userService.register(form);
@@ -87,14 +90,14 @@ class UserServiceTest {
     @Test
     void authenticate_returnsUserOnCorrectCredentials() {
         UserDTO stored = new UserDTO();
-        stored.setUsername("alice");
+        stored.setEmail("alice@test.com");
         stored.setPassword(ENCODED_PASSWORD);
 
-        when(userMapper.findByUsername("alice")).thenReturn(Optional.of(stored));
+        when(userMapper.findByEmail("alice@test.com")).thenReturn(Optional.of(stored));
         when(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
 
         LoginForm form = new LoginForm();
-        form.setUsername("alice");
+        form.setEmail("alice@test.com");
         form.setPassword(RAW_PASSWORD);
 
         Optional<UserDTO> result = userService.authenticate(form);
@@ -106,14 +109,14 @@ class UserServiceTest {
     @Test
     void authenticate_returnsEmptyOnWrongPassword() {
         UserDTO stored = new UserDTO();
-        stored.setUsername("alice");
+        stored.setEmail("alice@test.com");
         stored.setPassword(ENCODED_PASSWORD);
 
-        when(userMapper.findByUsername("alice")).thenReturn(Optional.of(stored));
+        when(userMapper.findByEmail("alice@test.com")).thenReturn(Optional.of(stored));
         when(passwordEncoder.matches(eq("wrongpassword"), anyString())).thenReturn(false);
 
         LoginForm form = new LoginForm();
-        form.setUsername("alice");
+        form.setEmail("alice@test.com");
         form.setPassword("wrongpassword");
 
         Optional<UserDTO> result = userService.authenticate(form);
@@ -123,10 +126,10 @@ class UserServiceTest {
 
     @Test
     void authenticate_returnsEmptyWhenUserNotFound() {
-        when(userMapper.findByUsername("unknown")).thenReturn(Optional.empty());
+        when(userMapper.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
 
         LoginForm form = new LoginForm();
-        form.setUsername("unknown");
+        form.setEmail("unknown@test.com");
         form.setPassword(RAW_PASSWORD);
 
         Optional<UserDTO> result = userService.authenticate(form);

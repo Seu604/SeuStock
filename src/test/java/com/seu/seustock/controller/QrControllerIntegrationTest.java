@@ -63,10 +63,11 @@ class QrControllerIntegrationTest {
     @BeforeEach
     void setUp() {
         testUser = new UserDTO();
-        testUser.setUsername("testuser");
+        testUser.setEmail("testuser@test.com");
+        testUser.setNickname("testuser");
         testUser.setPassword(passwordEncoder.encode("password"));
         userMapper.insertUser(testUser);
-        testUser = userMapper.findByUsername("testuser").orElseThrow();
+        testUser = userMapper.findByEmail("testuser@test.com").orElseThrow();
 
         testSpace = new SpaceDTO();
         testSpace.setUserId(testUser.getId());
@@ -91,7 +92,7 @@ class QrControllerIntegrationTest {
     @DisplayName("박스 QR 스캔 시 해당 재고 페이지로 리다이렉트 (로그인 상태)")
     void scanBoxRedirect() throws Exception {
         mockMvc.perform(get("/qr/boxes/" + testBox.getExternalId())
-                        .with(user("testuser").roles("USER")))
+                        .with(user("testuser@test.com").roles("USER")))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl(String.format("/spaces/%s/shelves/%s/boxes/%s/stocks",
                         testSpace.getExternalId(), testShelf.getExternalId(), testBox.getExternalId())));
@@ -130,7 +131,7 @@ class QrControllerIntegrationTest {
 
         MvcResult loginResult = mockMvc.perform(post("/login")
                         .session(session)
-                        .param("username", "testuser")
+                        .param("email", "testuser@test.com")
                         .param("password", "password")
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())

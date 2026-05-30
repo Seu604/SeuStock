@@ -64,7 +64,8 @@ class StockMapperTest {
     @BeforeEach
     void setUp() {
         UserDTO user = new UserDTO();
-        user.setUsername("testuser");
+        user.setEmail("testuser@test.com");
+        user.setNickname("testuser");
         user.setPassword("password");
         userMapper.insertUser(user);
         userId = user.getId();
@@ -264,7 +265,8 @@ class StockMapperTest {
     @Test
     void deleteInStockByExternalIdAndUserId_rejectsOtherUserUnit() {
         UserDTO otherUser = new UserDTO();
-        otherUser.setUsername("otheruser");
+        otherUser.setEmail("otheruser@test.com");
+        otherUser.setNickname("otheruser");
         otherUser.setPassword("password");
         userMapper.insertUser(otherUser);
 

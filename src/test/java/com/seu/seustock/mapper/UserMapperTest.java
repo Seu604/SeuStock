@@ -21,52 +21,54 @@ class UserMapperTest {
     @Autowired
     private UserMapper userMapper;
 
-    private UserDTO buildUser(String username) {
+    private UserDTO buildUser(String email) {
         UserDTO user = new UserDTO();
-        user.setUsername(username);
+        user.setEmail(email);
+        user.setNickname("tester");
         user.setPassword("password");
         return user;
     }
 
     @Test
-    void insertUser_thenFindByUsername() {
-        UserDTO user = buildUser("alice");
+    void insertUser_thenFindByEmail() {
+        UserDTO user = buildUser("alice@test.com");
         userMapper.insertUser(user);
 
-        Optional<UserDTO> found = userMapper.findByUsername("alice");
+        Optional<UserDTO> found = userMapper.findByEmail("alice@test.com");
 
         assertThat(found).isPresent();
         assertThat(found.get().getId()).isNotNull();
         assertThat(found.get().getExternalId()).isNotNull();
-        assertThat(found.get().getUsername()).isEqualTo("alice");
+        assertThat(found.get().getEmail()).isEqualTo("alice@test.com");
+        assertThat(found.get().getNickname()).isEqualTo("tester");
     }
 
     @Test
-    void findByUsername_notFound_returnsEmpty() {
-        Optional<UserDTO> found = userMapper.findByUsername("nobody");
+    void findByEmail_notFound_returnsEmpty() {
+        Optional<UserDTO> found = userMapper.findByEmail("nobody@test.com");
         assertThat(found).isEmpty();
     }
 
     @Test
     void updatePassword() {
-        UserDTO user = buildUser("bob");
+        UserDTO user = buildUser("bob@test.com");
         userMapper.insertUser(user);
         user.setPassword("newPassword");
 
         userMapper.updatePassword(user);
 
-        Optional<UserDTO> found = userMapper.findByUsername("bob");
+        Optional<UserDTO> found = userMapper.findByEmail("bob@test.com");
         assertThat(found).isPresent();
         assertThat(found.get().getPassword()).isEqualTo("newPassword");
     }
 
     @Test
     void deleteById() {
-        UserDTO user = buildUser("charlie");
+        UserDTO user = buildUser("charlie@test.com");
         userMapper.insertUser(user);
 
         userMapper.deleteById(user.getId());
 
-        assertThat(userMapper.findByUsername("charlie")).isEmpty();
+        assertThat(userMapper.findByEmail("charlie@test.com")).isEmpty();
     }
 }

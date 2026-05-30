@@ -105,7 +105,7 @@ class StockServiceTest {
         box = box(10000L, BOX_EXTERNAL_ID, shelf.getId());
         otherShelfBox = box(10001L, OTHER_BOX_EXTERNAL_ID, otherSpaceShelf.getId());
 
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
     }
 
     @Test
@@ -483,7 +483,7 @@ class StockServiceTest {
     private UserDTO user(Long id) {
         UserDTO dto = new UserDTO();
         dto.setId(id);
-        dto.setUsername(USERNAME);
+        dto.setEmail(USERNAME);
         return dto;
     }
 
@@ -524,7 +524,7 @@ class StockServiceTest {
 
     @Test
     void createWithNewItem_insertsItemAndStocksAndTransactions() {
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
         when(imageStorageService.store(null, user, null)).thenReturn(null);
 
@@ -544,7 +544,7 @@ class StockServiceTest {
 
     @Test
     void createWithNewItem_usesDefaultMemoWhenNoneProvided() {
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
         when(imageStorageService.store(null, user, null)).thenReturn(null);
 
@@ -564,7 +564,7 @@ class StockServiceTest {
 
     @Test
     void createWithNewItem_throwsWhenSpaceNotFound() {
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.empty());
         when(imageStorageService.store(null, user, null)).thenReturn(null);
 

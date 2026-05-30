@@ -78,7 +78,7 @@ public class ShelfService {
     SpaceDTO getVerifiedSpace(UUID spaceExternalId, String username) {
         SpaceDTO space = spaceMapper.findByExternalId(spaceExternalId)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.space.notFound")));
-        UserDTO user = userMapper.findByUsername(username)
+        UserDTO user = userMapper.findByEmail(username)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.user.notFound")));
         if (!space.getUserId().equals(user.getId())) {
             throw new SecurityException(getMsg("error.403.title"));

@@ -8,7 +8,7 @@ import java.util.Optional;
 @Mapper
 public interface UserMapper {
     void insertUser(UserDTO user);
-    Optional<UserDTO> findByUsername(String username);
+    Optional<UserDTO> findByEmail(String email);
     void updatePassword(UserDTO user);
     void deleteById(Long id);
 }

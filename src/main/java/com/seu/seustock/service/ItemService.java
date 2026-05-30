@@ -116,7 +116,7 @@ public class ItemService {
     }
 
     private UserDTO getUser(String username) {
-        return userMapper.findByUsername(username)
+        return userMapper.findByEmail(username)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.user.notFound")));
     }
 

@@ -50,7 +50,8 @@ class ImageMapperTest {
     @BeforeEach
     void setUp() {
         user = new UserDTO();
-        user.setUsername("image-user");
+        user.setEmail("image-user@test.com");
+        user.setNickname("image-user");
         user.setPassword("password");
         userMapper.insertUser(user);
 

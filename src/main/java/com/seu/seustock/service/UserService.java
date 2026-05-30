@@ -17,19 +17,20 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public boolean existsByUsername(String username) {
-        return userMapper.findByUsername(username).isPresent();
+    public boolean existsByEmail(String email) {
+        return userMapper.findByEmail(email).isPresent();
     }
 
     public void register(UserRegistrationForm form) {
         UserDTO user = new UserDTO();
-        user.setUsername(form.getUsername());
+        user.setEmail(form.getEmail());
+        user.setNickname(form.getNickname());
         user.setPassword(passwordEncoder.encode(form.getPassword()));
         userMapper.insertUser(user);
     }
 
     public Optional<UserDTO> authenticate(LoginForm form) {
-        return userMapper.findByUsername(form.getUsername())
+        return userMapper.findByEmail(form.getEmail())
                 .filter(user -> passwordEncoder.matches(form.getPassword(), user.getPassword()));
     }
 }

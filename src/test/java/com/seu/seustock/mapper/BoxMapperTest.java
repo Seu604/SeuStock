@@ -40,7 +40,8 @@ class BoxMapperTest {
     @BeforeEach
     void setUp() {
         UserDTO user = new UserDTO();
-        user.setUsername("testuser");
+        user.setEmail("testuser@test.com");
+        user.setNickname("testuser");
         user.setPassword("password");
         userMapper.insertUser(user);
 

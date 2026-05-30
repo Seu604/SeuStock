@@ -51,17 +51,32 @@
                 var type = detail && detail.type ? detail.type : 'success';
                 var isError = type === 'error';
                 var toast = document.createElement('div');
-                toast.className = 'rounded-md border px-4 py-3 text-sm shadow-lg transition ' +
+                toast.className = 'rounded-md border px-4 py-3 text-sm shadow-lg transition flex items-center gap-2 ' +
                     (isError
                         ? 'border-red-200 bg-red-50 text-red-700'
                         : 'border-emerald-200 bg-emerald-50 text-emerald-700');
-                toast.textContent = message;
-                ensureToastContainer().appendChild(toast);
 
-                window.setTimeout(function () {
+                var msgSpan = document.createElement('span');
+                msgSpan.className = 'flex-1';
+                msgSpan.textContent = message;
+
+                var closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.textContent = '×';
+                closeBtn.className = 'ml-1 shrink-0 text-base leading-none opacity-50 hover:opacity-100 focus:outline-none';
+
+                function dismiss() {
+                    window.clearTimeout(timerId);
                     toast.classList.add('opacity-0');
                     window.setTimeout(function () { toast.remove(); }, 200);
-                }, 2800);
+                }
+                closeBtn.addEventListener('click', dismiss);
+
+                toast.appendChild(msgSpan);
+                toast.appendChild(closeBtn);
+                ensureToastContainer().appendChild(toast);
+
+                var timerId = window.setTimeout(dismiss, 2800);
             }
 
             window.SeuStockToast = showToast;
@@ -126,7 +141,7 @@
                 <a href="/stocks"
                    class="text-slate-600 hover:text-slate-900 transition" th:text="#{view.nav.myStocks}">내 재고</a>
                 <span class="text-slate-300">|</span>
-                <span class="text-slate-500" th:text="${currentUsername}"></span>
+                <span class="text-slate-500" th:text="${currentNickname}"></span>
                 <form th:action="@{/logout}" method="post" class="inline">
                     <button type="submit"
                             class="text-slate-600 hover:text-slate-900 transition cursor-pointer bg-transparent border-0 p-0" th:text="#{view.nav.logout}">로그아웃</button>
@@ -151,7 +166,7 @@
                         border border-slate-200 bg-white shadow-md py-1 z-50">
                 <th:block th:if="${currentUsername != null}">
                     <div class="px-3 py-1.5 text-xs text-slate-400"
-                         th:text="${currentUsername}"></div>
+                         th:text="${currentNickname}"></div>
                     <hr class="border-slate-100 mx-2 my-1"/>
                     <a href="/spaces"
                        class="block px-3 py-2 text-slate-700 hover:bg-slate-50 transition" th:text="#{view.nav.mySpaces}">내 공간</a>

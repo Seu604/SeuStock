@@ -50,7 +50,8 @@ class UserControllerTest extends AbstractControllerTest {
     @DisplayName("POST /register - CSRF 토큰 없음 → 403 Forbidden")
     void postRegister_withoutCsrf_returns403() throws Exception {
         mockMvc.perform(post("/register")
-                        .param("username", "validuser")
+                        .param("email", "valid@test.com")
+                        .param("nickname", "닉네임")
                         .param("password", "password123")
                         .param("passwordConfirm", "password123"))
                .andExpect(status().isForbidden());
@@ -77,22 +78,22 @@ class UserControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    @DisplayName("GET /register/check-username (파라미터 없음) → 프래그먼트 반환, empty=true")
-    void getCheckUsername_withBlankUsername_returnsEmptyFlag() throws Exception {
-        mockMvc.perform(get("/register/check-username"))
+    @DisplayName("GET /register/check-email (파라미터 없음) → 프래그먼트 반환, empty=true")
+    void getCheckEmail_withBlankEmail_returnsEmptyFlag() throws Exception {
+        mockMvc.perform(get("/register/check-email"))
                .andExpect(status().isOk())
-               .andExpect(view().name("fragments/username-check :: result"))
+               .andExpect(view().name("fragments/email-check :: result"))
                .andExpect(model().attribute("empty", true));
     }
 
     @Test
-    @DisplayName("GET /register/check-username?username=taken → taken=true")
-    void getCheckUsername_withTakenUsername_returnsTakenFlag() throws Exception {
-        given(userService.existsByUsername("taken")).willReturn(true);
+    @DisplayName("GET /register/check-email?email=taken@test.com → taken=true")
+    void getCheckEmail_withTakenEmail_returnsTakenFlag() throws Exception {
+        given(userService.existsByEmail("taken@test.com")).willReturn(true);
 
-        mockMvc.perform(get("/register/check-username").param("username", "taken"))
+        mockMvc.perform(get("/register/check-email").param("email", "taken@test.com"))
                .andExpect(status().isOk())
-               .andExpect(view().name("fragments/username-check :: result"))
+               .andExpect(view().name("fragments/email-check :: result"))
                .andExpect(model().attribute("taken", true))
                .andExpect(model().attribute("empty", false));
     }
@@ -100,10 +101,11 @@ class UserControllerTest extends AbstractControllerTest {
     @Test
     @DisplayName("POST /register 정상 폼 → /register?success 리다이렉트")
     void postRegister_withValidForm_redirectsToSuccess() throws Exception {
-        given(userService.existsByUsername("newuser1")).willReturn(false);
+        given(userService.existsByEmail("newuser1@test.com")).willReturn(false);
 
         mockMvc.perform(post("/register").with(csrf())
-                        .param("username", "newuser1")
+                        .param("email", "newuser1@test.com")
+                        .param("nickname", "뉴비")
                         .param("password", "password123")
                         .param("passwordConfirm", "password123"))
                .andExpect(status().is3xxRedirection())
@@ -113,10 +115,11 @@ class UserControllerTest extends AbstractControllerTest {
     // ── Validation ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("POST /register - username 빈 값 → register 뷰 (200)")
-    void postRegister_withBlankUsername_returnsRegisterView() throws Exception {
+    @DisplayName("POST /register - email 빈 값 → register 뷰 (200)")
+    void postRegister_withBlankEmail_returnsRegisterView() throws Exception {
         mockMvc.perform(post("/register").with(csrf())
-                        .param("username", "")
+                        .param("email", "")
+                        .param("nickname", "닉네임")
                         .param("password", "password123")
                         .param("passwordConfirm", "password123"))
                .andExpect(status().isOk())
@@ -124,10 +127,11 @@ class UserControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    @DisplayName("POST /register - username 4자 미만 → register 뷰 (@Size min=4)")
-    void postRegister_withTooShortUsername_returnsRegisterView() throws Exception {
+    @DisplayName("POST /register - 잘못된 이메일 형식 → register 뷰 (@Email)")
+    void postRegister_withInvalidEmailFormat_returnsRegisterView() throws Exception {
         mockMvc.perform(post("/register").with(csrf())
-                        .param("username", "ab")
+                        .param("email", "not-an-email")
+                        .param("nickname", "닉네임")
                         .param("password", "password123")
                         .param("passwordConfirm", "password123"))
                .andExpect(status().isOk())
@@ -135,10 +139,23 @@ class UserControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    @DisplayName("POST /register - username 패턴 불일치 (공백 포함) → register 뷰 (@Pattern)")
-    void postRegister_withInvalidUsernamePattern_returnsRegisterView() throws Exception {
+    @DisplayName("POST /register - nickname 빈 값 → register 뷰 (@NotBlank)")
+    void postRegister_withBlankNickname_returnsRegisterView() throws Exception {
         mockMvc.perform(post("/register").with(csrf())
-                        .param("username", "ab cd")
+                        .param("email", "valid@test.com")
+                        .param("nickname", "")
+                        .param("password", "password123")
+                        .param("passwordConfirm", "password123"))
+               .andExpect(status().isOk())
+               .andExpect(view().name("register"));
+    }
+
+    @Test
+    @DisplayName("POST /register - nickname 2자 미만 → register 뷰 (@Size min=2)")
+    void postRegister_withTooShortNickname_returnsRegisterView() throws Exception {
+        mockMvc.perform(post("/register").with(csrf())
+                        .param("email", "valid@test.com")
+                        .param("nickname", "a")
                         .param("password", "password123")
                         .param("passwordConfirm", "password123"))
                .andExpect(status().isOk())
@@ -149,7 +166,8 @@ class UserControllerTest extends AbstractControllerTest {
     @DisplayName("POST /register - password 8자 미만 → register 뷰 (@Size min=8)")
     void postRegister_withTooShortPassword_returnsRegisterView() throws Exception {
         mockMvc.perform(post("/register").with(csrf())
-                        .param("username", "validuser")
+                        .param("email", "valid@test.com")
+                        .param("nickname", "닉네임")
                         .param("password", "short")
                         .param("passwordConfirm", "short"))
                .andExpect(status().isOk())
@@ -160,7 +178,8 @@ class UserControllerTest extends AbstractControllerTest {
     @DisplayName("POST /register - password와 passwordConfirm 불일치 → register 뷰")
     void postRegister_withMismatchedPasswords_returnsRegisterView() throws Exception {
         mockMvc.perform(post("/register").with(csrf())
-                        .param("username", "validuser")
+                        .param("email", "valid@test.com")
+                        .param("nickname", "닉네임")
                         .param("password", "password123")
                         .param("passwordConfirm", "different1"))
                .andExpect(status().isOk())
@@ -168,12 +187,13 @@ class UserControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    @DisplayName("POST /register - 이미 사용 중인 username → register 뷰 (중복 검사)")
-    void postRegister_withDuplicateUsername_returnsRegisterView() throws Exception {
-        given(userService.existsByUsername(anyString())).willReturn(true);
+    @DisplayName("POST /register - 이미 사용 중인 email → register 뷰 (중복 검사)")
+    void postRegister_withDuplicateEmail_returnsRegisterView() throws Exception {
+        given(userService.existsByEmail(anyString())).willReturn(true);
 
         mockMvc.perform(post("/register").with(csrf())
-                        .param("username", "existuser")
+                        .param("email", "exist@test.com")
+                        .param("nickname", "닉네임")
                         .param("password", "password123")
                         .param("passwordConfirm", "password123"))
                .andExpect(status().isOk())

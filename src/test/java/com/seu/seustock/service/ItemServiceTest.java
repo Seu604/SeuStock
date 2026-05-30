@@ -68,7 +68,7 @@ class ItemServiceTest {
         user.setId(1L);
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(stockMapper.countInStockByItemId(item.getId())).thenReturn(1);
 
         assertThatThrownBy(() -> itemService.delete(ITEM_EXTERNAL_ID, USERNAME))
@@ -89,7 +89,7 @@ class ItemServiceTest {
         user.setId(1L);
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(stockMapper.countInStockByItemId(item.getId())).thenReturn(0);
         when(stockMapper.countByItemId(item.getId())).thenReturn(1);
 
@@ -109,7 +109,7 @@ class ItemServiceTest {
         user.setId(1L);
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> itemService.delete(ITEM_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(SecurityException.class);
@@ -137,7 +137,7 @@ class ItemServiceTest {
         user.setId(1L);
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(stockMapper.countInStockByItemId(item.getId())).thenReturn(0);
         when(stockMapper.countByItemId(item.getId())).thenReturn(0);
 
@@ -165,7 +165,7 @@ class ItemServiceTest {
         form.setImageHash("abc123");
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(imageStorageService.store(imageFile, user, "abc123")).thenReturn(image);
         when(itemImageMapper.countByItemIdAndImageId(item.getId(), image.getId())).thenReturn(1);
 
@@ -187,7 +187,7 @@ class ItemServiceTest {
         created.setUserId(1L);
         created.setName("테스트 품목");
 
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(imageStorageService.store(null, user, null)).thenReturn(null);
         when(itemMapper.findById(any())).thenReturn(Optional.of(created));
 
@@ -211,7 +211,7 @@ class ItemServiceTest {
         image.setId(20L);
         MultipartFile imageFile = mock(MultipartFile.class);
 
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(imageStorageService.store(imageFile, user, "hash123")).thenReturn(image);
         when(itemImageMapper.countByItemIdAndImageId(any(), eq(20L))).thenReturn(0);
         when(itemMapper.findById(any())).thenReturn(Optional.of(created));
@@ -238,7 +238,7 @@ class ItemServiceTest {
         user.setId(1L);
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> itemService.findByExternalId(ITEM_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(SecurityException.class);
@@ -254,7 +254,7 @@ class ItemServiceTest {
         user.setId(1L);
 
         when(itemMapper.findByExternalId(ITEM_EXTERNAL_ID)).thenReturn(Optional.of(item));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         ItemDTO result = itemService.findByExternalId(ITEM_EXTERNAL_ID, USERNAME);
 

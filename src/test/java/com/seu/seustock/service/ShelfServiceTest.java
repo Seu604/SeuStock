@@ -65,7 +65,7 @@ class ShelfServiceTest {
         UserDTO user = user(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> shelfService.findAllBySpaceId(SPACE_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(SecurityException.class);
@@ -80,7 +80,7 @@ class ShelfServiceTest {
         List<ShelfDTO> shelves = List.of(new ShelfDTO(), new ShelfDTO());
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findBySpaceId(10L)).thenReturn(shelves);
 
         List<ShelfDTO> result = shelfService.findAllBySpaceId(SPACE_EXTERNAL_ID, USERNAME);
@@ -97,7 +97,7 @@ class ShelfServiceTest {
         UserDTO user = user(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> shelfService.findByExternalId(SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, USERNAME))
@@ -111,7 +111,7 @@ class ShelfServiceTest {
         ShelfDTO shelf = shelf(20L, 99L); // 다른 space에 속한 shelf
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
 
         assertThatThrownBy(() -> shelfService.findByExternalId(SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, USERNAME))
@@ -125,7 +125,7 @@ class ShelfServiceTest {
         ShelfDTO shelf = shelf(20L, 10L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
 
         ShelfDTO result = shelfService.findByExternalId(SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, USERNAME);
@@ -141,7 +141,7 @@ class ShelfServiceTest {
         UserDTO user = user(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         ShelfForm form = new ShelfForm();
         form.setName("새 선반");
@@ -160,7 +160,7 @@ class ShelfServiceTest {
         created.setName("새 선반");
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         // insertShelf는 void이므로 별도 stub 불필요
         when(shelfMapper.findById(any())).thenReturn(Optional.of(created));
 
@@ -185,7 +185,7 @@ class ShelfServiceTest {
         ShelfDTO shelf = shelf(20L, 99L); // 다른 space 소속
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
 
         ShelfForm form = new ShelfForm();
@@ -206,7 +206,7 @@ class ShelfServiceTest {
         updated.setName("변경명");
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(shelfMapper.findById(20L)).thenReturn(Optional.of(updated));
 
@@ -227,7 +227,7 @@ class ShelfServiceTest {
         UserDTO user = user(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> shelfService.delete(SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(SecurityException.class);
@@ -242,7 +242,7 @@ class ShelfServiceTest {
         ShelfDTO shelf = shelf(20L, 99L); // 다른 space 소속
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
 
         assertThatThrownBy(() -> shelfService.delete(SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, USERNAME))
@@ -258,7 +258,7 @@ class ShelfServiceTest {
         ShelfDTO shelf = shelf(20L, 10L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
 
         shelfService.delete(SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, USERNAME);

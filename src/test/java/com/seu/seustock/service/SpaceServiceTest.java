@@ -61,7 +61,7 @@ class SpaceServiceTest {
         user.setId(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(stockMapper.findBySpaceId(space.getId())).thenReturn(List.of(new StockDTO()));
 
         assertThatThrownBy(() -> spaceService.delete(SPACE_EXTERNAL_ID, USERNAME))
@@ -81,7 +81,7 @@ class SpaceServiceTest {
         user.setId(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> spaceService.delete(SPACE_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(SecurityException.class);
@@ -109,7 +109,7 @@ class SpaceServiceTest {
         user.setId(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(stockMapper.findBySpaceId(space.getId())).thenReturn(List.of());
 
         spaceService.delete(SPACE_EXTERNAL_ID, USERNAME);
@@ -121,7 +121,7 @@ class SpaceServiceTest {
 
     @Test
     void create_throwsWhenUserNotFound() {
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.empty());
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.empty());
 
         SpaceForm form = new SpaceForm();
         form.setName("새 공간");
@@ -137,7 +137,7 @@ class SpaceServiceTest {
         UserDTO user = new UserDTO();
         user.setId(1L);
 
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         SpaceForm form = new SpaceForm();
         form.setName("새 공간");
@@ -174,7 +174,7 @@ class SpaceServiceTest {
         user.setId(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         SpaceForm form = new SpaceForm();
         form.setName("변경명");
@@ -198,7 +198,7 @@ class SpaceServiceTest {
         updated.setName("변경명");
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space))
                 .thenReturn(Optional.of(updated));
 
@@ -222,7 +222,7 @@ class SpaceServiceTest {
         user.setId(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> spaceService.findByExternalId(SPACE_EXTERNAL_ID, USERNAME))
                 .isInstanceOf(SecurityException.class);
@@ -237,7 +237,7 @@ class SpaceServiceTest {
         user.setId(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         SpaceDTO result = spaceService.findByExternalId(SPACE_EXTERNAL_ID, USERNAME);
 

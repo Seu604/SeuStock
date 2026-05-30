@@ -67,7 +67,7 @@ class BoxServiceTest {
         UserDTO user = user(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() ->
                 boxService.findByExternalId(SPACE_EXTERNAL_ID, SHELF_EXTERNAL_ID, BOX_EXTERNAL_ID, USERNAME))
@@ -81,7 +81,7 @@ class BoxServiceTest {
         ShelfDTO shelf = shelf(20L, 99L); // 다른 space 소속 shelf
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
 
         assertThatThrownBy(() ->
@@ -97,7 +97,7 @@ class BoxServiceTest {
         BoxDTO box = box(30L, 99L); // 다른 shelf 소속 box
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
 
@@ -114,7 +114,7 @@ class BoxServiceTest {
         BoxDTO box = box(30L, 20L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
 
@@ -131,7 +131,7 @@ class BoxServiceTest {
         UserDTO user = user(1L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
 
         BoxForm form = new BoxForm();
         form.setName("새 박스");
@@ -150,7 +150,7 @@ class BoxServiceTest {
         ShelfDTO shelf = shelf(20L, 99L); // 계층 불일치
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
 
         BoxForm form = new BoxForm();
@@ -172,7 +172,7 @@ class BoxServiceTest {
         created.setName("새 박스");
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findById(any())).thenReturn(Optional.of(created));
 
@@ -198,7 +198,7 @@ class BoxServiceTest {
         BoxDTO box = box(30L, 99L); // 다른 shelf 소속
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
 
@@ -220,7 +220,7 @@ class BoxServiceTest {
         BoxDTO box = box(30L, 20L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
 
@@ -243,7 +243,7 @@ class BoxServiceTest {
         BoxDTO box = box(30L, 99L); // 다른 shelf 소속
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
 
@@ -262,7 +262,7 @@ class BoxServiceTest {
         BoxDTO box = box(30L, 20L);
 
         when(spaceMapper.findByExternalId(SPACE_EXTERNAL_ID)).thenReturn(Optional.of(space));
-        when(userMapper.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        when(userMapper.findByEmail(USERNAME)).thenReturn(Optional.of(user));
         when(shelfMapper.findByExternalId(SHELF_EXTERNAL_ID)).thenReturn(Optional.of(shelf));
         when(boxMapper.findByExternalId(BOX_EXTERNAL_ID)).thenReturn(Optional.of(box));
 

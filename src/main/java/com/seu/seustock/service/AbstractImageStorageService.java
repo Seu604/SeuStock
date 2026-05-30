@@ -31,7 +31,7 @@ public abstract class AbstractImageStorageService implements ImageStorageService
 
     @Override
     public ImageDTO loadForUser(UUID externalId, String username) {
-        UserDTO user = userMapper.findByUsername(username)
+        UserDTO user = userMapper.findByEmail(username)
                 .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다."));
         ImageDTO image = imageMapper.findByExternalId(externalId)
                 .orElseThrow(() -> new NoSuchElementException("이미지를 찾을 수 없습니다."));

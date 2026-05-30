@@ -35,8 +35,8 @@ public class UserController {
             result.rejectValue("passwordConfirm", "match", "비밀번호가 일치하지 않습니다.");
         }
 
-        if (!result.hasFieldErrors("username") && userService.existsByUsername(form.getUsername())) {
-            result.rejectValue("username", "duplicate", "이미 사용 중인 아이디입니다.");
+        if (!result.hasFieldErrors("email") && userService.existsByEmail(form.getEmail())) {
+            result.rejectValue("email", "duplicate", "이미 사용 중인 이메일입니다.");
         }
 
         if (result.hasErrors()) {
@@ -47,12 +47,12 @@ public class UserController {
         return "redirect:/register?success";
     }
 
-    @GetMapping("/register/check-username")
-    public String checkUsername(@RequestParam(defaultValue = "") String username, Model model) {
-        model.addAttribute("username", username);
-        model.addAttribute("taken", !username.isBlank() && userService.existsByUsername(username));
-        model.addAttribute("empty", username.isBlank());
-        return "fragments/username-check :: result";
+    @GetMapping("/register/check-email")
+    public String checkEmail(@RequestParam(defaultValue = "") String email, Model model) {
+        model.addAttribute("email", email);
+        model.addAttribute("taken", !email.isBlank() && userService.existsByEmail(email));
+        model.addAttribute("empty", email.isBlank());
+        return "fragments/email-check :: result";
     }
 
     @GetMapping("/login")

@@ -89,7 +89,7 @@ public class BoxService {
     private ShelfDTO getVerifiedShelf(UUID spaceExternalId, UUID shelfExternalId, String username) {
         SpaceDTO space = spaceMapper.findByExternalId(spaceExternalId)
                 .orElseThrow(() -> new NoSuchElementException(getMsg("error.space.notFound")));
-        userMapper.findByUsername(username)
+        userMapper.findByEmail(username)
                 .filter(u -> u.getId().equals(space.getUserId()))
                 .orElseThrow(() -> new SecurityException(getMsg("error.403.title")));
         ShelfDTO shelf = shelfMapper.findByExternalId(shelfExternalId)

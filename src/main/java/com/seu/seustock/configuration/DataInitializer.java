@@ -55,7 +55,8 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-    private static final String SEED_USERNAME = "test1234";
+    private static final String SEED_EMAIL = "test1234@test.com";
+    private static final String SEED_NICKNAME = "test1234";
     private static final String SEED_PASSWORD = "test1234";
 
     private static final int SPACE_COUNT = 25;
@@ -104,12 +105,12 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        if (userMapper.findByUsername(SEED_USERNAME).isPresent()) {
-            log.info("[DataInitializer] '{}' 사용자 존재 - 초기 데이터 생성을 건너뜁니다.", SEED_USERNAME);
+        if (userMapper.findByEmail(SEED_EMAIL).isPresent()) {
+            log.info("[DataInitializer] '{}' 사용자 존재 - 초기 데이터 생성을 건너뜁니다.", SEED_EMAIL);
             return;
         }
 
-        log.info("[DataInitializer] '{}' 사용자가 없어 초기 더미 데이터를 생성합니다.", SEED_USERNAME);
+        log.info("[DataInitializer] '{}' 사용자가 없어 초기 더미 데이터를 생성합니다.", SEED_EMAIL);
 
         UserDTO user = createUser();
         List<SpaceDTO> spaces = createSpaces(user);
@@ -128,10 +129,11 @@ public class DataInitializer implements CommandLineRunner {
 
     private UserDTO createUser() {
         UserDTO user = new UserDTO();
-        user.setUsername(SEED_USERNAME);
+        user.setEmail(SEED_EMAIL);
+        user.setNickname(SEED_NICKNAME);
         user.setPassword(passwordEncoder.encode(SEED_PASSWORD));
         userMapper.insertUser(user);
-        return userMapper.findByUsername(SEED_USERNAME).orElseThrow();
+        return userMapper.findByEmail(SEED_EMAIL).orElseThrow();
     }
 
     private List<SpaceDTO> createSpaces(UserDTO user) {

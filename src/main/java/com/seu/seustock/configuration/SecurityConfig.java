@@ -39,7 +39,7 @@ public class SecurityConfig {
             .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/login", "/register", "/register/check-username",
+                    "/login", "/register", "/register/check-email",
                     "/css/**", "/js/**", "/static/**",
                     "/api/qr/generate", "/api/qr/modal"
                 ).permitAll()
@@ -48,7 +48,7 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .usernameParameter("username")
+                .usernameParameter("email")
                 .passwordParameter("password")
                 .successHandler(new SavedRequestAwareAuthenticationSuccessHandler())
                 .failureUrl("/login?error")

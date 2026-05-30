@@ -8,8 +8,8 @@ import lombok.Setter;
 @Setter
 public class LoginForm {
 
-    @NotBlank(message = "{valid.login.username.notBlank}")
-    private String username;
+    @NotBlank(message = "{valid.login.email.notBlank}")
+    private String email;
 
     @NotBlank(message = "{valid.login.password.notBlank}")
     private String password;
